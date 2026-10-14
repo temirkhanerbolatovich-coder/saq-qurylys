@@ -813,6 +813,8 @@ function PaymentRisk({
   const [message, setMessage] = useState("");
   const retry = useRef<{ payload: string; key: string } | null>(null);
   const factor = property.data?.factors.find((f) => f.code === "R2");
+  const propertyReady =
+    property.data?.property.id === ad.confirmed_property_id && !property.error;
   const payment = extraction.hypotheses.filter(
     (h) =>
       h.field === "PAYMENT_TERM" &&
@@ -831,6 +833,10 @@ function PaymentRisk({
     return result;
   }
   async function run(callback: () => Promise<void>) {
+    if (!propertyReady) {
+      onError("Дождитесь загрузки текущего фактора R2 или повторите загрузку.");
+      return;
+    }
     setBusy(true);
     onError("");
     setMessage("");
@@ -855,7 +861,19 @@ function PaymentRisk({
         доказательство и фактор на проверке, затем примите отдельное решение о
         R2 (+25 при подтверждении).
       </p>
-      {property.error && <Notice error={property.error} />}
+      {!property.data && !property.error && (
+        <p role="status">Загружаем текущий фактор R2…</p>
+      )}
+      {property.error && (
+        <div>
+          <Notice
+            error={`Не удалось загрузить текущий фактор R2: ${property.error}`}
+          />
+          <Button variant="outline" onClick={property.reload}>
+            Повторить загрузку R2
+          </Button>
+        </div>
+      )}
       {factor && (
         <p>
           Текущий статус R2: <b>{factor.status}</b> · версия {factor.revision}
@@ -889,7 +907,9 @@ function PaymentRisk({
           <div className="review-actions">
             <Button
               variant="outline"
-              disabled={busy || !reason.trim() || !hypothesisId}
+              disabled={
+                busy || !propertyReady || !reason.trim() || !hypothesisId
+              }
               onClick={() =>
                 void run(async () => {
                   const h = payment.find((h) => h.id === hypothesisId)!;
@@ -929,7 +949,12 @@ function PaymentRisk({
             {factor && (
               <>
                 <Button
-                  disabled={busy || !reason.trim() || !evidenceIds.length}
+                  disabled={
+                    busy ||
+                    !propertyReady ||
+                    !reason.trim() ||
+                    !evidenceIds.length
+                  }
                   onClick={() =>
                     void run(async () => {
                       await action(`/risk-factors/${factor.id}/review`, {
@@ -946,7 +971,7 @@ function PaymentRisk({
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={busy || !reason.trim()}
+                  disabled={busy || !propertyReady || !reason.trim()}
                   onClick={() =>
                     void run(async () => {
                       await action(`/risk-factors/${factor.id}/review`, {

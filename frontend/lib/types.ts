@@ -147,4 +147,11 @@ export type Evidence = {
   event_at?: string | null;
   methodology?: string | null;
   signatory_count?: number | null;
+  construction_stage?: "UNDER_CONSTRUCTION" | "COMPLETED" | null;
+  measurement_percent?: number | null;
+  measurement_role?: "DECLARED" | "VERIFIED" | null;
+  comparison_key?: string | null;
+  planned_completion_at?: string | null;
+  actual_completion_at?: string | null;
+  delay_status?: "NOT_COMPLETED" | "COMPLETED_LATE" | null;
 };

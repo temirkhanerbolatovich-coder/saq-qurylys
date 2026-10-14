@@ -151,6 +151,8 @@ class EvidenceCreate(ReviewInput):
         'COLLECTIVE_APPEAL',
         'PROGRESS_MEASUREMENT',
         'DELAY_DOCUMENT',
+        'CONSTRUCTION_STAGE',
+        'ADVERTISEMENT_PUBLICATION',
     ]
     asset_id: UUID
     advertisement_id: UUID | None = None
@@ -165,6 +167,12 @@ class EvidenceCreate(ReviewInput):
     measurement_percent: float | None = Field(default=None, ge=0, le=100)
     methodology: str | None = Field(default=None, min_length=1, max_length=2000)
     signatory_count: int | None = Field(default=None, ge=2, le=100000)
+    construction_stage: Literal['UNDER_CONSTRUCTION', 'COMPLETED'] | None = None
+    measurement_role: Literal['DECLARED', 'VERIFIED'] | None = None
+    comparison_key: str | None = Field(default=None, min_length=1, max_length=300)
+    planned_completion_at: AwareDatetime | None = None
+    actual_completion_at: AwareDatetime | None = None
+    delay_status: Literal['NOT_COMPLETED', 'COMPLETED_LATE'] | None = None
     is_demo: bool
 
 
@@ -186,6 +194,7 @@ class RiskFactorReview(ReviewInput):
     status: Literal['CONFIRMED', 'REJECTED', 'PENDING']
     evidence_ids: list[UUID]
     reason: str = Field(min_length=1, max_length=2000)
+    as_of: AwareDatetime | None = None
 
 
 class RiskReviewOut(DTO):

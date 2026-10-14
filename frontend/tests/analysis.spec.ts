@@ -255,3 +255,122 @@ test("PNG goes through real worker OCR and shows a pixel fragment", async ({
     fullPage: true,
   });
 });
+
+test("payment evidence waits for the current property factor before saving", async ({
+  page,
+}) => {
+  await login(page);
+  const registry = await (
+    await page.request.get("/api/v1/properties?page_size=100")
+  ).json();
+  const property = registry.items.find((row: { name: string }) =>
+    row.name.includes("Самал"),
+  );
+  const initial = await (
+    await page.request.get(`/api/v1/properties/${property.id}`)
+  ).json();
+  const existingFactor = initial.factors.find(
+    (factor: { code: string }) => factor.code === "R2",
+  );
+  expect(existingFactor).toBeDefined();
+  const csrf = (await (await page.request.get("/api/v1/auth/csrf")).json())
+    .csrf_token;
+  const saved = await page.request.post("/api/v1/advertisements", {
+    headers: {
+      Origin: "http://localhost:3000",
+      "X-CSRF-Token": csrf,
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+    data: {
+      text: "ЖК «Самал», очередь 1. Первоначальный взнос 20%. Строящийся дом.",
+      source_label: `DEMO R2 loading regression ${Date.now()}`,
+      is_demo: true,
+    },
+  });
+  expect(saved.status()).toBe(201);
+  const ad = await saved.json();
+  await page.goto(`/review?advertisement_id=${ad.id}`);
+  await page
+    .getByRole("button", { name: "Запустить анализ", exact: true })
+    .click();
+  const payment = page
+    .locator(".hypothesis")
+    .filter({ hasText: "Условие оплаты" })
+    .first();
+  await expect(payment).toBeVisible({ timeout: 30000 });
+  await payment
+    .getByLabel("Обоснование проверки")
+    .fill("DEMO: условие сверено с оригиналом");
+  await payment
+    .getByRole("button", { name: "Подтвердить гипотезу", exact: true })
+    .click();
+  await expect(payment).toContainText("CONFIRMED");
+
+  let releaseResponse!: () => void;
+  const held = new Promise<void>((resolve) => {
+    releaseResponse = resolve;
+  });
+  let requestStarted!: () => void;
+  const loading = new Promise<void>((resolve) => {
+    requestStarted = resolve;
+  });
+  await page.route(`**/api/v1/properties/${property.id}`, async (route) => {
+    const response = await route.fetch();
+    requestStarted();
+    await held;
+    await route.fulfill({ response });
+  });
+  let createFactorRequests = 0;
+  page.on("request", (request) => {
+    if (
+      request.method() === "POST" &&
+      new URL(request.url()).pathname ===
+        `/api/v1/properties/${property.id}/risk-factors`
+    )
+      createFactorRequests += 1;
+  });
+  await page
+    .getByLabel("ЖК / очередь · можно выбрать вручную")
+    .selectOption(property.id);
+  await page
+    .getByLabel("Обоснование выбора / отклонения")
+    .fill("DEMO: Самал, очередь 1, адрес проверен");
+  await page
+    .getByRole("button", { name: "Подтвердить привязку", exact: true })
+    .click();
+  await loading;
+  const panel = page.locator("section").filter({
+    has: page.getByRole("heading", {
+      name: "R2 · прямое предложение платежа",
+      exact: true,
+    }),
+  });
+  await panel
+    .getByLabel("Проверенное условие оплаты")
+    .selectOption({ index: 1 });
+  await panel
+    .getByLabel("Обоснование решения по R2")
+    .fill("DEMO: новое доказательство для существующего R2");
+  const save = panel.getByRole("button", {
+    name: "Сохранить доказательство R2",
+    exact: true,
+  });
+  await expect(panel.getByRole("status")).toContainText(
+    "Загружаем текущий фактор R2",
+  );
+  await expect(save).toBeDisabled();
+  releaseResponse();
+  await expect(save).toBeEnabled();
+  await save.click();
+  await expect(panel.getByRole("status")).toContainText(
+    "Доказательство сохранено",
+  );
+  expect(createFactorRequests).toBe(0);
+  const after = await (
+    await page.request.get(`/api/v1/properties/${property.id}`)
+  ).json();
+  expect(
+    after.factors.find((factor: { code: string }) => factor.code === "R2").id,
+  ).toBe(existingFactor.id);
+  expect(after.property.risk.score).toBe(initial.property.risk.score);
+});

@@ -64,5 +64,5 @@ def unknown_information(row: Property) -> list[str]:
     if status in {'UNKNOWN', 'PENDING'}:
         result.append('Нет подтверждённого применимого основания на текущую дату. Это не подтверждает R1.')
     if row.progress_percent is None:
-        result.append('Нет датированной проверки готовности.')
+        result.append('В общих сведениях готовность не указана. Датированные измерения — в доказательствах факторов.')
     return result

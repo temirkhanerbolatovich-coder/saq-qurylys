@@ -1,18 +1,18 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-Updated: 2026-10-15 (Asia/Qyzylorda). Последний блок: датированное правовое основание и ручная проверка.
+Updated: 2026-10-15 (Asia/Qyzylorda). Последний блок: самостоятельные документы и ручные R3/R5/R6.
 Branch: main. Текущую ревизию см. `git log -1`; удалённый репозиторий не настроен, push/deploy не выполнялись.
 Owner: Codex; реализация и продолжение разрешены пользователем. Общие подтверждения повторно не нужны.
 
 ## Текущее состояние
 
-**Два вертикальных среза реализованы и проверены локально. Полный P0 ещё не завершён.** Приложение: http://localhost:3000. Логин/пароль только в игнорируемом `.local/credentials.txt`, не печатать и не вводить в DOM автотестов. Контейнеры SAQ db/api/worker/frontend оставлены работающими; сторонние контейнеры не использовались.
+**Реестр, OCR/review, ручные R2–R6 и датированное правовое основание реализованы локально. Полный P0 ещё не завершён.** Приложение: http://localhost:3000. Логин/пароль только в игнорируемом `.local/credentials.txt`, не печатать и не вводить в DOM автотестов. Контейнеры SAQ db/api/worker/frontend оставлены работающими; сторонние контейнеры не использовались.
 
 Рабочий путь: новый текст или PNG/JPEG/TXT → сохранённый оригинал/SHA-256/происхождение → явный анализ → durable PostgreSQL job/worker → Tesseract RU/KZ + правила + RapidFuzz → гипотезы/offsets/bbox → ручная проверка/исправление → точная привязка ЖК → доказательство → отдельное решение R2 → серверный риск/аудит. Ни OCR, ни matching сами не начисляют баллы.
 
-Seed: 8 DEMO-объектов и 12 исходных публикаций; новые browser/OCR/restart DEMO-записи добавлены отдельно, seed их не сбрасывает. Синтетические A/B/C (35/yellow, 70/red, 10/green) сохранены; реальной проверкой они не являются. Browser-сценарий оставляет историю по DEMO Ертіс с итоговым отклонённым R2/0.
+Seed: 8 DEMO-объектов и 12 исходных публикаций; новые browser/OCR/restart DEMO-записи добавлены отдельно, seed их не сбрасывает. Синтетические A/B/C (35/yellow, 70/red, 10/green) сохранены; реальной проверкой они не являются. Browser-сценарии оставляют историю по DEMO Ертіс с итоговыми отклонёнными R2–R6/0; по Самал добавлено evidence без изменения исходного R2/балла.
 
-Целевой контракт: 36 операций, из них 24 полностью доступны, 5 частично, 7 PLANNED. Помимо R2/R4 ручные доказательства/факторы остальных видов явно отклоняются 422. Текущий этап — docs/FEATURE_LEGAL_BASIS.md и ADR-003; OCR/R2 и R4 описаны в документах предыдущих срезов.
+Целевой контракт: 36 операций, из них 24 полностью доступны, 5 частично, 7 PLANNED. Ручные R2–R6 принимают только соответствующие доказательства; R1 и LEGAL_ABSENCE_REVIEW ещё отклоняются 422. Текущий этап — docs/FEATURE_CONSTRUCTION_REVIEW.md и ADR-004; legal/OCR/R2/R4 описаны в документах предыдущих срезов.
 
 ## P0 checklist
 
@@ -25,25 +25,25 @@ Seed: 8 DEMO-объектов и 12 исходных публикаций; но�
 | PostgreSQL jobs/worker | VERIFIED локально | SKIP LOCKED, lease/claim token, ограниченные попытки, fencing, queued job пережил замену API/worker | Нет heartbeat/HA/нагрузочной приёмки |
 | OCR RU/KZ | VERIFIED на двух новых синтетических баннерах | Tesseract 5.3.0 + rus/kaz/eng, реальные bbox, originals SHA; scripts/verify_ocr.py | Независимый image corpus ≥30, сложные/нечитаемые изображения и метрики |
 | Extraction/matching | IN PROGRESS | Правила/30 text cases, generic RapidFuzz candidates, ручной выбор | Независимые precision/recall/top-3; качество на реальных материалах |
-| Human review/audit | VERIFIED для гипотез/расшифровки/match/R2/R4/valid-rejected основания | Версии, review value, причины/server actor, stale 409, история before/after | Проверка отсутствия основания, остальные факторы и сигналы |
-| Risk R1–R6 | IN PROGRESS | Все веса/зоны и A/B/C; ручной R2 +25/0 и зависимый пересмотр | Typed evidence/guards R1/R3/R5/R6, датированные проверки и документирование процедуры |
+| Human review/audit | VERIFIED локально для гипотез/расшифровки/match/R2–R6/valid-rejected основания | Версии, review value, причины/server actor, stale 409, история before/after; R3 source invalidation | Проверка отсутствия основания/R1, сигналы и предметная приёмка |
+| Risk R1–R6 | IN PROGRESS | Все веса/зоны и A/B/C; ручные R2–R6, типовые документы, даты/сопоставимость/SHA | Полная процедура отсутствия всех оснований/R1, предметная приёмка |
 | Legal basis | IN PROGRESS | Typed создание и valid/rejected review, отдельный документ/evidence, область/дата/период; UNKNOWN не создаёт R1 | Полная проверка отсутствия всех механизмов, внешняя предметная приёмка, PDF |
 | Dashboard/registry/review | IN PROGRESS | Реальные API, фильтры, карточки, split original/hypotheses, audit; mobile no overflow | Карта, keyboard/200% zoom, UX с 3–5 людьми |
 | Signals/PDF | NOT STARTED | Честно обозначены будущим этапом | Snapshot/decision/revision/PDF/оговорка/шрифты |
-| Полный E2E/второй ПК/CI | IN PROGRESS | 105 backend + 10 browser; Docker/модели/build; workflow создан | Полный P0 E2E, другой ПК, реальный GitHub CI, backup/restore, freeze SHA |
+| Полный E2E/второй ПК/CI | IN PROGRESS | 149 backend + 14 browser; Docker/модели/build; workflow создан | Полный P0 E2E, другой ПК, реальный GitHub CI, backup/restore, freeze SHA |
 
 ## Выполненные проверки
 
 | Проверка | Реальный результат |
 |---|---|
-| Backend PostgreSQL | `cd backend; ..\.venv\Scripts\python.exe -m pytest -q`: **105 passed**, без warnings. Каждый запуск использует случайную test schema; public не очищался |
+| Backend PostgreSQL | `cd backend; ..\.venv\Scripts\python.exe -m pytest -q`: **149 passed**, без warnings. Каждый запуск использует случайную test schema; public не очищался |
 | Concurrency/recovery | Две одновременные гипотезы/факторы одной revision дают 200/409; устаревшее ORM-состояние перечитывается после lock; late worker не публикует второй результат |
 | API/errors/security | Roles/CSRF/Origin, чужие IDs/DEMO scope, точный фрагмент, idempotency, invalid/truncated/MIME images, streamed body limit, unavailable/timeout OCR с сохранением оригинала |
 | OpenAPI | Валидатор документа и schemas реальных job/extraction/match/evidence/risk/legal/audit responses |
 | Миграции | Исходная + `996510abee9b` + `c4f1a903b812`; Alembic check: No new upgrade operations detected |
 | Backend quality | Ruff check/format, pip check — без ошибок |
-| Frontend | build, typecheck, lint, format:check; npm audit — **0 vulnerabilities** |
-| Browser Docker | **10 passed**: первый срез плюс R2 evidence/confirm/reject (+25 → 0), настоящий KZ image OCR/bbox, mobile без overflow |
+| Frontend | Docker production build, typecheck, lint, format:check; npm audit ранее дал **0 vulnerabilities**, в блоке R3/R5/R6 повторно не запускался |
+| Browser Docker | **14 passed**: прежние сценарии, R3/R5/R6 pending/confirm/reject, частичный сбой/retry, 80.1–60.1 = 20 п.п., задержанная загрузка R2, реальный KZ OCR и mobile без overflow |
 | OCR smoke | Новый RU и KZ PNG вне seed: по 2 payment clauses/PENDING с bbox, original SHA идентичен; output/qa/ocr-verification.json |
 | OCR observations | CER RU 0.0541 / KZ 0.1026 на **двух чистых синтетических баннерах**, без заявления production accuracy. Потеря казахской диакритики явно показана |
 | Actual queue restart | Worker остановлен, новый PNG job сохранён QUEUED; API/worker пересозданы из новой сборки; SUCCEEDED, ровно одна версия, original SHA сохранён. `.local/queue-restart-check.json` |
@@ -56,8 +56,9 @@ Seed: 8 DEMO-объектов и 12 исходных публикаций; но�
 
 - PostgreSQL queue и worker из одной backend-сборки, без Redis/Celery: достаточно для объёма MVP; ADR-002.
 - Raw OCR и оригинал не перезаписываются. Исправление расшифровки — дочерняя версия; review — отдельное значение и аудит.
-- Изменение используемой гипотезы/расшифровки/привязки снимает зависимый CONFIRMED R2 в PENDING. Новый автоматический анализ сам не меняет уже проверенные факторы.
-- Текущий риск, уникальный фактор property/code; исторический as_of пока возвращает 400. Полные проверки R1/R5 и остальных кодов не реализованы — команды отклоняются.
+- Изменение используемой гипотезы снимает зависимый CONFIRMED R2; исправление расшифровки или привязки снимает зависимые R2/R3 в PENDING. Новый автоматический анализ сам не меняет уже проверенные факторы.
+- Текущий риск, уникальный фактор property/code; исторический as_of чтения пока возвращает 400. Дата оценки R3/R5/R6 сохранена отдельно от серверного reviewed_at. Ручной R1 пока отклоняется.
+- Один календарный день R3 и строгие дата/ключ/методика R5 — консервативная политика MVP, а не правовая норма. Разные SHA не доказывают подлинность/независимость; существенность R6 оценивает человек. ADR-004.
 - Нет quotas/retention/антивируса, SSO/admin password UI/distributed rate limiting, HA/heartbeat, backup/restore acceptance. Orphan content-hash файл при DB rollback возможен. DB audit не криптографически неизменяемый.
 - 30 текстовых регрессий не являются независимым benchmark. Два новых OCR-баннера не заменяют ≥30 image corpus или реальную предметную проверку.
 - Proxy ограничивает PNG/JPEG body 10 MiB + 64 KiB overhead. При изменении backend MAX_UPLOAD_BYTES выше этого нужно синхронизировать proxy.
@@ -65,7 +66,7 @@ Seed: 8 DEMO-объектов и 12 исходных публикаций; но�
 
 ## Следующее конкретное действие
 
-Продолжить без повторного общего разрешения: typed загрузка/сохранение документов и legal basis review с областью/датой; затем evidence guards и ручные R1/R3/R4/R5/R6. Проверить UNKNOWN/применимое действительное основание, датированную стадию стройки для R3 и сравнимые измерения R5 на границе 19/20 п.п. Обновить contract status и tests по фактическому объёму. После этого — snapshots/решения сигналов и PDF. Collector остаётся BLOCKED до появления разрешённого источника; не подменять его ручным вводом.
+Продолжить без повторного общего разрешения: самостоятельная полная проверка отсутствия всех применимых механизмов/R1 и разрешение противоречий с действующими основаниями. Затем snapshots/решения сигналов и PDF. PDF supporting documents и их безопасная обработка остаются отдельной задачей. Collector BLOCKED до появления разрешённого источника; не подменять его ручным вводом.
 
 ## Продолжение сессии
 
@@ -102,3 +103,17 @@ AssetUpload теперь принимает purpose=LEGAL_BASIS или default C
 README/архитектура/план/changelog/контракт обновлены; новая документация docs/FEATURE_LEGAL_BASIS.md и docs/decisions/ADR-003-dated-legal-applicability.md. Визуально просмотрен output/qa/legal-basis-review.png. Автотесты оставляют дополнительные DEMO-карточки/историю оснований по DEMO Алтай, итог — документы отклонены; seed A/B/C не сбрасывался.
 
 Следующий блок: PDF supporting documents и безопасная обработка, либо самостоятельные typed evidence/guards R3/R5/R6; затем полноценная проверка отсутствия механизмов/R1 и разрешение противоречий. Сигналы со snapshots/решением/PDF, карта, разрешённый collector, большой независимый OCR corpus, backup/restore и GitHub CI ещё открыты. Collector BLOCKED: пользователь не предоставил разрешённый источник. Никаких push/deploy/внешних сообщений не выполнялось.
+
+## Документы строительства и R3/R5/R6 · 15.10.2026
+
+Завершён связный блок: upload самостоятельного TXT/PNG/JPEG с purpose и типовыми датированными фактами → неизменяемый source snapshot → evidence → PENDING фактор/0 → отдельное подтверждение/отклонение → серверный балл/ревизия/аудит. R3 требует известной даты рекламы, проверенной привязки версии и отдельного UNDER_CONSTRUCTION документа; один и тот же оригинал нельзя использовать дважды. R5 требует DECLARED/VERIFIED с разными SHA, общей областью/методикой/календарным днём и абсолютной разницей ≥20 п.п. R6 сохраняет плановый срок, состояние и при необходимости фактическую сдачу; существенность обосновывает аналитик. Порог дней не придуман. Date-only сравнения — Asia/Qyzylorda. Один день R3 и строгое сравнение R5 явно обозначены как консервативные продуктовые ограничения MVP (ADR-004), без заявления правовой достаточности.
+
+Дата оценки as_of отделена от серверного reviewed_at. Изменение привязки/расшифровки снимает зависимый CONFIRMED R3 в PENDING. Сервер копирует факты из исходного документа, проверяет доступность/SHA/дату/область/DEMO; поля стройки нельзя подставить в R2 или обращение. Новых таблиц/миграций/зависимостей нет. Контракт 0.5.0-mvp по-прежнему **36 = 24 fully + 5 partial + 7 planned**. Ручной R1 и отсутствие всех правовых механизмов пока 422.
+
+В UI добавлены три формы и показ типовых фактов в evidence. При частичном сбое успешные upload/evidence и idempotency keys повторно используются в памяти текущей страницы. После reload незавершённая форма не восстанавливается; файлы/evidence сохраняются. Общие поля стадии/готовности карточки автоматически не перезаписываются, датированные факты видны в доказательствах. При общей проверке обнаружена и исправлена гонка R2: до успешной загрузки текущего фактора сохранение/решения блокируются, при ошибке доступен retry. Regression удерживает ответ объекта и доказывает отсутствие повторного POST createfactor.
+
+Проверено: **149 backend passed** (`pytest -q`, отдельная PostgreSQL schema, public сохранён), **44 focused construction passed**, **14 browser passed** на новой Docker-сборке. Проверки включают 19.99/20 п.п. и 80.1–60.1, неправильные роли/область/методику/даты/DEMO, одинаковые оригиналы R3/R5, future/unknown публикацию, новую версию без match, invalidation, недоступный оригинал, viewer, idempotency/stale audit. Browser R3 +10→0, R5 +10→0 с искусственным 503 второго evidence и повтором без новых upload, R6 +5→0, реальные OCR и старые workflows; тест R2 ожидания загрузки не меняет seed-фактор Самал. После финального уточнения текста предупреждения о готовности обновлены API/worker, R5 browser workflow повторён отдельно: **1 passed**.
+
+Ruff check/format, frontend lint/typecheck/format:check, Docker build/up (Next production build), Alembic check (No new upgrade operations detected), pip check, OpenAPI/live DTO и git diff --check пройдены. Скан известных локальных secret values по tracked/new nonignored файлам — без совпадений; это не полноценный security audit. Внешний CI, второй ПК, dependency audit и предметная приёмка в этом этапе не выполнялись. Снимок output/qa/construction-r5.png просмотрен; mobile overflow test прошёл. Сторонний AssetGuard остался остановленным, исходные документы сохранены.
+
+Обновлены README/архитектура/план/changelog/контракт/этот статус; новые docs/FEATURE_CONSTRUCTION_REVIEW.md и docs/decisions/ADR-004-dated-construction-evidence.md. Изменения сохраняются локальным commit, ревизия — `git log -1`; remote отсутствует, push/deploy не выполнялись. Следующее действие: полный самостоятельный сценарий отсутствия всех механизмов/R1 с датой/областью/противоречиями, затем сигналы со snapshots/решением/PDF. PDF supporting documents, карта, независимые OCR метрики/предметная проверка, backup/restore/CI открыты. Collector остаётся BLOCKED без разрешённого источника.

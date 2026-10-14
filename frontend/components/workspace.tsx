@@ -38,6 +38,7 @@ import type {
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { AppealReview } from "@/components/appeal-review";
+import { ConstructionReview } from "@/components/construction-review";
 import {
   LegalBasisCreate,
   LegalBasisDecision,
@@ -523,14 +524,33 @@ function EvidenceItem({ id }: { id: string }) {
       <Demo value={item.data.is_demo} />
       <strong>{item.data.source_label}</strong>
       <p>{item.data.description}</p>
+      {item.data.event_at && <p>Дата источника: {date(item.data.event_at)}</p>}
       {item.data.signatory_count && (
+        <p>Заявителей: {item.data.signatory_count}</p>
+      )}
+      {item.data.construction_stage && (
+        <p>Стадия: {stageLabels[item.data.construction_stage]}</p>
+      )}
+      {item.data.measurement_percent != null && (
         <p>
-          Заявителей: {item.data.signatory_count} · дата обращения:{" "}
-          {date(item.data.event_at || null)}
+          {item.data.measurement_role === "DECLARED"
+            ? "Заявленная"
+            : "Проверенная"}{" "}
+          готовность: {item.data.measurement_percent}%
           <br />
-          Проверка: {item.data.methodology}
+          Область сравнения: {item.data.comparison_key}
         </p>
       )}
+      {item.data.planned_completion_at && (
+        <p>
+          Плановое завершение: {date(item.data.planned_completion_at)}
+          <br />
+          {item.data.delay_status === "NOT_COMPLETED"
+            ? "Не завершено на дату источника"
+            : `Фактическое завершение: ${date(item.data.actual_completion_at || null)}`}
+        </p>
+      )}
+      {item.data.methodology && <p>Методика: {item.data.methodology}</p>}
       <a className="text-link" href={`/api/v1/assets/${item.data.asset_id}`}>
         Скачать исходник <ArrowRight size={14} />
       </a>
@@ -677,6 +697,9 @@ export function PropertyView({ id }: { id: string }) {
       </section>
       {user?.role === "analyst" && (
         <AppealReview detail={detail.data} onSaved={detail.reload} />
+      )}
+      {user?.role === "analyst" && (
+        <ConstructionReview detail={detail.data} onSaved={detail.reload} />
       )}
       {user?.role === "analyst" && (
         <LegalBasisCreate detail={detail.data} onSaved={detail.reload} />
