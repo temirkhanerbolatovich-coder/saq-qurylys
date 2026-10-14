@@ -1,5 +1,5 @@
 import hashlib
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
@@ -48,11 +48,16 @@ async def upload_document(
     source_label: Annotated[str, Form(min_length=1, max_length=300)],
     event_at: Annotated[AwareDatetime, Form()],
     methodology: Annotated[str, Form(min_length=1, max_length=2000)],
-    signatory_count: Annotated[int, Form(ge=2, le=100000)],
     is_demo: Annotated[bool, Form()],
+    signatory_count: Annotated[int | None, Form(ge=2, le=100000)] = None,
+    purpose: Annotated[Literal['COLLECTIVE_APPEAL', 'LEGAL_BASIS'], Form()] = 'COLLECTIVE_APPEAL',
     source_url: Annotated[str | None, Form()] = None,
 ):
     analyst(actor)
+    if purpose == 'COLLECTIVE_APPEAL' and signatory_count is None:
+        raise HTTPException(422, 'Укажите число заявителей коллективного обращения')
+    if purpose == 'LEGAL_BASIS' and signatory_count is not None:
+        raise HTTPException(422, 'Число заявителей не относится к правовому основанию')
     if not source_label.strip() or not methodology.strip() or event_at > utcnow():
         raise HTTPException(422, 'Нужны источник, основание проверки и дата не в будущем')
     try:
@@ -79,6 +84,7 @@ async def upload_document(
         'methodology': methodology,
         'signatory_count': signatory_count,
         'created_by': str(actor.id),
+        'purpose': purpose,
     }
     previous, digest = begin_command(
         db,
@@ -120,6 +126,7 @@ def appeal_evidence(body, request, actor, db, idempotency_key, digest):
         or asset.advertisement_id
         or not source
         or source.get('property_id') != str(prop.id)
+        or source.get('purpose', 'COLLECTIVE_APPEAL') != 'COLLECTIVE_APPEAL'
     ):
         raise HTTPException(422, 'Загрузите документ обращения для этого ЖК')
     if asset.is_demo != prop.is_demo or body.is_demo != prop.is_demo:
@@ -310,7 +317,8 @@ def validate_evidence(db, prop, ids, as_of=None, code='R2'):
             if (
                 not source
                 or source.get('property_id') != str(prop.id)
-                or source.get('signatory_count', 0) < 2
+                or (source.get('signatory_count') or 0) < 2
+                or source.get('purpose', 'COLLECTIVE_APPEAL') != 'COLLECTIVE_APPEAL'
                 or not source.get('methodology')
                 or asset.is_demo != prop.is_demo
             ):

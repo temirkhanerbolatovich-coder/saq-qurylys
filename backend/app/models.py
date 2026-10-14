@@ -106,6 +106,10 @@ class LegalBasis(Base):
     property_id: Mapped[UUID] = mapped_column(ForeignKey('properties.id'))
     details: Mapped[dict] = mapped_column(JSON)
 
+    @property
+    def revision(self) -> int:
+        return self.details['revision']
+
 
 class RiskFactor(Base):
     __tablename__ = 'risk_factors'

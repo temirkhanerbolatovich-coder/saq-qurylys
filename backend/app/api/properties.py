@@ -18,8 +18,6 @@ def filtered_properties(db, city=None, zone=None, legal_status=None, q=None, is_
     query = select(Property).order_by(Property.name, Property.id)
     if city:
         query = query.where(Property.city == city)
-    if legal_status:
-        query = query.where(Property.legal_verification_status == legal_status)
     if is_demo is not None:
         query = query.where(Property.is_demo == is_demo)
     if q:
@@ -31,7 +29,12 @@ def filtered_properties(db, city=None, zone=None, legal_status=None, q=None, is_
             )
         )
     result = [property_view(row, factor_views(db, row.id)) for row in db.scalars(query)]
-    return [row for row in result if zone is None or row.risk.zone == zone]
+    return [
+        row
+        for row in result
+        if (zone is None or row.risk.zone == zone)
+        and (legal_status is None or row.legal_verification_status == legal_status)
+    ]
 
 
 @router.get('/api/v1/properties', response_model=dto.Page[dto.PropertyOut], operation_id='listProperties')

@@ -73,6 +73,13 @@ export type PropertyDetail = {
     scope_description: string;
     asset_id: string;
     is_demo: boolean;
+    revision: number;
+    verification_status: string;
+    applies_from: string | null;
+    applies_until: string | null;
+    verification_as_of: string | null;
+    reviewed_at: string | null;
+    evidence_ids: string[];
   }[];
   advertisement_ids: string[];
   unknown_information: string[];

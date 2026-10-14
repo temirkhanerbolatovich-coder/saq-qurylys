@@ -38,6 +38,10 @@ import type {
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { AppealReview } from "@/components/appeal-review";
+import {
+  LegalBasisCreate,
+  LegalBasisDecision,
+} from "@/components/legal-basis-review";
 
 export const Auth = createContext<{
   user: User | null;
@@ -606,6 +610,12 @@ export function PropertyView({ id }: { id: string }) {
                 </h3>
                 <p>{basis.issuer}</p>
                 <p>Охват: {basis.scope_description}</p>
+                <LegalBasisDecision
+                  key={`${basis.id}:${basis.revision}`}
+                  basis={basis}
+                  onSaved={detail.reload}
+                  writable={user?.role === "analyst"}
+                />
                 <a
                   className="text-link"
                   href={`/api/v1/assets/${basis.asset_id}`}
@@ -667,6 +677,9 @@ export function PropertyView({ id }: { id: string }) {
       </section>
       {user?.role === "analyst" && (
         <AppealReview detail={detail.data} onSaved={detail.reload} />
+      )}
+      {user?.role === "analyst" && (
+        <LegalBasisCreate detail={detail.data} onSaved={detail.reload} />
       )}
     </>
   );

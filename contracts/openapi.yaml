@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.2.0-mvp",
-    "description": "SAQ QURYLYS target contract with per-operation implementation status. Implemented registry/OCR/review plus partial R2/R4 workflows and appeal document upload. Other legal/factor/signal workflows remain planned. JSON serialization is valid YAML 1.2."
+    "version": "0.4.0-mvp",
+    "description": "SAQ QURYLYS target contract with per-operation implementation status. Registry/OCR/review plus R2/R4 and dated legal-basis confirmation/rejection; all-mechanism absence, remaining factors and signal workflows are still planned. JSON serialization is valid YAML 1.2."
   },
   "servers": [
     {
@@ -770,12 +770,12 @@
             }
           }
         ],
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED_LEGAL_BASIS_SLICE"
       },
       "post": {
         "operationId": "createLegalBasis",
         "summary": "Attach a document without automatic verification",
-        "description": "Attach a document without automatic verification",
+        "description": "Attach a LEGAL_BASIS-purpose document of the same property/DEMO scope. Creates PENDING and a LEGAL_DOCUMENT evidence snapshot; source URL/captured time from immutable upload. No risk confirmation. Duplicate asset=409.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -849,14 +849,14 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED_LEGAL_BASIS_SLICE"
       }
     },
     "/api/v1/legal-bases/{id}/review": {
       "post": {
         "operationId": "reviewLegalBasis",
         "summary": "Review scoped document applicability",
-        "description": "Review does not confirm R1 automatically. Absence requires a dated review of all applicable mechanisms. Resolve contradictory valid documents first; return 409 on conflict.",
+        "description": "Supports VERIFIED_VALID and REJECTED, requires own evidence IDs and revision. Confirmation requires document number/date/start of applicability and applicable nonfuture as_of; matching dated CONFIRMED R1 is conflict 409. VERIFIED_ABSENT=422 until all-mechanism absence workflow exists. Server actor/time and before/after audit. Current property legal status is derived from document periods; rejection/expiry never proves absence.",
         "x-origin": "proposal",
         "responses": {
           "200": {
@@ -930,7 +930,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "PARTIAL_VALID_REJECTED"
       }
     },
     "/api/v1/properties/{id}/risk-factors": {
@@ -1952,7 +1952,7 @@
       "post": {
         "operationId": "uploadEvidenceAsset",
         "summary": "Store supporting document or image",
-        "description": "Current scope: collective appeal supporting TXT (UTF-8, <=100000 characters) or PNG/JPEG (<=25MP), <=10MiB. Explicit property/date/source/methodology/number of signatories, server actor/time, immutable storage. Download as attachment; no PDF support in this slice.",
+        "description": "Current scope: collective appeal or legal basis supporting TXT/PNG/JPEG, <=10MiB, TXT<=100000 chars, image<=25MP. property/date/source/methodology required; purpose default COLLECTIVE_APPEAL requires >=2 signatories, LEGAL_BASIS forbids count. Immutable provenance, server actor/time, attachment download. PDF remains unsupported.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -2017,7 +2017,7 @@
             }
           }
         },
-        "x-implementation-status": "PARTIAL_APPEAL_DOCUMENTS"
+        "x-implementation-status": "PARTIAL_SUPPORT_DOCUMENTS"
       }
     },
     "/api/v1/assets/{id}": {
@@ -4487,6 +4487,25 @@
                 "type": "null"
               }
             ]
+          },
+          "verification_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "uniqueItems": true
           }
         },
         "required": [
@@ -4503,7 +4522,9 @@
           "verification_status",
           "revision",
           "reviewed_by",
-          "reviewed_at"
+          "reviewed_at",
+          "verification_as_of",
+          "evidence_ids"
         ]
       },
       "LegalBasisReview": {
@@ -4926,6 +4947,14 @@
                 "type": "null"
               }
             ]
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "COLLECTIVE_APPEAL",
+              "LEGAL_BASIS"
+            ],
+            "default": "COLLECTIVE_APPEAL"
           }
         },
         "required": [
@@ -4934,9 +4963,9 @@
           "is_demo",
           "property_id",
           "event_at",
-          "methodology",
-          "signatory_count"
-        ]
+          "methodology"
+        ],
+        "description": "purpose defaults to COLLECTIVE_APPEAL and requires signatory_count. LEGAL_BASIS forbids signatory_count. Both require property-scoped provenance."
       },
       "RiskFactorCreate": {
         "type": "object",

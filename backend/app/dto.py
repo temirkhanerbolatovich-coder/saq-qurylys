@@ -153,6 +153,8 @@ class LegalBasisOut(DTO):
     revision: int
     reviewed_by: UUID | None
     reviewed_at: datetime | None
+    verification_as_of: datetime | None = None
+    evidence_ids: list[UUID] = Field(default_factory=list)
 
 
 class PropertyDetailOut(DTO):

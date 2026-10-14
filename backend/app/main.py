@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from starlette.exceptions import HTTPException
 
-from app.api import advertisements, analysis, auth, properties, reviews
+from app.api import advertisements, analysis, auth, legal_bases, properties, reviews
 from app.body_limit import BodyLimitMiddleware
 from app.config import Settings
 from app.dependencies import DB, error_response
@@ -69,6 +69,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(advertisements.router)
     app.include_router(analysis.router)
     app.include_router(reviews.router)
+    app.include_router(legal_bases.router)
     return app
 
 
