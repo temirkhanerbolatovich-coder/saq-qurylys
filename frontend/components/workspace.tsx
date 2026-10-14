@@ -49,6 +49,20 @@ const legalLabels: Record<string, string> = {
   VERIFIED_ABSENT: "Отсутствие установлено",
   REJECTED: "Отклонено",
 };
+const stageLabels: Record<string, string> = {
+  UNKNOWN: "Не проверена",
+  PLANNED: "Планируется",
+  UNDER_CONSTRUCTION: "Строится",
+  COMPLETED: "Завершён",
+};
+const factorLabels: Record<string, string> = {
+  R1: "Отсутствие основания установлено",
+  R2: "Прямое предложение внести деньги",
+  R3: "Активная реклама строящегося жилья",
+  R4: "Коллективное обращение",
+  R5: "Расхождение готовности ≥20 п.п.",
+  R6: "Подтверждённая задержка",
+};
 const zoneLabels = { GREEN: "Зелёная", YELLOW: "Жёлтая", RED: "Красная" };
 const nav = [
   { href: "/dashboard", label: "Обзор", icon: LayoutDashboard },
@@ -551,7 +565,7 @@ export function PropertyView({ id }: { id: string }) {
             <dt>БИН</dt>
             <dd>{row.developer.bin || "Не указан · DEMO"}</dd>
             <dt>Стадия</dt>
-            <dd>{row.stage === "COMPLETED" ? "Завершён" : "Строится"}</dd>
+            <dd>{stageLabels[row.stage] || "Не проверена"}</dd>
             <dt>Готовность</dt>
             <dd>
               {row.progress_percent === null
@@ -613,13 +627,7 @@ export function PropertyView({ id }: { id: string }) {
             <div className="factor-row" key={factor.id}>
               <span className="factor-token">{factor.code}</span>
               <div>
-                <strong>
-                  {factor.code === "R1"
-                    ? "Отсутствие основания установлено"
-                    : factor.code === "R2"
-                      ? "Прямое предложение внести деньги"
-                      : "Активная реклама строящегося жилья"}
-                </strong>
+                <strong>{factorLabels[factor.code] || factor.code}</strong>
                 <small>{factor.reason}</small>
               </div>
               <span className="points">
@@ -866,7 +874,7 @@ export function NewAdvertisementView() {
         <div className="form-tabs">
           <strong>Текст</strong>
           <span>URL-импорт · следующий этап</span>
-          <Link href="/advertisements/upload">Изображение · PNG / JPEG</Link>
+          <Link href="/advertisements/upload">Файл · PNG / JPEG / TXT</Link>
         </div>
         <form onSubmit={submit}>
           <label htmlFor="source">Источник / описание происхождения</label>

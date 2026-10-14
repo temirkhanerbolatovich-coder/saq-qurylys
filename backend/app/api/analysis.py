@@ -14,7 +14,7 @@ from app.dependencies import DB, Actor, check_csrf
 from app.dto import AdvertisementOut
 from app.models import Advertisement, AnalysisJob, Asset, AuditEvent, ExtractionResult, Property, PropertyMatch
 from app.storage import save_bytes
-from app.uploads import validate_image
+from app.uploads import validate_image, validate_text
 from app.worker import create_extraction
 
 router = APIRouter()
@@ -101,8 +101,18 @@ async def upload_advertisement(
     settings = request.app.state.settings
     content = await file.read(settings.max_upload_bytes + 1)
     if len(content) > settings.max_upload_bytes:
-        raise HTTPException(413, 'Изображение должно быть не больше 10 МБ')
-    mime, extension = validate_image(content, file.content_type, settings.max_image_pixels)
+        raise HTTPException(413, 'Файл превышает допустимый размер')
+    declared_mime = (file.content_type or '').split(';', 1)[0].strip().lower()
+    is_text = declared_mime == 'text/plain' or (file.filename or '').lower().endswith('.txt')
+    original_text = ''
+    if is_text:
+        if declared_mime not in {'text/plain', 'application/octet-stream', ''}:
+            raise HTTPException(415, 'Содержимое TXT не соответствует указанному типу')
+        original_text = validate_text(content)
+        mime, extension, kind = 'text/plain', 'txt', 'TEXT'
+    else:
+        mime, extension = validate_image(content, file.content_type, settings.max_image_pixels)
+        kind = 'IMAGE'
     payload = metadata.model_dump(mode='json') | {'sha256': hashlib.sha256(content).hexdigest()}
     previous, digest = begin_command(db, actor.id, 'uploadAdvertisement', idempotency_key, payload)
     if previous:
@@ -113,7 +123,7 @@ async def upload_advertisement(
         source_label=metadata.source_label,
         source_url=str(metadata.source_url) if metadata.source_url else None,
         published_at=metadata.published_at,
-        original_text='',
+        original_text=original_text,
         is_demo=is_demo,
         created_by=actor.id,
     )
@@ -122,7 +132,7 @@ async def upload_advertisement(
     db.add(
         Asset(
             advertisement_id=ad.id,
-            kind='IMAGE',
+            kind=kind,
             mime_type=mime,
             byte_size=size,
             sha256=sha,
@@ -130,7 +140,7 @@ async def upload_advertisement(
             is_demo=is_demo,
         )
     )
-    audit(db, request, actor, ad, 'ADVERTISEMENT_UPLOADED', reason='Ручная загрузка изображения')
+    audit(db, request, actor, ad, 'ADVERTISEMENT_UPLOADED', reason='Ручная загрузка файла', details={'kind': kind})
     db.flush()
     db.expire(ad, ['assets'])
     result = AdvertisementOut.model_validate(ad).model_dump(mode='json')

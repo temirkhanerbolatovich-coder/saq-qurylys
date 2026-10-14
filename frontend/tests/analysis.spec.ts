@@ -1,6 +1,65 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./support";
 
+test("UTF-8 TXT upload keeps the original and creates payment hypotheses", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto("/advertisements/upload");
+  const text = "ЖК «Арман»\r\nБастапқы жарна 20%.\r\n";
+  await page
+    .getByLabel("Источник / происхождение")
+    .fill(`DEMO TXT ${Date.now()}`);
+  await page.getByLabel("Оригинальный PNG / JPEG / TXT").setInputFiles({
+    name: "new.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from(text, "utf8"),
+  });
+  await page
+    .getByRole("button", { name: "Сохранить файл", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/review\?advertisement_id=/);
+  const id = new URL(page.url()).searchParams.get("advertisement_id");
+  const ad = await (
+    await page.request.get(`/api/v1/advertisements/${id}`)
+  ).json();
+  expect(ad.original_text).toBe(text);
+  expect(
+    await (await page.request.get(`/api/v1/assets/${ad.assets[0].id}`)).text(),
+  ).toBe(text);
+  await page
+    .getByRole("button", { name: "Запустить анализ", exact: true })
+    .click();
+  await expect(
+    page.locator(".hypothesis").filter({ hasText: "Условие оплаты" }),
+  ).toHaveCount(1, { timeout: 30000 });
+});
+
+test("unknown stage and R5 display their own labels", async ({ page }) => {
+  await login(page);
+  const registry = await (
+    await page.request.get("/api/v1/properties?page_size=100")
+  ).json();
+  const id = registry.items.find((p: { name: string }) =>
+    p.name.includes("Өркен"),
+  ).id;
+  // Presentation regression only; no domain data or factor decisions are changed.
+  await page.route(`**/api/v1/properties/${id}`, async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    body.property.stage = "UNKNOWN";
+    body.factors[0].code = "R5";
+    await route.fulfill({ response, json: body });
+  });
+  await page.goto(`/properties/${id}`);
+  await expect(
+    page.locator("dt").filter({ hasText: "Стадия" }).locator("+ dd"),
+  ).toHaveText("Не проверена");
+  await expect(
+    page.getByText("Расхождение готовности ≥20 п.п.", { exact: true }),
+  ).toBeVisible();
+});
+
 test("human decisions turn a payment hypothesis into R2 and can remove the score", async ({
   page,
 }) => {
@@ -108,10 +167,10 @@ test("PNG goes through real worker OCR and shows a pixel fragment", async ({
     .getByLabel("Источник / происхождение")
     .fill(`DEMO browser OCR ${Date.now()}`);
   await page
-    .getByLabel("Оригинальный PNG / JPEG")
+    .getByLabel("Оригинальный PNG / JPEG / TXT")
     .setInputFiles("../output/qa/ocr-kz.png");
   await page
-    .getByRole("button", { name: "Сохранить изображение", exact: true })
+    .getByRole("button", { name: "Сохранить файл", exact: true })
     .click();
   await expect(page).toHaveURL(/\/review\?advertisement_id=/);
   await page

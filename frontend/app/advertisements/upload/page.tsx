@@ -1,4 +1,4 @@
-import { ImageUploadView } from "@/components/analysis-workspace";
+import { FileUploadView } from "@/components/analysis-workspace";
 export default function Page() {
-  return <ImageUploadView />;
+  return <FileUploadView />;
 }

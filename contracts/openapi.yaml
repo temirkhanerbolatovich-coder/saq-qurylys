@@ -1301,7 +1301,7 @@
       "post": {
         "operationId": "uploadAdvertisement",
         "summary": "Save new image or text file",
-        "description": "PNG/JPEG only; text is submitted through createAdvertisement. Maximum 10 MiB and 25 MP, actual content validation. Analysis requested separately. Captured time comes from server.",
+        "description": "PNG/JPEG or UTF-8 TXT; maximum file size 10 MiB, images up to 25 MP, text up to 100000 characters. Reject invalid encoding, binary controls and blank text; preserve original bytes including BOM/line endings. Analysis requested separately. Captured time comes from server.",
         "x-origin": "CODEX_TZ",
         "responses": {
           "201": {

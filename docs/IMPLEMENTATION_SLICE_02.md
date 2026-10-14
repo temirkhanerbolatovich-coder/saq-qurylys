@@ -35,7 +35,7 @@ API и worker используют одну backend-сборку, PostgreSQL и 
 
 ## Контракт и защита файлов
 
-В целевом контракте 36 операций: 22 полностью доступны, 3 частично доступны для R2, 11 PLANNED. Явные изменения контракта: `OCR_TEXT`, `analysis_text`, `parent_extraction_id`, evidence.hypothesis_id, audit.details и новый POST `/extractions/{id}/transcription`. Создание фактора возвращает `RiskReviewResult`, чтобы UI использовал серверный риск. PNG/JPEG — файловая форма; текст вводится существующей JSON-формой, TXT-upload пока не добавлен.
+В целевом контракте 36 операций: 22 полностью доступны, 3 частично доступны для R2, 11 PLANNED. Явные изменения контракта: `OCR_TEXT`, `analysis_text`, `parent_extraction_id`, evidence.hypothesis_id, audit.details и новый POST `/extractions/{id}/transcription`. Создание фактора возвращает `RiskReviewResult`, чтобы UI использовал серверный риск. PNG/JPEG/TXT — файловая форма; также доступна JSON-форма текста. TXT: UTF-8, до 100000 символов, без бинарных controls и пустого содержимого; исходные байты/BOM/CRLF сохраняются.
 
 PNG/JPEG проверяются Pillow по реальному содержимому, MIME, кадрам, полному декодированию, лимиту пикселей. Имя загрузки не используется в storage path. ASGI middleware и Next proxy ограничивают фактически прочитанные байты, включая chunked запросы. Файлы вне webroot, просмотр изображения требует сессии, inline разрешён только PNG/JPEG, остальные материалы скачиваются attachment. Проверяется SHA-256; CSP sandbox и nosniff ограничивают интерпретацию содержимого.
 
@@ -71,3 +71,5 @@ docker compose exec worker tesseract --list-langs
 ## Следующий этап
 
 Typed документы/правовые основания, процедуры доказательств и guards для R1/R3/R4/R5/R6; затем snapshot сигнала, решение и PDF. Параллельные открытые пункты: разрешённый collector, независимый RU/KZ OCR/matching corpus ≥30 изображений, карта, keyboard/zoom и UX с людьми, второй ПК, backup/restore и GitHub CI. Ничто из этого не отмечается выполненным текущими тестами.
+
+Дополнение после основного среза: закрыт TXT upload и подписи UNKNOWN/R4–R6. Текущий короткий повторный прогон — 78 backend / 8 browser, Docker build/up, lint/typecheck/format. Ранее приведённые OCR-метрики не пересчитывались; количество тестов основного среза выше историческое.

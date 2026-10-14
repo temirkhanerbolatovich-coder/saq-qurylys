@@ -26,7 +26,7 @@ import {
   Zone,
 } from "@/components/workspace";
 
-export function ImageUploadView() {
+export function FileUploadView() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,7 +36,7 @@ export function ImageUploadView() {
     const form = new FormData(event.currentTarget);
     const file = form.get("file") as File;
     if (file.size > 10_485_760) {
-      setError("Изображение должно быть не больше 10 МБ");
+      setError("Файл должен быть не больше 10 МБ");
       return;
     }
     form.set("is_demo", form.get("is_demo") ? "true" : "false");
@@ -61,14 +61,14 @@ export function ImageUploadView() {
     <>
       <PageTitle
         eyebrow="СБОР МАТЕРИАЛОВ"
-        title="Загрузить изображение"
-        description="PNG или JPEG до 10 МБ и 25 млн пикселей. Оригинал сохраняется отдельно от распознанного текста."
+        title="Загрузить файл"
+        description="PNG/JPEG до 10 МБ и 25 млн пикселей или UTF-8 TXT до 100000 символов. Оригинал сохраняется без изменений."
         action={false}
       />
       <section className="panel form-panel">
         <div className="form-tabs">
           <Link href="/advertisements/new">Текст</Link>
-          <strong>Изображение</strong>
+          <strong>PNG / JPEG / TXT</strong>
         </div>
         <form
           onSubmit={submit}
@@ -83,12 +83,12 @@ export function ImageUploadView() {
             required
             maxLength={300}
           />
-          <label htmlFor="image-file">Оригинальный PNG / JPEG</label>
+          <label htmlFor="image-file">Оригинальный PNG / JPEG / TXT</label>
           <input
             id="image-file"
             type="file"
             name="file"
-            accept="image/png,image/jpeg"
+            accept="image/png,image/jpeg,text/plain,.txt"
             required
           />
           <label htmlFor="image-url">Ссылка на источник · необязательно</label>
@@ -103,7 +103,7 @@ export function ImageUploadView() {
           </label>
           {error && <Notice error={error} />}
           <Button disabled={busy}>
-            {busy ? "Сохранение…" : "Сохранить изображение"}
+            {busy ? "Сохранение…" : "Сохранить файл"}
           </Button>
         </form>
       </section>

@@ -300,6 +300,57 @@ def test_chunked_body_is_bounded(signed):
     assert response.json()['error']['request_id']
 
 
+def test_txt_upload_preserves_bytes_and_uses_text_analysis(signed, settings):
+    text = '\ufeffЖК «Арман»\r\nБастапқы жарна 20%.\r\n'
+    content = text.encode('utf8')
+    headers = mutation_headers(signed)
+
+    def upload():
+        return signed.post(
+            '/api/v1/advertisements/upload',
+            files={'file': ('../new.txt', content, 'text/plain; charset=utf-8')},
+            data={'source_label': 'Собственный TXT', 'is_demo': 'true'},
+            headers=headers,
+        )
+
+    response = upload()
+    assert response.status_code == 201, response.text
+    ad = response.json()
+    assert upload().json()['id'] == ad['id']
+    assert ad['original_text'] == text and ad['assets'][0]['kind'] == 'TEXT'
+    assert signed.get(f'/api/v1/assets/{ad["assets"][0]["id"]}').content == content
+    job = post(
+        signed, f'/advertisements/{ad["id"]}/analyze', {'expected_advertisement_revision': ad['revision']}
+    ).json()
+    assert process_one(signed.app.state.sessions, settings)
+    assert signed.get(f'/api/v1/analysis-jobs/{job["id"]}').json()['state'] == 'SUCCEEDED'
+    extraction = signed.get(f'/api/v1/advertisements/{ad["id"]}/extractions').json()[0]
+    assert extraction['analysis_text'] == text and extraction['original_ocr_text'] is None
+    assert any(h['field'] == 'PAYMENT_TERM' for h in extraction['hypotheses'])
+
+
+@pytest.mark.parametrize(
+    ('content', 'mime', 'status'),
+    [
+        (b'\xff\xfe', 'text/plain', 415),
+        (b'text\x00binary', 'text/plain', 415),
+        (b' \r\n', 'text/plain', 422),
+        ('\ufeff'.encode('utf8'), 'text/plain', 422),
+        (b'x' * 100001, 'text/plain', 413),
+        (b'text', 'image/png', 415),
+    ],
+    ids=['invalid-utf8', 'binary-controls', 'blank', 'bom-only', 'too-long', 'wrong-mime'],
+)
+def test_txt_upload_rejects_invalid_content(signed, content, mime, status):
+    response = signed.post(
+        '/api/v1/advertisements/upload',
+        files={'file': ('x.txt', content, mime)},
+        data={'source_label': 'Invalid TXT', 'is_demo': 'true'},
+        headers=mutation_headers(signed),
+    )
+    assert response.status_code == status
+
+
 def test_lease_recovery_and_exhaustion(signed, settings):
     ad = post(
         signed, '/advertisements', {'text': 'Аванс 500000 тенге', 'source_label': 'lease', 'is_demo': True}

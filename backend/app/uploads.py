@@ -5,6 +5,21 @@ from PIL import Image, UnidentifiedImageError
 from starlette.exceptions import HTTPException
 
 
+def validate_text(content: bytes) -> str:
+    """Validate UTF-8 without normalizing bytes, line endings or an optional BOM."""
+    try:
+        text = content.decode('utf-8')
+    except UnicodeDecodeError:
+        raise HTTPException(415, 'TXT должен быть в кодировке UTF-8') from None
+    if len(text) > 100_000:
+        raise HTTPException(413, 'В TXT допускается до 100000 символов')
+    if any(ord(char) < 32 and char not in '\t\r\n' or ord(char) == 127 for char in text):
+        raise HTTPException(415, 'TXT содержит недопустимые управляющие символы')
+    if not text.lstrip('\ufeff').strip():
+        raise HTTPException(422, 'TXT не должен быть пустым')
+    return text
+
+
 def validate_image(content: bytes, mime_type: str | None, max_pixels: int) -> tuple[str, str]:
     try:
         with warnings.catch_warnings():

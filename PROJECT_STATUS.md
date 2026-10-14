@@ -8,7 +8,7 @@ Owner: Codex; реализация и продолжение разрешены 
 
 **Два вертикальных среза реализованы и проверены локально. Полный P0 ещё не завершён.** Приложение: http://localhost:3000. Логин/пароль только в игнорируемом `.local/credentials.txt`, не печатать и не вводить в DOM автотестов. Контейнеры SAQ db/api/worker/frontend оставлены работающими; сторонние контейнеры не использовались.
 
-Рабочий путь: новый текст или PNG/JPEG → сохранённый оригинал/SHA-256/происхождение → явный анализ → durable PostgreSQL job/worker → Tesseract RU/KZ + правила + RapidFuzz → гипотезы/offsets/bbox → ручная проверка/исправление → точная привязка ЖК → доказательство → отдельное решение R2 → серверный риск/аудит. Ни OCR, ни matching сами не начисляют баллы.
+Рабочий путь: новый текст или PNG/JPEG/TXT → сохранённый оригинал/SHA-256/происхождение → явный анализ → durable PostgreSQL job/worker → Tesseract RU/KZ + правила + RapidFuzz → гипотезы/offsets/bbox → ручная проверка/исправление → точная привязка ЖК → доказательство → отдельное решение R2 → серверный риск/аудит. Ни OCR, ни matching сами не начисляют баллы.
 
 Seed: 8 DEMO-объектов и 12 исходных публикаций; новые browser/OCR/restart DEMO-записи добавлены отдельно, seed их не сбрасывает. Синтетические A/B/C (35/yellow, 70/red, 10/green) сохранены; реальной проверкой они не являются. Browser-сценарий оставляет историю по DEMO Ертіс с итоговым отклонённым R2/0.
 
@@ -20,7 +20,7 @@ Seed: 8 DEMO-объектов и 12 исходных публикаций; но�
 |---|---|---|---|
 | Architecture/API | IN PROGRESS | 36 целевых операций с честным implementation status; OpenAPI и live schema tests | Реализовать оставшиеся операции и весь объём PARTIAL_R2 |
 | Seed 8/12 | VERIFIED | Аддитивный seed; A/B/C из БД, источники и DEMO | Не выдавать за реальную проверку |
-| Новый материал/происхождение | VERIFIED для текста/PNG/JPEG | Байт-в-байт оригинал, SHA-256, время сервера, nullable published_at, idempotency | TXT upload, разрешённый collector отдельно |
+| Новый материал/происхождение | VERIFIED для текста/PNG/JPEG/TXT | Байт-в-байт оригинал, SHA-256, время сервера, nullable published_at, idempotency | Разрешённый collector отдельно |
 | Один permitted collector | BLOCKED | Пользователь ответил: разрешённого сайта пока нет | Домен/URL, условия и реальный допустимый импорт; manual не закрывает пункт |
 | PostgreSQL jobs/worker | VERIFIED локально | SKIP LOCKED, lease/claim token, ограниченные попытки, fencing, queued job пережил замену API/worker | Нет heartbeat/HA/нагрузочной приёмки |
 | OCR RU/KZ | VERIFIED на двух новых синтетических баннерах | Tesseract 5.3.0 + rus/kaz/eng, реальные bbox, originals SHA; scripts/verify_ocr.py | Независимый image corpus ≥30, сложные/нечитаемые изображения и метрики |
@@ -30,20 +30,20 @@ Seed: 8 DEMO-объектов и 12 исходных публикаций; но�
 | Legal basis | IN PROGRESS | Чтение синтетических документов; UNKNOWN не создаёт R1 | Typed writes/review, применимость по области/дате и независимый документ |
 | Dashboard/registry/review | IN PROGRESS | Реальные API, фильтры, карточки, split original/hypotheses, audit; mobile no overflow | Карта, keyboard/200% zoom, UX с 3–5 людьми |
 | Signals/PDF | NOT STARTED | Честно обозначены будущим этапом | Snapshot/decision/revision/PDF/оговорка/шрифты |
-| Полный E2E/второй ПК/CI | IN PROGRESS | 71 backend + 6 browser; Docker/модели/build; workflow создан | Полный P0 E2E, другой ПК, реальный GitHub CI, backup/restore, freeze SHA |
+| Полный E2E/второй ПК/CI | IN PROGRESS | 78 backend + 8 browser; Docker/модели/build; workflow создан | Полный P0 E2E, другой ПК, реальный GitHub CI, backup/restore, freeze SHA |
 
 ## Выполненные проверки
 
 | Проверка | Реальный результат |
 |---|---|
-| Backend PostgreSQL | `cd backend; ..\.venv\Scripts\python.exe -m pytest -q`: **71 passed**, без warnings. Каждый запуск использует случайную test schema; public не очищался |
+| Backend PostgreSQL | `cd backend; ..\.venv\Scripts\python.exe -m pytest -q`: **78 passed**, без warnings. Каждый запуск использует случайную test schema; public не очищался |
 | Concurrency/recovery | Две одновременные гипотезы/факторы одной revision дают 200/409; устаревшее ORM-состояние перечитывается после lock; late worker не публикует второй результат |
 | API/errors/security | Roles/CSRF/Origin, чужие IDs/DEMO scope, точный фрагмент, idempotency, invalid/truncated/MIME images, streamed body limit, unavailable/timeout OCR с сохранением оригинала |
 | OpenAPI | Валидатор документа и schemas реальных job/extraction/match/evidence/risk/audit responses |
 | Миграции | Исходная + аддитивная `996510abee9b`; Alembic check: No new upgrade operations detected |
 | Backend quality | Ruff check/format, pip check — без ошибок |
 | Frontend | build, typecheck, lint, format:check; npm audit — **0 vulnerabilities** |
-| Browser Docker | **6 passed**: первый срез плюс R2 evidence/confirm/reject (+25 → 0), настоящий KZ image OCR/bbox, mobile без overflow |
+| Browser Docker | **8 passed**: первый срез плюс R2 evidence/confirm/reject (+25 → 0), настоящий KZ image OCR/bbox, mobile без overflow |
 | OCR smoke | Новый RU и KZ PNG вне seed: по 2 payment clauses/PENDING с bbox, original SHA идентичен; output/qa/ocr-verification.json |
 | OCR observations | CER RU 0.0541 / KZ 0.1026 на **двух чистых синтетических баннерах**, без заявления production accuracy. Потеря казахской диакритики явно показана |
 | Actual queue restart | Worker остановлен, новый PNG job сохранён QUEUED; API/worker пересозданы из новой сборки; SUCCEEDED, ровно одна версия, original SHA сохранён. `.local/queue-restart-check.json` |
@@ -72,3 +72,9 @@ Seed: 8 DEMO-объектов и 12 исходных публикаций; но�
 Сначала прочитать AGENTS/этот статус/docs среза 02, `git status`, `git log`, текущие файлы/tests. Не сбрасывать public/volume/storage или пользовательские изменения. Все up команды текущего dev окружения — с `-f docker-compose.yml -f docker-compose.dev.yml`, чтобы не потерять порт 55432. Не запускать Docker daemon заново без необходимости и не поднимать сторонние остановленные контейнеры. Перед frontend build останавливать host standalone server, если он есть; Docker UI на 3000 уже работает. Не печатать `.env`/credentials. Не публиковать/не деплоить без явного запроса.
 
 История: 05dbbfc — первый срез, 2ecc6ba — его checkpoint; текущий OCR/review commit см. git log. Исходные PDF/DOCX/CODEX_TZ/шаблон статуса не изменены. Публикация в GitHub, внешний deploy, отправка материалов и юридическая приёмка не выполнялись.
+
+## Быстрые задачи после 9ab92bf · 14.10.2026
+
+Закрыто: UTF-8 TXT upload до 100000 символов через существующую файловую форму; сохраняются исходные BOM/CRLF/байты и SHA, правила выполняются без OCR. Проверяются кодировка, пустой текст, бинарные controls, размер и MIME. UNKNOWN стадия теперь «Не проверена»; R4/R5/R6 имеют собственные подписи. Новых зависимостей/миграций/архитектурных решений нет.
+
+Проверки этой задачи: **78 backend passed**, **8 browser passed** на обновлённом Docker-приложении; Ruff check/format, frontend lint/typecheck/format:check; Docker build/up (включает production Next build), git diff --check. Browser-проверка UNKNOWN/R5 использует подмену ответа только для представления, не изменяет решения БД. Npm audit и второй ПК в этой короткой задаче повторно не запускались. README/контракт/changelog и срез 02 обновлены. Следующая крупная задача и блокер collector прежние. Пользователь попросил ограничиться быстрыми задачами из-за остатка лимита.
