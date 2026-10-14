@@ -1,0 +1,5 @@
+# Optional host access for local API development and PostgreSQL integration tests.
+services:
+  db:
+    ports:
+      - "127.0.0.1:55432:5432"

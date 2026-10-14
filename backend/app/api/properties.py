@@ -1,0 +1,113 @@
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import APIRouter, Query
+from sqlalchemy import func, or_, select
+from starlette.exceptions import HTTPException
+
+from app import dto
+from app.dependencies import DB, Actor, get_property
+from app.models import Advertisement, Property, utcnow
+from app.views import factor_views, legal_views, property_view, unknown_information
+
+router = APIRouter()
+
+
+def filtered_properties(db, city=None, zone=None, legal_status=None, q=None, is_demo=None):
+    query = select(Property).order_by(Property.name, Property.id)
+    if city:
+        query = query.where(Property.city == city)
+    if legal_status:
+        query = query.where(Property.legal_verification_status == legal_status)
+    if is_demo is not None:
+        query = query.where(Property.is_demo == is_demo)
+    if q:
+        escaped = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        query = query.where(
+            or_(
+                Property.name.ilike(f'%{escaped}%', escape='\\'),
+                Property.address.ilike(f'%{escaped}%', escape='\\'),
+            )
+        )
+    result = [property_view(row, factor_views(db, row.id)) for row in db.scalars(query)]
+    return [row for row in result if zone is None or row.risk.zone == zone]
+
+
+@router.get('/api/v1/properties', response_model=dto.Page[dto.PropertyOut], operation_id='listProperties')
+def properties(
+    actor: Actor,
+    db: DB,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    city: str | None = None,
+    zone: dto.RiskZone | None = None,
+    legal_status: dto.LegalStatus | None = None,
+    q: str | None = Query(None, max_length=300),
+    is_demo: bool | None = None,
+):
+    rows = filtered_properties(db, city, zone, legal_status, q, is_demo)
+    start = (page - 1) * page_size
+    return {'items': rows[start : start + page_size], 'page': page, 'page_size': page_size, 'total': len(rows)}
+
+
+@router.get('/api/v1/properties/{id}', response_model=dto.PropertyDetailOut, operation_id='getProperty')
+def property_detail(id: UUID, actor: Actor, db: DB):
+    row = get_property(db, id)
+    factors = factor_views(db, id)
+    return {
+        'property': property_view(row, factors),
+        'legal_bases': legal_views(db, id),
+        'factors': factors,
+        'advertisement_ids': list(
+            db.scalars(select(Advertisement.id).where(Advertisement.confirmed_property_id == id))
+        ),
+        'unknown_information': unknown_information(row),
+    }
+
+
+@router.get('/api/v1/properties/{id}/risk', response_model=dto.RiskDetailOut, operation_id='getPropertyRisk')
+def property_risk(id: UUID, actor: Actor, db: DB, as_of: dto.AwareDatetime | None = None):
+    if as_of is not None:
+        raise HTTPException(400, 'Исторический расчёт ещё не реализован; доступна текущая оценка')
+    row = get_property(db, id)
+    factors = factor_views(db, id)
+    return {
+        'property_id': id,
+        'summary': property_view(row, factors).risk,
+        'factors': factors,
+        'unknown_information': unknown_information(row),
+    }
+
+
+@router.get('/api/v1/dashboard/summary', operation_id='getDashboardSummary')
+def dashboard(
+    actor: Actor,
+    db: DB,
+    city: str | None = None,
+    zone: dto.RiskZone | None = None,
+    legal_status: dto.LegalStatus | None = None,
+    q: str | None = Query(None, max_length=300),
+    is_demo: bool | None = None,
+    date_from: Annotated[dto.AwareDatetime | None, Query(alias='from')] = None,
+    date_to: Annotated[dto.AwareDatetime | None, Query(alias='to')] = None,
+):
+    rows = filtered_properties(db, city, zone, legal_status, q, is_demo)
+    query = select(func.count()).select_from(Advertisement)
+    if any(value is not None for value in [city, zone, legal_status, q]):
+        query = query.where(Advertisement.confirmed_property_id.in_([row.id for row in rows]))
+    if is_demo is not None:
+        query = query.where(Advertisement.is_demo == is_demo)
+    if date_from:
+        query = query.where(Advertisement.captured_at >= date_from)
+    if date_to:
+        query = query.where(Advertisement.captured_at < date_to)
+    return {
+        'property_count': len(rows),
+        'zones': {value: sum(row.risk.zone == value for row in rows) for value in ['GREEN', 'YELLOW', 'RED']},
+        'new_advertisements': db.scalar(query),
+        'pending_hypotheses': 0,
+        'pending_signals': 0,
+        'unknown_legal_bases': sum(row.legal_verification_status in {'UNKNOWN', 'PENDING'} for row in rows),
+        'latest_signals': [],
+        'calculated_at': utcnow().isoformat(),
+    }

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "notice": "Все названия, компании, адреса, статусы и материалы вымышлены. Только DEMO.",
+  "properties": [
+    {"key":"samal","name":"DEMO Самал · очередь 1","address":"DEMO участок 01","latitude":49.950,"longitude":82.610,"progress":35,"legal":"UNKNOWN","factors":["R2","R3"]},
+    {"key":"baiterek","name":"DEMO Бәйтерек · очередь 2","address":"DEMO участок 02","latitude":49.958,"longitude":82.630,"progress":20,"legal":"VERIFIED_ABSENT","factors":["R1","R2","R3"]},
+    {"key":"orken","name":"DEMO Өркен · корпус А","address":"DEMO участок 03","latitude":49.943,"longitude":82.625,"progress":75,"legal":"VERIFIED_VALID","factors":["R3"]},
+    {"key":"ertis","name":"DEMO Ертіс · очередь 1","address":"DEMO участок 04","latitude":49.968,"longitude":82.605,"progress":null,"legal":"UNKNOWN","factors":[]},
+    {"key":"altai","name":"DEMO Алтай · корпус Б","address":"DEMO участок 05","latitude":49.935,"longitude":82.600,"progress":60,"legal":"PENDING","factors":["R3"]},
+    {"key":"shygys","name":"DEMO Шығыс · очередь 1","address":"DEMO участок 06","latitude":49.960,"longitude":82.650,"progress":45,"legal":"UNKNOWN","factors":["R2","R3"]},
+    {"key":"nurly","name":"DEMO Нұрлы · корпус А","address":"DEMO участок 07","latitude":49.975,"longitude":82.635,"progress":100,"legal":"UNKNOWN","factors":[],"completed":true},
+    {"key":"arman","name":"DEMO Арман · очередь 3","address":"DEMO участок 08","latitude":49.940,"longitude":82.645,"progress":15,"legal":"UNKNOWN","factors":["R3"]}
+  ],
+  "advertisements": [
+    {"property":"samal","text":"DEMO Самал, очередь 1. Строящиеся квартиры. Платная бронь 100 000 ₸ до сдачи дома."},
+    {"property":"baiterek","text":"DEMO Бәйтерек, очередь 2. Дом строится. Депозит 500 000 тенге для бронирования квартиры."},
+    {"property":"orken","text":"DEMO Өркен, корпус А. Идёт строительство. Приглашаем ознакомиться с планировками. Бронирование бесплатно."},
+    {"property":"ertis","text":"DEMO Ертіс. Информационная публикация о проекте. Условия и сроки ещё не проверены."},
+    {"property":"altai","text":"DEMO Алтай, корпус Б. Продажа квартир в строящемся доме. Посмотрите доступные планировки."},
+    {"property":"shygys","text":"DEMO Шығыс, очередь 1. Бастапқы жарна 30%. Үй салынып жатыр. Бұл тек демонстрациялық хабарландыру."},
+    {"property":"nurly","text":"DEMO Нұрлы. Готовые квартиры. Дом введён. Без первоначального взноса. Данные вымышлены."},
+    {"property":"arman","text":"DEMO Арман, очередь 3. Сатылым басталды. Тұрғын үй салынып жатыр. Ақылы брондау ұсынылмайды."},
+    {"property":"samal","text":"DEMO Самал, очередь 1. Новые планировки в строящемся доме. Подробности у DEMO-консультанта."},
+    {"property":"baiterek","text":"DEMO Бәйтерек, очередь 2. Повтор демонстрационной акции: депозит 500 000 ₸. Не реальное предложение."},
+    {"property":"orken","text":"DEMO Өркен. Строительный дневник корпуса А. Все сведения учебные, бронь бесплатная."},
+    {"property":"arman","text":"DEMO Арман, очередь 3. Демонстрационная реклама строящегося жилья без предложения внести деньги."}
+  ]
+}

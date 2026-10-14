@@ -1,0 +1,79 @@
+import logging
+import secrets
+from collections import defaultdict, deque
+from contextlib import asynccontextmanager
+from uuid import uuid4
+
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+from starlette.exceptions import HTTPException
+
+from app.api import advertisements, auth, properties
+from app.config import Settings
+from app.dependencies import DB, error_response
+from app.security import hash_password
+
+logger = logging.getLogger(__name__)
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
+    settings = settings or Settings()
+    engine = create_engine(settings.database_url, pool_pre_ping=True, hide_parameters=True)
+
+    @asynccontextmanager
+    async def lifespan(_app):
+        yield
+        engine.dispose()
+
+    app = FastAPI(title='SAQ QURYLYS', version='0.1.0', lifespan=lifespan)
+    app.state.settings = settings
+    app.state.engine = engine
+    app.state.sessions = sessionmaker(engine, expire_on_commit=False)
+    app.state.login_attempts = defaultdict(deque)
+    app.state.dummy_password = hash_password(secrets.token_urlsafe(24))
+
+    @app.middleware('http')
+    async def request_context(request: Request, call_next):
+        request.state.request_id = uuid4()
+        try:
+            content_length = int(request.headers.get('content-length', '0'))
+            if content_length < 0:
+                raise ValueError('negative length')
+        except ValueError:
+            return error_response(request, 400, 'Некорректная длина запроса')
+        if request.method == 'POST' and content_length > 500_000:
+            return error_response(request, 413, 'Слишком большой запрос')
+        try:
+            response = await call_next(request)
+        except Exception:
+            logger.exception('Request failed; request_id=%s', request.state.request_id)
+            response = error_response(request, 500, 'Не удалось выполнить действие. Повторите позже.')
+        response.headers['X-Request-ID'] = str(request.state.request_id)
+        response.headers['Cache-Control'] = 'no-store'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
+
+    @app.exception_handler(HTTPException)
+    async def http_error(request, exc):
+        return error_response(request, exc.status_code, str(exc.detail))
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request, exc):
+        # Do not echo input values: validation can fail on credentials and private text.
+        fields = [{'path': '.'.join(map(str, err['loc'])), 'message': err['msg']} for err in exc.errors()]
+        return error_response(request, 422, 'Проверьте заполненные поля', fields)
+
+    @app.get('/health', include_in_schema=False)
+    def health(db: DB):
+        db.execute(text('SELECT 1'))
+        return {'status': 'ok'}
+
+    app.include_router(auth.router)
+    app.include_router(properties.router)
+    app.include_router(advertisements.router)
+    return app
+
+
+app = create_app()

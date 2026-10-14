@@ -1,0 +1,11 @@
+.git
+.venv
+.env*
+.local
+storage
+frontend/node_modules
+frontend/.next
+output
+tmp
+*.pdf
+*.docx
