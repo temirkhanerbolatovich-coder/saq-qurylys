@@ -137,4 +137,7 @@ export type Evidence = {
   asset_id: string;
   captured_at: string;
   is_demo: boolean;
+  event_at?: string | null;
+  methodology?: string | null;
+  signatory_count?: number | null;
 };

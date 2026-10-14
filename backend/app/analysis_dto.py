@@ -164,6 +164,7 @@ class EvidenceCreate(ReviewInput):
     event_at: AwareDatetime | None
     measurement_percent: float | None = Field(default=None, ge=0, le=100)
     methodology: str | None = Field(default=None, min_length=1, max_length=2000)
+    signatory_count: int | None = Field(default=None, ge=2, le=100000)
     is_demo: bool
 
 

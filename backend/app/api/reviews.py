@@ -1,6 +1,9 @@
+import hashlib
+from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
+from pydantic import AwareDatetime, HttpUrl, TypeAdapter
 from sqlalchemy import or_, select
 from starlette.exceptions import HTTPException
 
@@ -8,10 +11,11 @@ from app import analysis_dto as dto
 from app.api.analysis import Key, analyst, audit, latest_extraction, revision
 from app.commands import begin_command, finish_command
 from app.dependencies import DB, Actor, check_csrf
-from app.dto import Page
+from app.dto import AssetOut, Page
 from app.extraction import payment_offer
 from app.models import (
     Advertisement,
+    Asset,
     AuditEvent,
     Evidence,
     ExtractionResult,
@@ -20,9 +24,129 @@ from app.models import (
     RiskFactor,
     utcnow,
 )
+from app.storage import save_bytes
+from app.uploads import validate_image, validate_text
 from app.views import factor_views, property_view
 
 router = APIRouter()
+
+
+@router.post(
+    '/api/v1/assets/upload',
+    response_model=AssetOut,
+    status_code=201,
+    operation_id='uploadEvidenceAsset',
+    dependencies=[Depends(check_csrf)],
+)
+async def upload_document(
+    request: Request,
+    actor: Actor,
+    db: DB,
+    idempotency_key: Key,
+    file: Annotated[UploadFile, File()],
+    property_id: Annotated[UUID, Form()],
+    source_label: Annotated[str, Form(min_length=1, max_length=300)],
+    event_at: Annotated[AwareDatetime, Form()],
+    methodology: Annotated[str, Form(min_length=1, max_length=2000)],
+    signatory_count: Annotated[int, Form(ge=2, le=100000)],
+    is_demo: Annotated[bool, Form()],
+    source_url: Annotated[str | None, Form()] = None,
+):
+    analyst(actor)
+    if not source_label.strip() or not methodology.strip() or event_at > utcnow():
+        raise HTTPException(422, 'Нужны источник, основание проверки и дата не в будущем')
+    try:
+        url = str(TypeAdapter(HttpUrl).validate_python(source_url)) if source_url else None
+    except ValueError:
+        raise HTTPException(422, 'Проверьте URL источника') from None
+    settings = request.app.state.settings
+    content = await file.read(settings.max_upload_bytes + 1)
+    if len(content) > settings.max_upload_bytes:
+        raise HTTPException(413, 'Файл превышает допустимый размер')
+    mime = (file.content_type or '').split(';', 1)[0].lower().strip()
+    if mime == 'text/plain' or (file.filename or '').lower().endswith('.txt'):
+        if mime not in {'text/plain', 'application/octet-stream', ''}:
+            raise HTTPException(415, 'Недопустимый MIME для TXT')
+        validate_text(content)
+        mime, extension = 'text/plain', 'txt'
+    else:
+        mime, extension = validate_image(content, file.content_type, settings.max_image_pixels)
+    metadata = {
+        'property_id': str(property_id),
+        'source_label': source_label,
+        'source_url': url,
+        'event_at': event_at.isoformat(),
+        'methodology': methodology,
+        'signatory_count': signatory_count,
+        'created_by': str(actor.id),
+    }
+    previous, digest = begin_command(
+        db,
+        actor.id,
+        'uploadEvidenceAsset',
+        idempotency_key,
+        metadata | {'sha256': hashlib.sha256(content).hexdigest(), 'is_demo': is_demo},
+    )
+    if previous:
+        return previous
+    prop = property_locked(db, property_id)
+    if prop.is_demo != is_demo:
+        raise HTTPException(422, 'Нельзя смешивать DEMO и реальные документы')
+    key, sha, size = save_bytes(settings.storage_root, content, extension)
+    row = Asset(
+        kind='DOCUMENT',
+        mime_type=mime,
+        byte_size=size,
+        sha256=sha,
+        storage_key=key,
+        is_demo=is_demo,
+        source_details=metadata,
+    )
+    db.add(row)
+    db.flush()
+    audit(db, request, actor, row, 'SUPPORT_DOCUMENT_UPLOADED', reason=methodology, details=metadata)
+    result = AssetOut.model_validate(row).model_dump(mode='json')
+    finish_command(db, actor.id, 'uploadEvidenceAsset', idempotency_key, digest, result)
+    return result
+
+
+def appeal_evidence(body, request, actor, db, idempotency_key, digest):
+    prop = property_locked(db, body.property_id)
+    asset = db.get(Asset, body.asset_id)
+    source = asset.source_details if asset else None
+    if (
+        not asset
+        or asset.kind != 'DOCUMENT'
+        or asset.advertisement_id
+        or not source
+        or source.get('property_id') != str(prop.id)
+    ):
+        raise HTTPException(422, 'Загрузите документ обращения для этого ЖК')
+    if asset.is_demo != prop.is_demo or body.is_demo != prop.is_demo:
+        raise HTTPException(422, 'Нельзя смешивать DEMO и реальные документы')
+    if (
+        any([body.advertisement_id, body.extraction_id, body.hypothesis_id, body.fragment, body.legal_basis_id])
+        or body.measurement_percent is not None
+    ):
+        raise HTTPException(422, 'Обращение подтверждается отдельным документом')
+    details = body.model_dump(mode='json', exclude={'property_id', 'asset_id'}) | {
+        key: source[key] for key in ['source_label', 'source_url', 'event_at', 'methodology', 'signatory_count']
+    }
+    details |= {'captured_at': asset.captured_at.isoformat(), 'created_by': str(actor.id)}
+    row = Evidence(id=uuid4(), property_id=prop.id, asset_id=asset.id, details=details)
+    db.add(row)
+    audit(
+        db,
+        request,
+        actor,
+        row,
+        'EVIDENCE_CREATED',
+        reason=body.description,
+        details={'property_id': str(prop.id), 'kind': body.kind},
+    )
+    result = dto.EvidenceOut(id=row.id, property_id=prop.id, asset_id=asset.id, **details).model_dump(mode='json')
+    finish_command(db, actor.id, 'createEvidence', idempotency_key, digest, result)
+    return result
 
 
 def property_locked(db, id):
@@ -126,8 +250,10 @@ def create_evidence(body: dto.EvidenceCreate, request: Request, actor: Actor, db
     previous, digest = begin_command(db, actor.id, 'createEvidence', idempotency_key, body.model_dump(mode='json'))
     if previous:
         return previous
+    if body.kind == 'COLLECTIVE_APPEAL':
+        return appeal_evidence(body, request, actor, db, idempotency_key, digest)
     if body.kind != 'ADVERTISEMENT_FRAGMENT' or not body.advertisement_id:
-        raise HTTPException(422, 'На этом этапе поддерживается доказательство условия оплаты из рекламы')
+        raise HTTPException(422, 'Поддерживаются условия оплаты из рекламы и документы коллективного обращения')
     ad = db.scalar(
         select(Advertisement)
         .where(Advertisement.id == body.advertisement_id)
@@ -171,11 +297,28 @@ def create_evidence(body: dto.EvidenceCreate, request: Request, actor: Actor, db
     return result
 
 
-def validate_evidence(db, prop, ids, as_of=None):
+def validate_evidence(db, prop, ids, as_of=None, code='R2'):
     if not ids:
         raise HTTPException(422, 'Нужно хотя бы одно доказательство')
     for id in set(ids):
         evidence = db.get(Evidence, id)
+        if code == 'R4':
+            if not evidence or evidence.property_id != prop.id or evidence.details.get('kind') != 'COLLECTIVE_APPEAL':
+                raise HTTPException(422, 'R4 требует документа коллективного обращения этого ЖК')
+            asset = db.get(Asset, evidence.asset_id)
+            source = asset.source_details if asset else None
+            if (
+                not source
+                or source.get('property_id') != str(prop.id)
+                or source.get('signatory_count', 0) < 2
+                or not source.get('methodology')
+                or asset.is_demo != prop.is_demo
+            ):
+                raise HTTPException(422, 'Не подтверждены происхождение и коллективность обращения')
+            date = TypeAdapter(AwareDatetime).validate_python(source['event_at'])
+            if date > (as_of or utcnow()):
+                raise HTTPException(422, 'Дата фактора предшествует документу')
+            continue
         if not evidence or evidence.property_id != prop.id or evidence.details.get('kind') != 'ADVERTISEMENT_FRAGMENT':
             raise HTTPException(422, 'Доказательство должно относиться к этому ЖК и условию оплаты')
         ad, _, _ = payment_hypothesis(db, evidence)
@@ -199,14 +342,14 @@ def create_factor(id: UUID, body: dto.RiskFactorCreate, request: Request, actor:
     prop = property_locked(db, id)
     if body.as_of > utcnow():
         raise HTTPException(422, 'Дата проверки не может быть в будущем')
-    if body.code != 'R2':
+    if body.code not in {'R2', 'R4'}:
         raise HTTPException(
             422,
-            'В этом этапе ручная проверка реализована для R2; остальные факторы требуют отдельного сценария доказательств',
+            'В этом этапе ручная проверка реализована для R2/R4; остальные факторы требуют отдельного сценария доказательств',
         )
     if db.scalar(select(RiskFactor.id).where(RiskFactor.property_id == id, RiskFactor.code == body.code)):
         raise HTTPException(409, 'Фактор уже существует. Откройте его ручную проверку.')
-    validate_evidence(db, prop, body.evidence_ids, body.as_of)
+    validate_evidence(db, prop, body.evidence_ids, body.as_of, body.code)
     factor = RiskFactor(
         property_id=id,
         code=body.code,
@@ -256,10 +399,10 @@ def review_factor(id: UUID, body: dto.RiskFactorReview, request: Request, actor:
         select(RiskFactor).where(RiskFactor.id == id).with_for_update().execution_options(populate_existing=True)
     )
     revision(row.revision, body.expected_revision)
-    if row.code != 'R2':
-        raise HTTPException(422, 'Этот этап поддерживает ручную проверку R2')
+    if row.code not in {'R2', 'R4'}:
+        raise HTTPException(422, 'Этот этап поддерживает ручную проверку R2/R4')
     if body.status == 'CONFIRMED':
-        validate_evidence(db, prop, body.evidence_ids, utcnow())
+        validate_evidence(db, prop, body.evidence_ids, utcnow(), row.code)
     elif any(not db.get(Evidence, id) or db.get(Evidence, id).property_id != prop.id for id in body.evidence_ids):
         raise HTTPException(422, 'Доказательства должны относиться к этому ЖК')
     before = {'status': row.status, 'evidence_ids': row.evidence_ids, 'as_of': row.as_of.isoformat()}

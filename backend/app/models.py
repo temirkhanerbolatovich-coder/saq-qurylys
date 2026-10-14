@@ -88,6 +88,7 @@ class Asset(Base):
     storage_key: Mapped[str] = mapped_column(String(100))
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     is_demo: Mapped[bool] = mapped_column(Boolean)
+    source_details: Mapped[dict | None] = mapped_column(JSON)
 
 
 class Evidence(Base):

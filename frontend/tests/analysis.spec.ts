@@ -1,6 +1,59 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./support";
 
+test("appeal document requires a separate R4 decision", async ({ page }) => {
+  await login(page);
+  const registry = await (
+    await page.request.get("/api/v1/properties?page_size=100")
+  ).json();
+  const id = registry.items.find((p: { name: string }) =>
+    p.name.includes("Ертіс"),
+  ).id;
+  await page.goto(`/properties/${id}`);
+  await page.getByLabel("Источник обращения").fill("DEMO browser appeal");
+  await page.getByLabel("Документ обращения · TXT / PNG / JPEG").setInputFiles({
+    name: "appeal.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from(
+      "DEMO: коллективное обращение двух вымышленных заявителей",
+    ),
+  });
+  await page.getByLabel("Дата обращения · +05:00").fill("2026-10-13T12:00");
+  await page.getByLabel("Количество заявителей").fill("2");
+  await page
+    .getByLabel("Основание проверки коллективности")
+    .fill("Сверены два заявителя в синтетическом документе");
+  await page
+    .getByLabel("Обоснование решения R4")
+    .fill("Учебная ручная проверка");
+  await page
+    .getByRole("button", { name: "Сохранить документ обращения", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText(
+    "Документ и доказательство сохранены",
+  );
+  const risk = async () =>
+    (await (await page.request.get(`/api/v1/properties/${id}/risk`)).json())
+      .summary.score;
+  expect(await risk()).toBe(0);
+  await page
+    .getByRole("button", { name: "Подтвердить R4 · +15", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toHaveText(
+    "R4 подтверждён: +15 баллов.",
+  );
+  expect(await risk()).toBe(15);
+  await page
+    .locator(".factor-row")
+    .filter({ hasText: "Коллективное обращение" })
+    .getByRole("button", { name: "Доказательства", exact: true })
+    .click();
+  await expect(page.getByText("Заявителей: 2", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Отклонить R4", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("R4 отклонён: 0 баллов.");
+  expect(await risk()).toBe(0);
+});
+
 test("UTF-8 TXT upload keeps the original and creates payment hypotheses", async ({
   page,
 }) => {

@@ -1,6 +1,6 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-Updated: 2026-10-14 23:27 +05:00 (Asia/Qyzylorda).
+Updated: 2026-10-15 (Asia/Qyzylorda). Последний блок: документ коллективного обращения и R4.
 Branch: main. Текущую ревизию см. `git log -1`; удалённый репозиторий не настроен, push/deploy не выполнялись.
 Owner: Codex; реализация и продолжение разрешены пользователем. Общие подтверждения повторно не нужны.
 
@@ -12,7 +12,7 @@ Owner: Codex; реализация и продолжение разрешены 
 
 Seed: 8 DEMO-объектов и 12 исходных публикаций; новые browser/OCR/restart DEMO-записи добавлены отдельно, seed их не сбрасывает. Синтетические A/B/C (35/yellow, 70/red, 10/green) сохранены; реальной проверкой они не являются. Browser-сценарий оставляет историю по DEMO Ертіс с итоговым отклонённым R2/0.
 
-Целевой контракт: 36 операций, из них 22 полностью доступны, 3 частично для R2, 11 PLANNED. Ручные доказательства/факторы остальных видов явно отклоняются 422. Основная документация текущего этапа — docs/IMPLEMENTATION_SLICE_02.md и ADR-002.
+Целевой контракт: 36 операций, из них 22 полностью доступны, 4 частично (R2/R4/documents), 10 PLANNED. Помимо R2/R4 ручные доказательства/факторы остальных видов явно отклоняются 422. Основная документация текущего этапа — docs/IMPLEMENTATION_SLICE_02.md и ADR-002.
 
 ## P0 checklist
 
@@ -30,20 +30,20 @@ Seed: 8 DEMO-объектов и 12 исходных публикаций; но�
 | Legal basis | IN PROGRESS | Чтение синтетических документов; UNKNOWN не создаёт R1 | Typed writes/review, применимость по области/дате и независимый документ |
 | Dashboard/registry/review | IN PROGRESS | Реальные API, фильтры, карточки, split original/hypotheses, audit; mobile no overflow | Карта, keyboard/200% zoom, UX с 3–5 людьми |
 | Signals/PDF | NOT STARTED | Честно обозначены будущим этапом | Snapshot/decision/revision/PDF/оговорка/шрифты |
-| Полный E2E/второй ПК/CI | IN PROGRESS | 78 backend + 8 browser; Docker/модели/build; workflow создан | Полный P0 E2E, другой ПК, реальный GitHub CI, backup/restore, freeze SHA |
+| Полный E2E/второй ПК/CI | IN PROGRESS | 85 backend + 9 browser; Docker/модели/build; workflow создан | Полный P0 E2E, другой ПК, реальный GitHub CI, backup/restore, freeze SHA |
 
 ## Выполненные проверки
 
 | Проверка | Реальный результат |
 |---|---|
-| Backend PostgreSQL | `cd backend; ..\.venv\Scripts\python.exe -m pytest -q`: **78 passed**, без warnings. Каждый запуск использует случайную test schema; public не очищался |
+| Backend PostgreSQL | `cd backend; ..\.venv\Scripts\python.exe -m pytest -q`: **85 passed**, без warnings. Каждый запуск использует случайную test schema; public не очищался |
 | Concurrency/recovery | Две одновременные гипотезы/факторы одной revision дают 200/409; устаревшее ORM-состояние перечитывается после lock; late worker не публикует второй результат |
 | API/errors/security | Roles/CSRF/Origin, чужие IDs/DEMO scope, точный фрагмент, idempotency, invalid/truncated/MIME images, streamed body limit, unavailable/timeout OCR с сохранением оригинала |
 | OpenAPI | Валидатор документа и schemas реальных job/extraction/match/evidence/risk/audit responses |
 | Миграции | Исходная + аддитивная `996510abee9b`; Alembic check: No new upgrade operations detected |
 | Backend quality | Ruff check/format, pip check — без ошибок |
 | Frontend | build, typecheck, lint, format:check; npm audit — **0 vulnerabilities** |
-| Browser Docker | **8 passed**: первый срез плюс R2 evidence/confirm/reject (+25 → 0), настоящий KZ image OCR/bbox, mobile без overflow |
+| Browser Docker | **9 passed**: первый срез плюс R2 evidence/confirm/reject (+25 → 0), настоящий KZ image OCR/bbox, mobile без overflow |
 | OCR smoke | Новый RU и KZ PNG вне seed: по 2 payment clauses/PENDING с bbox, original SHA идентичен; output/qa/ocr-verification.json |
 | OCR observations | CER RU 0.0541 / KZ 0.1026 на **двух чистых синтетических баннерах**, без заявления production accuracy. Потеря казахской диакритики явно показана |
 | Actual queue restart | Worker остановлен, новый PNG job сохранён QUEUED; API/worker пересозданы из новой сборки; SUCCEEDED, ровно одна версия, original SHA сохранён. `.local/queue-restart-check.json` |
@@ -77,4 +77,14 @@ Seed: 8 DEMO-объектов и 12 исходных публикаций; но�
 
 Закрыто: UTF-8 TXT upload до 100000 символов через существующую файловую форму; сохраняются исходные BOM/CRLF/байты и SHA, правила выполняются без OCR. Проверяются кодировка, пустой текст, бинарные controls, размер и MIME. UNKNOWN стадия теперь «Не проверена»; R4/R5/R6 имеют собственные подписи. Новых зависимостей/миграций/архитектурных решений нет.
 
-Проверки этой задачи: **78 backend passed**, **8 browser passed** на обновлённом Docker-приложении; Ruff check/format, frontend lint/typecheck/format:check; Docker build/up (включает production Next build), git diff --check. Browser-проверка UNKNOWN/R5 использует подмену ответа только для представления, не изменяет решения БД. Npm audit и второй ПК в этой короткой задаче повторно не запускались. README/контракт/changelog и срез 02 обновлены. Следующая крупная задача и блокер collector прежние. Пользователь попросил ограничиться быстрыми задачами из-за остатка лимита.
+Проверки этой задачи: **85 backend passed**, **9 browser passed** на обновлённом Docker-приложении; Ruff check/format, frontend lint/typecheck/format:check; Docker build/up (включает production Next build), git diff --check. Browser-проверка UNKNOWN/R5 использует подмену ответа только для представления, не изменяет решения БД. Npm audit и второй ПК в этой короткой задаче повторно не запускались. README/контракт/changelog и срез 02 обновлены. Следующая крупная задача и блокер collector прежние. Пользователь попросил ограничиться быстрыми задачами из-за остатка лимита.
+
+## Коллективное обращение / R4 · 15.10.2026
+
+Закрыт самостоятельный путь: analyst upload документа TXT/PNG/JPEG → неизменяемый source_details (ЖК/дата/источник/методология/число заявителей) → COLLECTIVE_APPEAL evidence → PENDING R4/0 → отдельное CONFIRMED +15 либо REJECTED 0, с revision/аудитом. Подлинность/полномочия заявителей — предмет ручной проверки, не OCR-вердикт. PDF и остальные виды документов пока не поддерживаются. Ни загрузка, ни количество заявителей сами не подтверждают риск.
+
+Аддитивная миграция c4f1a903b812 добавляет nullable assets.source_details, старые исходники не меняет. Контракт: 36 операций, 22 полностью, 4 частично (asset upload/R2/R4), 10 PLANNED. Ранее указанный PARTIAL_R2 объём расширен, описание первоначального среза историческое.
+
+Проверено: **85 backend passed**, **9 browser passed**, Docker build/up (production Next build), Ruff check/format, frontend lint/typecheck/format, Alembic check (No new upgrade operations detected). Проверки включают чужой ЖК, подмену клиентом source/count, дату в будущем, одного заявителя, пустую методологию, роль viewer, stale 409, загрузку только attachment и полный R4 +15 → 0. Browser оставляет историю R4 по DEMO Ертіс с отклонённым фактором. README/changelog/контракт и docs/FEATURE_COLLECTIVE_APPEAL.md обновлены. Новых пакетов нет, ADR не нужен: сохранены существующие SQL/JSON/idempotency/actor patterns. Внешний CI, security audit зависимостей и другой ПК в этой задаче не выполнялись.
+
+Следующая задача: PDF supporting documents и typed legal basis review; затем R1/R3/R5/R6 guards. Сигналы/PDF-экспорт/карта/collector открыты; collector по-прежнему без разрешённого источника. Большие блоки в текущий короткий бюджет не включены.

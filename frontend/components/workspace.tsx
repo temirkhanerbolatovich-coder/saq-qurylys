@@ -37,6 +37,7 @@ import type {
   User,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { AppealReview } from "@/components/appeal-review";
 
 export const Auth = createContext<{
   user: User | null;
@@ -518,6 +519,14 @@ function EvidenceItem({ id }: { id: string }) {
       <Demo value={item.data.is_demo} />
       <strong>{item.data.source_label}</strong>
       <p>{item.data.description}</p>
+      {item.data.signatory_count && (
+        <p>
+          Заявителей: {item.data.signatory_count} · дата обращения:{" "}
+          {date(item.data.event_at || null)}
+          <br />
+          Проверка: {item.data.methodology}
+        </p>
+      )}
       <a className="text-link" href={`/api/v1/assets/${item.data.asset_id}`}>
         Скачать исходник <ArrowRight size={14} />
       </a>
@@ -528,6 +537,7 @@ function EvidenceItem({ id }: { id: string }) {
 }
 
 export function PropertyView({ id }: { id: string }) {
+  const { user } = useContext(Auth);
   const detail = useData<PropertyDetail>(`/properties/${id}`);
   const [evidence, setEvidence] = useState<string | null>(null);
   if (!detail.data)
@@ -655,6 +665,9 @@ export function PropertyView({ id }: { id: string }) {
           <div className="empty">Подтверждённых факторов пока нет.</div>
         )}
       </section>
+      {user?.role === "analyst" && (
+        <AppealReview detail={detail.data} onSaved={detail.reload} />
+      )}
     </>
   );
 }

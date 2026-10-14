@@ -3,7 +3,7 @@
   "info": {
     "title": "SAQ QURYLYS API",
     "version": "0.2.0-mvp",
-    "description": "SAQ QURYLYS target contract with per-operation implementation status. First slice + OCR/review slice are implemented. PARTIAL_R2 means only advertisement payment evidence and R2 mutations; other factor guards remain planned. JSON serialization is valid YAML 1.2."
+    "description": "SAQ QURYLYS target contract with per-operation implementation status. Implemented registry/OCR/review plus partial R2/R4 workflows and appeal document upload. Other legal/factor/signal workflows remain planned. JSON serialization is valid YAML 1.2."
   },
   "servers": [
     {
@@ -937,7 +937,7 @@
       "post": {
         "operationId": "createRiskFactor",
         "summary": "Create a pending factor with evidence",
-        "description": "Current factor is unique per property/code. This slice accepts R2 only, creates PENDING with no score; explicit review confirms it. Other codes return 422 until their evidence workflows are implemented. Current risk only; no historical mutation.",
+        "description": "Unique current factor per property/code. Current scope: R2 payment and R4 collective appeal; creates PENDING with no score. Other codes return 422. R4 requires dated document, >=2 declared signatories and analyst methodology. Evidence must belong to the same property.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -1011,7 +1011,7 @@
             }
           }
         },
-        "x-implementation-status": "PARTIAL_R2"
+        "x-implementation-status": "PARTIAL_R2_R4"
       }
     },
     "/api/v1/properties/{id}/audit": {
@@ -1952,7 +1952,7 @@
       "post": {
         "operationId": "uploadEvidenceAsset",
         "summary": "Store supporting document or image",
-        "description": "PNG/JPEG/TXT/PDF; validate MIME/signature, 10 MiB limit. Store outside webroot. No arbitrary executable or active HTML upload.",
+        "description": "Current scope: collective appeal supporting TXT (UTF-8, <=100000 characters) or PNG/JPEG (<=25MP), <=10MiB. Explicit property/date/source/methodology/number of signatories, server actor/time, immutable storage. Download as attachment; no PDF support in this slice.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -2017,7 +2017,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "PARTIAL_APPEAL_DOCUMENTS"
       }
     },
     "/api/v1/assets/{id}": {
@@ -2099,7 +2099,7 @@
       "post": {
         "operationId": "createEvidence",
         "summary": "Create a version-specific evidence link",
-        "description": "This slice accepts ADVERTISEMENT_FRAGMENT payment evidence only. Requires exact saved fragment and reviewed hypothesis; source provenance is copied by server. Other kinds return 422. New evidence uses latest extraction and its own confirmed match. Earlier evidence cannot confirm R2 after a manual transcription supersedes its text.",
+        "description": "Supports ADVERTISEMENT_FRAGMENT payment evidence with latest reviewed hypothesis and confirmed version match, plus COLLECTIVE_APPEAL from a separately uploaded document of the same property/DEMO scope. Server copies immutable source/date/methodology/count; no automatic factor confirmation. Other kinds return 422.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -2164,7 +2164,7 @@
             }
           }
         },
-        "x-implementation-status": "PARTIAL_R2"
+        "x-implementation-status": "PARTIAL_R2_R4"
       }
     },
     "/api/v1/evidence/{id}": {
@@ -2236,7 +2236,7 @@
       "post": {
         "operationId": "reviewRiskFactor",
         "summary": "Review factor and atomically recalculate risk",
-        "description": "This slice accepts R2 only; other codes return 422. Requires current reviewed payment hypothesis and property link. Server stamps current as_of/reviewer, checks optimistic revision and recalculates atomically with audit. R1/R3/R4/R5/R6 guards remain planned.",
+        "description": "Current scope: R2/R4, others return 422. Revalidates applicable evidence and optimistic revision, sets server reviewer/date, recalculates atomically with audit. R4 signatory authenticity remains a human check.",
         "x-origin": "CODEX_TZ",
         "responses": {
           "200": {
@@ -2310,7 +2310,7 @@
             }
           }
         },
-        "x-implementation-status": "PARTIAL_R2"
+        "x-implementation-status": "PARTIAL_R2_R4"
       }
     },
     "/api/v1/signals": {
@@ -4684,6 +4684,18 @@
                 "type": "null"
               }
             ]
+          },
+          "signatory_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 100000
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -4843,6 +4855,18 @@
                 "type": "null"
               }
             ]
+          },
+          "signatory_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 100000
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -4873,12 +4897,45 @@
           },
           "is_demo": {
             "type": "boolean"
+          },
+          "property_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "methodology": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "signatory_count": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 100000
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "file",
           "source_label",
-          "is_demo"
+          "is_demo",
+          "property_id",
+          "event_at",
+          "methodology",
+          "signatory_count"
         ]
       },
       "RiskFactorCreate": {
