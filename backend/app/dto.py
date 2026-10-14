@@ -57,7 +57,7 @@ class AdvertisementCreate(DTO):
 
 class AssetOut(DTO):
     id: UUID
-    kind: Literal['TEXT', 'HTML', 'IMAGE', 'DOCUMENT', 'SIGNAL_PDF']
+    kind: Literal['TEXT', 'OCR_TEXT', 'HTML', 'IMAGE', 'DOCUMENT', 'SIGNAL_PDF']
     mime_type: str
     byte_size: int
     sha256: str

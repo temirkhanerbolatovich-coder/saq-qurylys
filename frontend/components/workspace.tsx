@@ -38,9 +38,10 @@ import type {
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 
-const Auth = createContext<{ user: User | null; refresh: () => Promise<void> }>(
-  { user: null, refresh: async () => {} },
-);
+export const Auth = createContext<{
+  user: User | null;
+  refresh: () => Promise<void>;
+}>({ user: null, refresh: async () => {} });
 const legalLabels: Record<string, string> = {
   UNKNOWN: "Не проверено",
   PENDING: "На проверке",
@@ -118,9 +119,7 @@ export function Providers({ children }: { children: ReactNode }) {
               >
                 <Icon size={18} />
                 {label}
-                {["/review", "/signals"].includes(href) && (
-                  <span className="soon">Далее</span>
-                )}
+                {href === "/signals" && <span className="soon">Далее</span>}
               </Link>
             ))}
           </nav>
@@ -186,7 +185,7 @@ export function Zone({ risk }: { risk: Property["risk"] }) {
   );
 }
 
-function useData<T>(path: string) {
+export function useData<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
@@ -205,7 +204,13 @@ function useData<T>(path: string) {
   return { data, error, reload: () => setVersion((value) => value + 1) };
 }
 
-function LoadState({ error, retry }: { error: string; retry: () => void }) {
+export function LoadState({
+  error,
+  retry,
+}: {
+  error: string;
+  retry: () => void;
+}) {
   return error ? (
     <>
       <Notice error={error} />
@@ -220,7 +225,7 @@ function LoadState({ error, retry }: { error: string; retry: () => void }) {
   );
 }
 
-function PageTitle({
+export function PageTitle({
   eyebrow,
   title,
   description,
@@ -596,10 +601,10 @@ export function PropertyView({ id }: { id: string }) {
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>Подтверждённые факторы</h2>
+            <h2>Факторы и решения</h2>
             <p>
-              DEMO-решения загружены из учебного набора. Новые материалы ещё не
-              анализируются.
+              Только подтверждённые факторы участвуют в балле. DEMO-решения из
+              учебного набора отмечены отдельно.
             </p>
           </div>
         </div>
@@ -617,7 +622,10 @@ export function PropertyView({ id }: { id: string }) {
                 </strong>
                 <small>{factor.reason}</small>
               </div>
-              <span className="points">+{factor.weight}</span>
+              <span className="points">
+                {factor.status === "CONFIRMED" ? `+${factor.weight}` : "0"}
+                <small>{factor.status}</small>
+              </span>
               <Button
                 variant="outline"
                 onClick={() =>
@@ -717,15 +725,13 @@ export function AdvertisementView({ id }: { id: string }) {
       <PageTitle
         eyebrow="СОХРАНЁННЫЙ МАТЕРИАЛ"
         title={ad.source_label}
-        description="Исходный текст сохранён без изменений. Анализ не запускается автоматически."
+        description="Оригинал сохранён без изменений. Анализ не запускается автоматически."
         action={false}
       />
       <div className="object-summary">
         <Demo value={ad.is_demo} />
         <span>
-          {ad.status === "NEW"
-            ? "Новый · ожидает анализа"
-            : "DEMO · учебный сценарий"}
+          {ad.status === "NEW" ? "Новый · ожидает анализа" : ad.status}
         </span>
       </div>
       <section className="panel padded">
@@ -750,15 +756,20 @@ export function AdvertisementView({ id }: { id: string }) {
         {ad.assets.map((asset) => (
           <div className="asset" key={asset.id}>
             <a className="text-link" href={`/api/v1/assets/${asset.id}`}>
-              Скачать исходный текст <ArrowRight size={14} />
+              Скачать материал <ArrowRight size={14} />
             </a>
             <small>SHA-256: {asset.sha256}</small>
           </div>
         ))}
       </section>
+      <Button asChild>
+        <Link href={`/review?advertisement_id=${id}`}>
+          Открыть анализ и проверку
+        </Link>
+      </Button>
       <p className="notice">
-        OCR, извлечение и выбор объекта будут подключены следующим этапом. Этот
-        текст не влияет на балл риска без проверки человека.
+        Анализ и ручная проверка доступны в рабочем месте. Гипотезы не влияют на
+        балл риска без отдельного решения аналитика.
       </p>
     </>
   );
@@ -855,7 +866,7 @@ export function NewAdvertisementView() {
         <div className="form-tabs">
           <strong>Текст</strong>
           <span>URL-импорт · следующий этап</span>
-          <span>Изображение · следующий этап</span>
+          <Link href="/advertisements/upload">Изображение · PNG / JPEG</Link>
         </div>
         <form onSubmit={submit}>
           <label htmlFor="source">Источник / описание происхождения</label>

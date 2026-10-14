@@ -35,6 +35,8 @@ export type Asset = {
 };
 export type Advertisement = {
   id: string;
+  revision: number;
+  latest_job_id: string | null;
   source_label: string;
   source_url: string | null;
   original_text: string;
@@ -55,6 +57,7 @@ export type PropertyDetail = {
   property: Property;
   factors: {
     id: string;
+    revision: number;
     code: string;
     status: string;
     weight: number;
@@ -73,6 +76,52 @@ export type PropertyDetail = {
   }[];
   advertisement_ids: string[];
   unknown_information: string[];
+};
+
+export type Job = {
+  id: string;
+  state: "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "BLOCKED";
+  stage: string;
+  attempt: number;
+  error: { error: { message: string } } | null;
+};
+export type Value = {
+  text: string | null;
+  money: { amount: string; currency: "KZT" | "USD" | "EUR" | "UNKNOWN" } | null;
+  percent: number | null;
+};
+export type Hypothesis = {
+  id: string;
+  field: string;
+  value: Value;
+  reviewed_value: Value | null;
+  review_status: string;
+  fragment: {
+    asset_id: string;
+    text_version_id: string;
+    quote: string;
+    start_offset: number;
+    end_offset: number;
+    bbox: { x: number; y: number; width: number; height: number } | null;
+  };
+};
+export type Extraction = {
+  id: string;
+  revision: number;
+  parent_extraction_id: string | null;
+  pipeline_version: string;
+  original_ocr_text: string | null;
+  analysis_text: string;
+  hypotheses: Hypothesis[];
+  warnings: string[];
+  created_at: string;
+};
+export type Match = {
+  id: string;
+  property_id: string;
+  status: string;
+  similarity: number;
+  reasons: string[];
 };
 export type Dashboard = {
   property_count: number;

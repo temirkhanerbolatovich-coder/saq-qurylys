@@ -27,12 +27,51 @@ async function proxy(
     if (value) headers.set(name, value);
   }
   try {
+    const limit = path.at(-1) === "upload" ? 10_485_760 + 65_536 : 500_000;
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    const reader = request.body?.getReader();
+    if (reader) {
+      while (true) {
+        const part = await reader.read();
+        if (part.done) break;
+        total += part.value.byteLength;
+        if (total > limit) {
+          await reader.cancel();
+          const requestId = crypto.randomUUID();
+          return Response.json(
+            {
+              error: {
+                code: "HTTP_413",
+                message: "Материал превышает допустимый размер",
+                request_id: requestId,
+                fields: [],
+              },
+            },
+            {
+              status: 413,
+              headers: {
+                "X-Request-ID": requestId,
+                "Cache-Control": "no-store",
+              },
+            },
+          );
+        }
+        chunks.push(part.value);
+      }
+    }
+    const body = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      body.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
     const upstream = await fetch(target, {
       method: request.method,
       headers,
       redirect: "manual",
       cache: "no-store",
-      body: request.method === "GET" ? undefined : await request.arrayBuffer(),
+      body: request.method === "GET" ? undefined : body,
       signal: AbortSignal.timeout(15000),
     });
     const resultHeaders = new Headers();
@@ -42,6 +81,7 @@ async function proxy(
       "x-request-id",
       "x-content-type-options",
       "retry-after",
+      "content-security-policy",
     ]) {
       const value = upstream.headers.get(name);
       if (value) resultHeaders.set(name, value);

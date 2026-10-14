@@ -3,11 +3,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query
 from sqlalchemy import func, or_, select
+from sqlalchemy.dialects.postgresql import distinct_on
 from starlette.exceptions import HTTPException
 
 from app import dto
 from app.dependencies import DB, Actor, get_property
-from app.models import Advertisement, Property, utcnow
+from app.models import Advertisement, ExtractionResult, Property, utcnow
 from app.views import factor_views, legal_views, property_view, unknown_information
 
 router = APIRouter()
@@ -92,7 +93,7 @@ def dashboard(
     date_to: Annotated[dto.AwareDatetime | None, Query(alias='to')] = None,
 ):
     rows = filtered_properties(db, city, zone, legal_status, q, is_demo)
-    query = select(func.count()).select_from(Advertisement)
+    query = select(Advertisement.id)
     if any(value is not None for value in [city, zone, legal_status, q]):
         query = query.where(Advertisement.confirmed_property_id.in_([row.id for row in rows]))
     if is_demo is not None:
@@ -101,11 +102,18 @@ def dashboard(
         query = query.where(Advertisement.captured_at >= date_from)
     if date_to:
         query = query.where(Advertisement.captured_at < date_to)
+    latest = db.scalars(
+        select(ExtractionResult)
+        .where(ExtractionResult.advertisement_id.in_(query))
+        .ext(distinct_on(ExtractionResult.advertisement_id))
+        .order_by(ExtractionResult.advertisement_id, ExtractionResult.created_at.desc(), ExtractionResult.id)
+    )
+    pending = sum(h['review_status'] == 'PENDING' for extraction in latest for h in extraction.hypotheses)
     return {
         'property_count': len(rows),
         'zones': {value: sum(row.risk.zone == value for row in rows) for value in ['GREEN', 'YELLOW', 'RED']},
-        'new_advertisements': db.scalar(query),
-        'pending_hypotheses': 0,
+        'new_advertisements': db.scalar(select(func.count()).select_from(query.subquery())),
+        'pending_hypotheses': pending,
         'pending_signals': 0,
         'unknown_legal_bases': sum(row.legal_verification_status in {'UNKNOWN', 'PENDING'} for row in rows),
         'latest_signals': [],

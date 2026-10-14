@@ -47,3 +47,16 @@ export function date(value: string | null) {
     timeStyle: "short",
   }).format(new Date(value));
 }
+
+export async function upload<T>(
+  path: string,
+  body: FormData,
+  key: string,
+): Promise<T> {
+  const csrf = await api<{ csrf_token: string }>("/auth/csrf");
+  return api<T>(path, {
+    method: "POST",
+    headers: { "X-CSRF-Token": csrf.csrf_token, "Idempotency-Key": key },
+    body,
+  });
+}

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.1.0-draft",
-    "description": "Accepted baseline for SAQ QURYLYS. Only operations with x-implementation-status=IMPLEMENTED_FIRST_SLICE exist. JSON serialization is valid YAML 1.2. See docs/IMPLEMENTATION_SLICE_01.md for limits. Unknown legal data never confirms R1; humans confirm factors and signals."
+    "version": "0.2.0-mvp",
+    "description": "SAQ QURYLYS target contract with per-operation implementation status. First slice + OCR/review slice are implemented. PARTIAL_R2 means only advertisement payment evidence and R2 mutations; other factor guards remain planned. JSON serialization is valid YAML 1.2."
   },
   "servers": [
     {
@@ -937,7 +937,7 @@
       "post": {
         "operationId": "createRiskFactor",
         "summary": "Create a pending factor with evidence",
-        "description": "Supports manual R1/R4/R5/R6 as well as ad-derived R2/R3. Unique current factor per property/code/as_of; no automatic confirmation or duplicate weights.",
+        "description": "Current factor is unique per property/code. This slice accepts R2 only, creates PENDING with no score; explicit review confirms it. Other codes return 422 until their evidence workflows are implemented. Current risk only; no historical mutation.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -945,7 +945,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RiskFactor"
+                  "$ref": "#/components/schemas/RiskReviewResult"
                 }
               }
             }
@@ -1011,7 +1011,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "PARTIAL_R2"
       }
     },
     "/api/v1/properties/{id}/audit": {
@@ -1099,7 +1099,7 @@
             "description": ""
           }
         ],
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED_OCR_REVIEW_SLICE"
       }
     },
     "/api/v1/advertisements": {
@@ -1301,7 +1301,7 @@
       "post": {
         "operationId": "uploadAdvertisement",
         "summary": "Save new image or text file",
-        "description": "PNG/JPEG/TXT only, maximum 10 MiB and 25 MP. Validate actual content. Analysis is requested separately. Captured time comes from server.",
+        "description": "PNG/JPEG only; text is submitted through createAdvertisement. Maximum 10 MiB and 25 MP, actual content validation. Analysis requested separately. Captured time comes from server.",
         "x-origin": "CODEX_TZ",
         "responses": {
           "201": {
@@ -1366,7 +1366,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED_OCR_REVIEW_SLICE"
       }
     },
     "/api/v1/advertisements/import-url": {
@@ -1584,7 +1584,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED_OCR_REVIEW_SLICE"
       }
     },
     "/api/v1/analysis-jobs/{id}": {
@@ -1649,7 +1649,7 @@
             }
           }
         ],
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED_OCR_REVIEW_SLICE"
       }
     },
     "/api/v1/advertisements/{id}/extractions": {
@@ -1717,7 +1717,7 @@
             }
           }
         ],
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED_OCR_REVIEW_SLICE"
       }
     },
     "/api/v1/extractions/{id}/review": {
@@ -1798,7 +1798,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED_OCR_REVIEW_SLICE"
       }
     },
     "/api/v1/advertisements/{id}/matches": {
@@ -1866,7 +1866,7 @@
             }
           }
         ],
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED_OCR_REVIEW_SLICE"
       },
       "post": {
         "operationId": "reviewMatch",
@@ -1945,7 +1945,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED_OCR_REVIEW_SLICE"
       }
     },
     "/api/v1/assets/upload": {
@@ -2081,6 +2081,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "inline",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Authenticated preview only for validated PNG/JPEG originals."
           }
         ],
         "x-implementation-status": "IMPLEMENTED_FIRST_SLICE"
@@ -2090,7 +2099,7 @@
       "post": {
         "operationId": "createEvidence",
         "summary": "Create a version-specific evidence link",
-        "description": "Validate exact text offsets, asset ownership, object/phase and dates. R5 measurement requires value, date and methodology. Creating evidence alone confirms no factor.",
+        "description": "This slice accepts ADVERTISEMENT_FRAGMENT payment evidence only. Requires exact saved fragment and reviewed hypothesis; source provenance is copied by server. Other kinds return 422. New evidence uses latest extraction and its own confirmed match. Earlier evidence cannot confirm R2 after a manual transcription supersedes its text.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -2155,7 +2164,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "PARTIAL_R2"
       }
     },
     "/api/v1/evidence/{id}": {
@@ -2227,7 +2236,7 @@
       "post": {
         "operationId": "reviewRiskFactor",
         "summary": "Review factor and atomically recalculate risk",
-        "description": "Actor comes from session. CONFIRMED requires applicable evidence; R1 cannot contradict a valid basis for the same scope/date. R5 requires two comparable dated measurements differing by >=20 percentage points. Transaction includes factor, risk revision and audit.",
+        "description": "This slice accepts R2 only; other codes return 422. Requires current reviewed payment hypothesis and property link. Server stamps current as_of/reviewer, checks optimistic revision and recalculates atomically with audit. R1/R3/R4/R5/R6 guards remain planned.",
         "x-origin": "CODEX_TZ",
         "responses": {
           "200": {
@@ -2301,7 +2310,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "PARTIAL_R2"
       }
     },
     "/api/v1/signals": {
@@ -2784,6 +2793,87 @@
           }
         ],
         "x-implementation-status": "PLANNED"
+      }
+    },
+    "/api/v1/extractions/{id}/transcription": {
+      "post": {
+        "operationId": "correctTranscription",
+        "summary": "Create a new manual transcription version; preserve raw OCR and original",
+        "description": "Explicit extension of baseline. Invalidates dependent confirmed R2 factors to PENDING. Prior text versions, fragments and audit remain available.",
+        "x-origin": "proposal",
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          },
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractionResult"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranscriptionRequest"
+              }
+            }
+          }
+        },
+        "x-implementation-status": "IMPLEMENTED_OCR_REVIEW_SLICE"
       }
     }
   },
@@ -3380,7 +3470,8 @@
               "HTML",
               "IMAGE",
               "DOCUMENT",
-              "SIGNAL_PDF"
+              "SIGNAL_PDF",
+              "OCR_TEXT"
             ]
           },
           "mime_type": {
@@ -3987,6 +4078,21 @@
               "minLength": 1,
               "maxLength": 2000
             }
+          },
+          "parent_extraction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "analysis_text": {
+            "type": "string",
+            "maxLength": 100000
           }
         },
         "required": [
@@ -3997,7 +4103,9 @@
           "original_ocr_text",
           "hypotheses",
           "created_at",
-          "warnings"
+          "warnings",
+          "parent_extraction_id",
+          "analysis_text"
         ]
       },
       "ExtractionReview": {
@@ -4565,6 +4673,17 @@
           },
           "is_demo": {
             "type": "boolean"
+          },
+          "hypothesis_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -4713,6 +4832,17 @@
           "created_by": {
             "type": "string",
             "format": "uuid"
+          },
+          "hypothesis_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -5294,6 +5424,10 @@
           "request_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
           }
         },
         "required": [
@@ -5306,7 +5440,8 @@
           "old_revision",
           "new_revision",
           "reason",
-          "request_id"
+          "request_id",
+          "details"
         ]
       },
       "PropertyPage": {
@@ -5431,6 +5566,31 @@
           "page",
           "page_size",
           "total"
+        ]
+      },
+      "TranscriptionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "expected_revision",
+          "text",
+          "reason"
         ]
       }
     }

@@ -10,7 +10,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from starlette.exceptions import HTTPException
 
-from app.api import advertisements, auth, properties
+from app.api import advertisements, analysis, auth, properties, reviews
+from app.body_limit import BodyLimitMiddleware
 from app.config import Settings
 from app.dependencies import DB, error_response
 from app.security import hash_password
@@ -33,18 +34,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.sessions = sessionmaker(engine, expire_on_commit=False)
     app.state.login_attempts = defaultdict(deque)
     app.state.dummy_password = hash_password(secrets.token_urlsafe(24))
+    app.add_middleware(BodyLimitMiddleware, upload_limit=settings.max_upload_bytes)
 
     @app.middleware('http')
     async def request_context(request: Request, call_next):
         request.state.request_id = uuid4()
-        try:
-            content_length = int(request.headers.get('content-length', '0'))
-            if content_length < 0:
-                raise ValueError('negative length')
-        except ValueError:
-            return error_response(request, 400, 'Некорректная длина запроса')
-        if request.method == 'POST' and content_length > 500_000:
-            return error_response(request, 413, 'Слишком большой запрос')
         try:
             response = await call_next(request)
         except Exception:
@@ -73,6 +67,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth.router)
     app.include_router(properties.router)
     app.include_router(advertisements.router)
+    app.include_router(analysis.router)
+    app.include_router(reviews.router)
     return app
 
 

@@ -143,7 +143,7 @@ def advertisement_detail(id: UUID, actor: Actor, db: DB):
 
 
 @router.get('/api/v1/assets/{id}', operation_id='downloadAsset')
-def asset_download(id: UUID, request: Request, actor: Actor, db: DB):
+def asset_download(id: UUID, request: Request, actor: Actor, db: DB, inline: bool = False):
     settings = request.app.state.settings
     row = db.get(Asset, id)
     if not row:
@@ -153,7 +153,14 @@ def asset_download(id: UUID, request: Request, actor: Actor, db: DB):
         raise HTTPException(404, 'Сохранённый файл недоступен')
     if hashlib.sha256(path.read_bytes()).hexdigest() != row.sha256:
         raise HTTPException(409, 'Контрольная сумма материала не совпадает')
-    return FileResponse(path, media_type='application/octet-stream', filename=f'{row.id}.txt')
+    preview = inline and row.kind == 'IMAGE' and row.mime_type in {'image/png', 'image/jpeg'}
+    return FileResponse(
+        path,
+        media_type=row.mime_type if preview else 'application/octet-stream',
+        filename=f'{row.id}{path.suffix}',
+        content_disposition_type='inline' if preview else 'attachment',
+        headers={'Content-Security-Policy': "default-src 'none'; sandbox"},
+    )
 
 
 @router.get('/api/v1/evidence/{id}', operation_id='getEvidence')

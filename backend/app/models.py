@@ -73,6 +73,7 @@ class Advertisement(Base):
     status: Mapped[str] = mapped_column(String(30), default='NEW')
     confirmed_property_id: Mapped[UUID | None] = mapped_column(ForeignKey('properties.id'))
     created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    latest_job_id: Mapped[UUID | None] = mapped_column()
     assets: Mapped[list['Asset']] = relationship(order_by='Asset.id')
 
 
@@ -94,7 +95,7 @@ class Evidence(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     property_id: Mapped[UUID] = mapped_column(ForeignKey('properties.id'))
     asset_id: Mapped[UUID] = mapped_column(ForeignKey('assets.id'))
-    # This immutable source snapshot will gain typed write DTOs with the review slice.
+    # Immutable provenance snapshot, validated through EvidenceCreate before writing.
     details: Mapped[dict] = mapped_column(JSON)
 
 
@@ -132,6 +133,7 @@ class AuditEvent(Base):
     new_revision: Mapped[int | None] = mapped_column(Integer)
     reason: Mapped[str | None] = mapped_column(Text)
     request_id: Mapped[UUID] = mapped_column(default=uuid4)
+    details: Mapped[dict] = mapped_column(JSON, default=dict, server_default='{}')
 
 
 class Command(Base):
@@ -143,3 +145,51 @@ class Command(Base):
     key: Mapped[UUID] = mapped_column()
     body_hash: Mapped[str] = mapped_column(String(64))
     response: Mapped[dict] = mapped_column(JSON)
+
+
+class AnalysisJob(Base):
+    __tablename__ = 'analysis_jobs'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    advertisement_id: Mapped[UUID] = mapped_column(ForeignKey('advertisements.id'), index=True)
+    advertisement_revision: Mapped[int] = mapped_column(Integer)
+    kind: Mapped[str] = mapped_column(String(30), default='ANALYZE')
+    state: Mapped[str] = mapped_column(String(20), default='QUEUED', index=True)
+    stage: Mapped[str] = mapped_column(String(100), default='Ожидает обработки')
+    attempt: Mapped[int] = mapped_column(Integer, default=0)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    claim_token: Mapped[UUID | None] = mapped_column()
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    request_id: Mapped[UUID] = mapped_column()
+    result_asset_id: Mapped[UUID | None] = mapped_column(ForeignKey('assets.id'))
+    error: Mapped[dict | None] = mapped_column(JSON)
+
+
+class ExtractionResult(Base):
+    __tablename__ = 'extraction_results'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    job_id: Mapped[UUID | None] = mapped_column(ForeignKey('analysis_jobs.id'), unique=True)
+    advertisement_id: Mapped[UUID] = mapped_column(ForeignKey('advertisements.id'), index=True)
+    source_asset_id: Mapped[UUID] = mapped_column(ForeignKey('assets.id'))
+    parent_extraction_id: Mapped[UUID | None] = mapped_column(ForeignKey('extraction_results.id'))
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    pipeline_version: Mapped[str] = mapped_column(String(100))
+    original_ocr_text: Mapped[str | None] = mapped_column(Text)
+    analysis_text: Mapped[str] = mapped_column(Text)
+    hypotheses: Mapped[list] = mapped_column(JSON)
+    warnings: Mapped[list] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PropertyMatch(Base):
+    __tablename__ = 'property_matches'
+    __table_args__ = (UniqueConstraint('extraction_id', 'property_id', name='uq_extraction_property_match'),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    advertisement_id: Mapped[UUID] = mapped_column(ForeignKey('advertisements.id'), index=True)
+    property_id: Mapped[UUID] = mapped_column(ForeignKey('properties.id'))
+    extraction_id: Mapped[UUID] = mapped_column(ForeignKey('extraction_results.id'))
+    similarity: Mapped[float] = mapped_column(Float)
+    reasons: Mapped[list] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(20), default='PENDING')
+    revision: Mapped[int] = mapped_column(Integer, default=1)

@@ -1,4 +1,4 @@
-import { UpcomingView } from "@/components/workspace";
+import { ReviewView } from "@/components/analysis-workspace";
 export default function Page() {
-  return <UpcomingView kind="review" />;
+  return <ReviewView />;
 }

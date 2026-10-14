@@ -1,94 +1,74 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-Updated: 2026-10-14 22:46 +05:00 (Asia/Qyzylorda)
-Branch: main. Commit реализации: 05dbbfc. Текущий handoff commit см. git log -1; удалённый репозиторий не настроен, push/deploy не выполнялись.
-Current goal: первый вертикальный срез VERIFIED; следующий — изображение/OCR/извлечение/matching и ручная проверка.
-Owner: Codex; пользователь разрешил реализацию 14.10.2026 («окей гоу начнем реализовывать»).
+Updated: 2026-10-14 23:27 +05:00 (Asia/Qyzylorda).
+Branch: main. Текущую ревизию см. `git log -1`; удалённый репозиторий не настроен, push/deploy не выполнялись.
+Owner: Codex; реализация и продолжение разрешены пользователем. Общие подтверждения повторно не нужны.
 
-## Общая готовность
+## Текущее состояние
 
-**Первый срез реализован и проверен на живом PostgreSQL и через Docker Compose. Это не полный P0.** Доступно локально: http://localhost:3000. Credentials: игнорируемый `.local/credentials.txt`; пароль не публиковать. Контейнеры SAQ оставлены работающими; посторонние контейнеры не используются. Два AssetGuard-контейнера автоматически поднялись при запуске Docker Desktop и сразу были возвращены в остановленное состояние без удаления данных.
+**Два вертикальных среза реализованы и проверены локально. Полный P0 ещё не завершён.** Приложение: http://localhost:3000. Логин/пароль только в игнорируемом `.local/credentials.txt`, не печатать и не вводить в DOM автотестов. Контейнеры SAQ db/api/worker/frontend оставлены работающими; сторонние контейнеры не использовались.
 
-Есть 8 DEMO-объектов, 12 исходных DEMO-публикаций и дополнительные DEMO-записи browser/restart smoke. Все вымышленные документы/решения маркированы. API имеет 13 реализованных операций из целевых 35; остальные явно PLANNED в contracts/openapi.yaml. Нельзя выдавать фиктивные проверки seed за новую ручную проверку реального объекта.
+Рабочий путь: новый текст или PNG/JPEG → сохранённый оригинал/SHA-256/происхождение → явный анализ → durable PostgreSQL job/worker → Tesseract RU/KZ + правила + RapidFuzz → гипотезы/offsets/bbox → ручная проверка/исправление → точная привязка ЖК → доказательство → отдельное решение R2 → серверный риск/аудит. Ни OCR, ни matching сами не начисляют баллы.
 
-Статусы: NOT STARTED / IN PROGRESS / BLOCKED / VERIFIED. VERIFIED относится к названному объёму и фактической проверке, не к будущим частям модуля.
+Seed: 8 DEMO-объектов и 12 исходных публикаций; новые browser/OCR/restart DEMO-записи добавлены отдельно, seed их не сбрасывает. Синтетические A/B/C (35/yellow, 70/red, 10/green) сохранены; реальной проверкой они не являются. Browser-сценарий оставляет историю по DEMO Ертіс с итоговым отклонённым R2/0.
 
-## P0 MVP checklist
+Целевой контракт: 36 операций, из них 22 полностью доступны, 3 частично для R2, 11 PLANNED. Ручные доказательства/факторы остальных видов явно отклоняются 422. Основная документация текущего этапа — docs/IMPLEMENTATION_SLICE_02.md и ADR-002.
 
-| Блок | Статус | Файлы / доказательства | Что осталось |
+## P0 checklist
+
+| Блок | Статус | Проверено / файлы | Осталось |
 |---|---|---|---|
-| Architecture + API contract | IN PROGRESS | Архитектура/UX приняты как основа; docs и 13 operationId; OpenAPI validator и live DTO checks проходят | Реализовать ещё 22 целевых операции по срезам |
-| Seed ≥8 properties and ≥12 ads | VERIFIED | data/seed/fixtures.json, backend/app/seed.py; повтор seed не меняет записи; A/B/C с источниками | Другой ПК и UX включены в общую приёмку, не в готовность seed |
-| Create/import ad + source/time | IN PROGRESS | Новый текст, UTF-8 asset/SHA, nullable published_at, captured_at, server actor, audit, idempotency/concurrency, фактический restart Docker API VERIFIED | Изображения и URL-collector ещё отсутствуют |
-| One permitted HTML collector | BLOCKED | Разрешённый рекламный домен/пути ещё не выбраны; ссылка формы только сохраняется | Проверить правила/разрешение и реальный новый импорт; manual не закрывает этот пункт |
-| OCR RU/KZ on new image | NOT STARTED | Не подключён; модели не устанавливались | Tesseract rus+kaz+eng, worker, новый RU/KZ файл и метрики |
-| Extraction + matching | NOT STARTED | Нет готовых AI-ответов и нет имитации matching | Правила RU/KZ, RapidFuzz, фрагменты, выбор очереди |
-| Legal basis verification | IN PROGRESS | Карточка показывает датированный DEMO-документ и источник; UNKNOWN не создаёт R1 | Typed write/review и процедуры реальной проверки |
-| Risk R1–R6 + A/B/C tests | IN PROGRESS | backend/app/risk.py: все веса/зоны, дубли и статусы; 11 unit cases VERIFIED; сервер отдаёт 35/70/10 из БД | Ручное подтверждение с guards R1/R5, история/пересчёт через review |
-| Human review + audit | IN PROGRESS | Сессии/CSRF/роль и аудит создания публикации VERIFIED | Подтверждение/отклонение гипотез, документов, факторов и сигнала |
-| Dashboard / registry / map / review UX | IN PROGRESS | Next.js: обзор, поиск/фильтры, карточка/доказательства, реклама/форма; 4 browser-теста, визуальный desktop/mobile просмотр | Карта, split review, UX с 3–5 людьми, keyboard/zoom полная приёмка |
-| Signals + PDF | NOT STARTED | Меню честно показывает будущий этап | Snapshot/версии/decision/PDF/оговорка/шрифты |
-| End-to-end + clean setup + CI | IN PROGRESS | Первый срез: backend 23 passed, browser 4 passed; Docker build/up, migrations; workflow создан | Полный P0 E2E, другой ПК, реальный GitHub CI, freeze SHA и резерв демо |
+| Architecture/API | IN PROGRESS | 36 целевых операций с честным implementation status; OpenAPI и live schema tests | Реализовать оставшиеся операции и весь объём PARTIAL_R2 |
+| Seed 8/12 | VERIFIED | Аддитивный seed; A/B/C из БД, источники и DEMO | Не выдавать за реальную проверку |
+| Новый материал/происхождение | VERIFIED для текста/PNG/JPEG | Байт-в-байт оригинал, SHA-256, время сервера, nullable published_at, idempotency | TXT upload, разрешённый collector отдельно |
+| Один permitted collector | BLOCKED | Пользователь ответил: разрешённого сайта пока нет | Домен/URL, условия и реальный допустимый импорт; manual не закрывает пункт |
+| PostgreSQL jobs/worker | VERIFIED локально | SKIP LOCKED, lease/claim token, ограниченные попытки, fencing, queued job пережил замену API/worker | Нет heartbeat/HA/нагрузочной приёмки |
+| OCR RU/KZ | VERIFIED на двух новых синтетических баннерах | Tesseract 5.3.0 + rus/kaz/eng, реальные bbox, originals SHA; scripts/verify_ocr.py | Независимый image corpus ≥30, сложные/нечитаемые изображения и метрики |
+| Extraction/matching | IN PROGRESS | Правила/30 text cases, generic RapidFuzz candidates, ручной выбор | Независимые precision/recall/top-3; качество на реальных материалах |
+| Human review/audit | VERIFIED для гипотез/расшифровки/match/R2 | Версии, review value, причины/server actor, stale 409, история before/after | Проверка документов, остальные факторы и сигналы |
+| Risk R1–R6 | IN PROGRESS | Все веса/зоны и A/B/C; ручной R2 +25/0 и зависимый пересмотр | Typed evidence/guards R1/R3/R4/R5/R6, датированные проверки и документирование процедуры |
+| Legal basis | IN PROGRESS | Чтение синтетических документов; UNKNOWN не создаёт R1 | Typed writes/review, применимость по области/дате и независимый документ |
+| Dashboard/registry/review | IN PROGRESS | Реальные API, фильтры, карточки, split original/hypotheses, audit; mobile no overflow | Карта, keyboard/200% zoom, UX с 3–5 людьми |
+| Signals/PDF | NOT STARTED | Честно обозначены будущим этапом | Snapshot/decision/revision/PDF/оговорка/шрифты |
+| Полный E2E/второй ПК/CI | IN PROGRESS | 71 backend + 6 browser; Docker/модели/build; workflow создан | Полный P0 E2E, другой ПК, реальный GitHub CI, backup/restore, freeze SHA |
 
-## P1 / P2
+## Выполненные проверки
 
-P1 NOT STARTED: KZhK PDF import; LLM enrichment; близкие дубликаты; полный RU/KZ UI; экран здоровья источников. Идемпотентность и отсутствие повторного веса уже есть в первом срезе, не откладываются до P1.
+| Проверка | Реальный результат |
+|---|---|
+| Backend PostgreSQL | `cd backend; ..\.venv\Scripts\python.exe -m pytest -q`: **71 passed**, без warnings. Каждый запуск использует случайную test schema; public не очищался |
+| Concurrency/recovery | Две одновременные гипотезы/факторы одной revision дают 200/409; устаревшее ORM-состояние перечитывается после lock; late worker не публикует второй результат |
+| API/errors/security | Roles/CSRF/Origin, чужие IDs/DEMO scope, точный фрагмент, idempotency, invalid/truncated/MIME images, streamed body limit, unavailable/timeout OCR с сохранением оригинала |
+| OpenAPI | Валидатор документа и schemas реальных job/extraction/match/evidence/risk/audit responses |
+| Миграции | Исходная + аддитивная `996510abee9b`; Alembic check: No new upgrade operations detected |
+| Backend quality | Ruff check/format, pip check — без ошибок |
+| Frontend | build, typecheck, lint, format:check; npm audit — **0 vulnerabilities** |
+| Browser Docker | **6 passed**: первый срез плюс R2 evidence/confirm/reject (+25 → 0), настоящий KZ image OCR/bbox, mobile без overflow |
+| OCR smoke | Новый RU и KZ PNG вне seed: по 2 payment clauses/PENDING с bbox, original SHA идентичен; output/qa/ocr-verification.json |
+| OCR observations | CER RU 0.0541 / KZ 0.1026 на **двух чистых синтетических баннерах**, без заявления production accuracy. Потеря казахской диакритики явно показана |
+| Actual queue restart | Worker остановлен, новый PNG job сохранён QUEUED; API/worker пересозданы из новой сборки; SUCCEEDED, ровно одна версия, original SHA сохранён. `.local/queue-restart-check.json` |
+| Visual QA | Просмотрены review-ocr.png / review-r2.png; источники, статус, предупреждение и действия читаемы |
+| Retained state | Существующие public данные/исходные документы сохранены; credentials и runtime artifacts игнорируются Git |
 
-P2 NOT STARTED: инспекции/дрон, дополнительные источники, расширенная GIS и ведомственные интеграции. До основного P0 не начинать.
+Системные OCR-пакеты фактически установлены в Docker: tesseract 5.3.0-2, rus/kaz/eng 1:4.1.0-2. Apt packages не pinned по digest; Python/JS lock-файлы закреплены. GitHub CI не выполнялся: remote отсутствует. OCR failure/fencing unit-тесты используют управляемую замену распознавания; реальные RU/KZ задания проверены отдельно.
 
-## Проверенные реализации и команды
+## Решения и ограничения
 
-| Проверка | Реальный результат | Файлы |
-|---|---|---|
-| PostgreSQL / migration | Новая БД и начальная миграция применены; Alembic check: No new upgrade operations detected | backend/alembic/versions/7c3486b58495_initial_data_and_sessions.py |
-| Backend tests | `cd backend; ..\.venv\Scripts\python.exe -m pytest -q`: **23 passed**, последний прогон без warnings; реальные миграции в отдельной случайной test schema | backend/tests/* |
-| Backend lint/format | Ruff check проходит; format --check: 21 files already formatted | backend/pyproject.toml |
-| Contract | Полный OpenAPI validator; schema validation живых responses; неизвестные operationId не появились | backend/tests/test_contract.py |
-| Build / types / lint / format | npm run build/typecheck/lint/format:check проходят; production Next standalone проверен | frontend/package.json и lock |
-| Proxy failure | API остановлен: возвращается schema-valid 503 и совпадающий X-Request-ID; API восстановлен, browser 4/4 повторно прошёл | frontend/app/api/[...path]/route.ts |
-| Dependency checks | pip check: no broken requirements; полный npm audit: **0 vulnerabilities** | requirements*.txt, package-lock.json |
-| Browser E2E | **4 passed** на Docker-приложении: anonymous/login, dashboard/filter/evidence, draft/new text/reload, mobile no overflow | frontend/tests/workspace.spec.ts |
-| Visual QA | Просмотрены output/qa/dashboard.png, mobile.png и new-advertisement.png; читаемые статусы и источники, 390px без page overflow | Игнорируемый output/qa/ |
-| Docker | api/frontend образы собраны; `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait api frontend` успешно; API healthy | docker-compose*.yml, Dockerfiles |
-| Actual restart | Новый DEMO-текст → `docker compose restart api` → та же session/record/nullable date/captured_at/UTF-8 asset; PASS | .local/restart-check.json (игнорируется) |
-| Seed | Повтор аддитивный, не сбрасывает новые пользовательские записи | backend/app/seed.py |
+- PostgreSQL queue и worker из одной backend-сборки, без Redis/Celery: достаточно для объёма MVP; ADR-002.
+- Raw OCR и оригинал не перезаписываются. Исправление расшифровки — дочерняя версия; review — отдельное значение и аудит.
+- Изменение используемой гипотезы/расшифровки/привязки снимает зависимый CONFIRMED R2 в PENDING. Новый автоматический анализ сам не меняет уже проверенные факторы.
+- Текущий риск, уникальный фактор property/code; исторический as_of пока возвращает 400. Полные проверки R1/R5 и остальных кодов не реализованы — команды отклоняются.
+- Нет quotas/retention/антивируса, SSO/admin password UI/distributed rate limiting, HA/heartbeat, backup/restore acceptance. Orphan content-hash файл при DB rollback возможен. DB audit не криптографически неизменяемый.
+- 30 текстовых регрессий не являются независимым benchmark. Два новых OCR-баннера не заменяют ≥30 image corpus или реальную предметную проверку.
+- Proxy ограничивает PNG/JPEG body 10 MiB + 64 KiB overhead. При изменении backend MAX_UPLOAD_BYTES выше этого нужно синхронизировать proxy.
+- Diagnostic repr настроек показал локальный DB password: repr секретов отключён, пароль заменён и env/контейнеры обновлены. В Git секреты не добавлялись. Предыдущий риск DOM/trace уже закрыт API-auth автотестами.
 
-Backend-тесты используют отдельную schema test_<uuid> и удаляют только её; существующие public данные не сбрасывались. Browser-тесты создают новые DEMO-записи. Workflow ещё не запускался в GitHub: remote отсутствует. Чистый другой ПК, полный P0, реальные данные/реестры, OCR/collector/PDF и проверка людьми НЕ выполнены.
+## Следующее конкретное действие
 
-## Исправленные проблемы этой сессии
+Продолжить без повторного общего разрешения: typed загрузка/сохранение документов и legal basis review с областью/датой; затем evidence guards и ручные R1/R3/R4/R5/R6. Проверить UNKNOWN/применимое действительное основание, датированную стадию стройки для R3 и сравнимые измерения R5 на границе 19/20 п.п. Обновить contract status и tests по фактическому объёму. После этого — snapshots/решения сигналов и PDF. Collector остаётся BLOCKED до появления разрешённого источника; не подменять его ручным вводом.
 
-- TypeScript 7 несовместим с текущим typescript-eslint: закреплён совместимый TypeScript 6.0.3.
-- Уязвимый braces в цепочке eslint-config-next: выбран core/TypeScript ESLint без этой зависимости; итоговый npm audit = 0. Контроли типов/lint не отключены.
-- Mobile page overflow из-за абсолютной sr-only подписи таблицы: таблица получила собственный positioning context; browser regression проходит.
-- Один ранний failure snapshot Playwright содержал локальный пароль формы: credentials заменены, прежние sessions отозваны, snapshot очищен. Тесты теперь авторизуются через API и не кладут пароль в DOM/trace. Новый пароль остаётся только в приватной конфигурации/локальном файле.
-- Windows EBUSY при сборке поверх работающего standalone server: локальный сервер останавливается до сборки; рецепт записан в README. Первые browser-прогоны во время рестарта API не считались успешной проверкой; финальный согласованный прогон 4/4 прошёл.
+## Продолжение сессии
 
-## Известные ограничения первого среза
+Сначала прочитать AGENTS/этот статус/docs среза 02, `git status`, `git log`, текущие файлы/tests. Не сбрасывать public/volume/storage или пользовательские изменения. Все up команды текущего dev окружения — с `-f docker-compose.yml -f docker-compose.dev.yml`, чтобы не потерять порт 55432. Не запускать Docker daemon заново без необходимости и не поднимать сторонние остановленные контейнеры. Перед frontend build останавливать host standalone server, если он есть; Docker UI на 3000 уже работает. Не печатать `.env`/credentials. Не публиковать/не деплоить без явного запроса.
 
-См. docs/IMPLEMENTATION_SLICE_01.md: нет обработки chunked размера тела сверх проверки Content-Length, distributed throttling, session retention и admin управления паролями; orphan content-hash файл возможен при rollback БД. При реальном внешнем deploy эти ограничения требуют отдельного закрытия. Исторический as_of возвращает явную 400. Текущий scorer не является юридическим верификатором.
-
-## Блокеры и открытые вопросы
-
-1. Collector: нет согласованного разрешённого источника. Нужны домен/пути/правила и фактический импорт.
-2. Процедуры R1/R4/R6 и полномочия реального пилота предметно не согласованы; на демо только явные синтетические документы. Полная актуальная редакция закона не проверялась повторно.
-3. «ИГК», точный GitHub, состав команды/часы, второй ПК, роли проверяющих и правила/timezone отсечки не определены.
-4. OCR/PDF системные зависимости ещё не устанавливались и не проверялись; это задача следующего среза, не доказанная готовность окружения.
-
-## Next concrete action
-
-Следующий вертикальный срез без нового запроса общего разрешения: добавить upload PNG/JPEG с limits, контролируемый worker/DB jobs, Tesseract rus+kaz+eng, сохранённый OCR/фрагменты, правила оплаты и RapidFuzz-кандидаты; экран оригинал ↔ гипотеза и отдельный выбор точной очереди. До начисления баллов необходимо реализовать ручной review, evidence guards и аудит. Разрешённый источник collector искать ранней независимой задачей; массовый сбор/LLM/дрон не начинать.
-
-## Last session handoff
-
-Date: 14.10.2026. Executor: Codex.
-Completed: первый срез, Docker runtime, auth, seed, реестр/карточки/доказательства, новый текст и restart persistence, тесты и документация.
-Runtime: Docker SAQ UI http://localhost:3000; API внутренний; PostgreSQL dev binding localhost:55432. Host API/UI процессы остановлены. AssetGuard не работает.
-Commit реализации: 05dbbfc (feat: implement first SAQ QURYLYS vertical slice). Этот статус сохраняется отдельным docs commit; remote/push/deploy отсутствуют.
-Unfinished: следующий OCR/review срез и остальной P0; не выдавать текущую оболочку за готовое решение кейса.
-
-## История сессий
-
-| Дата | Исполнитель | Результат | Следующий шаг |
-|---|---|---|---|
-| 14.10.2026, планирование | Codex | Четыре источника изучены, требования/архитектура/UX/OpenAPI сохранены | Согласование пользователя |
-| 14.10.2026, реализация | Codex | Разрешение получено, первый срез и Docker/browser/restart проверки выполнены | Изображение → OCR → фрагменты → matching → ручная проверка |
+История: 05dbbfc — первый срез, 2ecc6ba — его checkpoint; текущий OCR/review commit см. git log. Исходные PDF/DOCX/CODEX_TZ/шаблон статуса не изменены. Публикация в GitHub, внешний deploy, отправка материалов и юридическая приёмка не выполнялись.
