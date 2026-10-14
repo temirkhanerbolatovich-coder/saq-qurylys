@@ -1,7 +1,7 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-Updated: 2026-10-14 22:43 +05:00 (Asia/Qyzylorda)
-Branch: main. Первый локальный commit готовится; удалённый репозиторий не настроен, push/deploy не выполнялись.
+Updated: 2026-10-14 22:46 +05:00 (Asia/Qyzylorda)
+Branch: main. Commit реализации: 05dbbfc. Текущий handoff commit см. git log -1; удалённый репозиторий не настроен, push/deploy не выполнялись.
 Current goal: первый вертикальный срез VERIFIED; следующий — изображение/OCR/извлечение/matching и ручная проверка.
 Owner: Codex; пользователь разрешил реализацию 14.10.2026 («окей гоу начнем реализовывать»).
 
@@ -83,7 +83,7 @@ Backend-тесты используют отдельную schema test_<uuid> и
 Date: 14.10.2026. Executor: Codex.
 Completed: первый срез, Docker runtime, auth, seed, реестр/карточки/доказательства, новый текст и restart persistence, тесты и документация.
 Runtime: Docker SAQ UI http://localhost:3000; API внутренний; PostgreSQL dev binding localhost:55432. Host API/UI процессы остановлены. AssetGuard не работает.
-Commit: первый локальный commit фиксируется после финальной проверки; remote/push/deploy отсутствуют.
+Commit реализации: 05dbbfc (feat: implement first SAQ QURYLYS vertical slice). Этот статус сохраняется отдельным docs commit; remote/push/deploy отсутствуют.
 Unfinished: следующий OCR/review срез и остальной P0; не выдавать текущую оболочку за готовое решение кейса.
 
 ## История сессий
