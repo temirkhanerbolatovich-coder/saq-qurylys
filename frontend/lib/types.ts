@@ -5,6 +5,7 @@ export type User = {
   role: "analyst" | "viewer";
 };
 export type Risk = {
+  revision: number;
   score: number;
   zone: "GREEN" | "YELLOW" | "RED";
   confirmed_codes: string[];
@@ -165,4 +166,47 @@ export type Evidence = {
         reason: string;
       }[]
     | null;
+};
+
+export type Signal = {
+  id: string;
+  property_id: string;
+  version: number;
+  revision: number;
+  previous_signal_id: string | null;
+  state: "DRAFT" | "CONFIRMED" | "RETURNED";
+  is_stale: boolean;
+  risk_snapshot: Risk;
+  created_at: string;
+  created_by: User;
+  is_demo: boolean;
+  pdf_state: "NOT_REQUESTED" | "QUEUED" | "READY" | "FAILED";
+  pdf_job_id: string | null;
+};
+
+export type SignalEvidence = Evidence & {
+  kind: string;
+  source_url: string | null;
+  advertisement_id: string | null;
+  fragment: { quote: string } | null;
+};
+
+export type SignalDetail = {
+  signal: Signal;
+  snapshot: {
+    property: Property;
+    legal_bases: PropertyDetail["legal_bases"];
+    factors: PropertyDetail["factors"];
+    evidence: SignalEvidence[];
+    assets: Asset[];
+    unknown_information: string[];
+    disclaimer: string;
+  };
+  decisions: {
+    id: string;
+    action: "CONFIRM" | "RETURN";
+    actor: User;
+    decided_at: string;
+    reason: string;
+  }[];
 };

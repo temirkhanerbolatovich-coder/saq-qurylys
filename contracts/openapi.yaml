@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.6.0-mvp",
-    "description": "SAQ QURYLYS target contract with per-operation status. Registry/OCR, dated legal document review and manual R1-R6 implemented. R1 is an all-mechanism dated human absence review; empty registry results do not prove absence. Signals/PDF and permitted collector remain incomplete. JSON serialization is valid YAML 1.2."
+    "version": "0.7.0-mvp",
+    "description": "SAQ QURYLYS target contract with per-operation status. Registry/OCR, dated legal review, manual R1-R6, immutable signals, human decisions and durable WeasyPrint PDF jobs implemented. Permitted collector remains planned. JSON is valid YAML 1.2."
   },
   "servers": [
     {
@@ -2422,7 +2422,7 @@
             "description": ""
           }
         ],
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "post": {
         "operationId": "createSignal",
@@ -2492,7 +2492,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/api/v1/signals/{id}": {
@@ -2557,7 +2557,7 @@
             }
           }
         ],
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/api/v1/signals/{id}/decision": {
@@ -2638,7 +2638,7 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/api/v1/signals/{id}/pdf": {
@@ -2723,7 +2723,7 @@
             }
           }
         ],
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "post": {
         "operationId": "renderSignalPdf",
@@ -2792,7 +2792,7 @@
             "$ref": "#/components/parameters/IdempotencyKey"
           }
         ],
-        "x-implementation-status": "PLANNED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/api/v1/extractions/{id}/transcription": {
@@ -5648,6 +5648,17 @@
               "READY",
               "FAILED"
             ]
+          },
+          "pdf_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -5662,7 +5673,8 @@
           "created_at",
           "created_by",
           "is_demo",
-          "pdf_state"
+          "pdf_state",
+          "pdf_job_id"
         ]
       },
       "SignalSnapshot": {
@@ -5703,6 +5715,12 @@
             "enum": [
               "Сигнал необходимости проверки; не устанавливает факт правонарушения"
             ]
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Asset"
+            }
           }
         },
         "required": [
@@ -5711,7 +5729,8 @@
           "factors",
           "evidence",
           "unknown_information",
-          "disclaimer"
+          "disclaimer",
+          "assets"
         ]
       },
       "SignalDetail": {

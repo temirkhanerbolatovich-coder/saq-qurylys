@@ -1,4 +1,4 @@
-import { UpcomingView } from "@/components/workspace";
+import { SignalsView } from "@/components/signals-workspace";
 export default function Page() {
-  return <UpcomingView kind="signals" />;
+  return <SignalsView />;
 }

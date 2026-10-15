@@ -58,7 +58,8 @@ def claim_job(sessions, settings):
         job.attempt += 1
         job.claim_token = uuid4()
         job.lease_until = now + timedelta(seconds=settings.job_lease_seconds)
-        job.state, job.stage, job.updated_at = 'RUNNING', 'Распознавание и извлечение условий', now
+        job.state, job.updated_at = 'RUNNING', now
+        job.stage = 'Генерация PDF' if job.kind == 'RENDER_PDF' else 'Распознавание и извлечение условий'
         return job.id, job.claim_token, job.advertisement_id, job.attempt
 
 
@@ -67,6 +68,12 @@ def process_one(sessions, settings):
     if not claimed:
         return False
     job_id, token, ad_id, attempt = claimed
+    with sessions() as db:
+        kind = db.get(AnalysisJob, job_id).kind
+    if kind == 'RENDER_PDF':
+        from app.signal_pdf import process_pdf_job
+
+        return process_pdf_job(sessions, settings, job_id, token, attempt)
     failure, result = None, None
     try:
         if attempt > settings.job_max_attempts:

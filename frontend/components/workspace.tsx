@@ -40,6 +40,7 @@ import { Button } from "@/components/ui/button";
 import { AppealReview } from "@/components/appeal-review";
 import { ConstructionReview } from "@/components/construction-review";
 import { LegalAbsenceReview } from "@/components/legal-absence-review";
+import { CreateSignalButton } from "@/components/signals-workspace";
 import {
   LegalBasisCreate,
   LegalBasisDecision,
@@ -141,7 +142,6 @@ export function Providers({ children }: { children: ReactNode }) {
               >
                 <Icon size={18} />
                 {label}
-                {href === "/signals" && <span className="soon">Далее</span>}
               </Link>
             ))}
           </nav>
@@ -614,6 +614,7 @@ export function PropertyView({ id }: { id: string }) {
       <div className="detail-grid">
         <section className="panel padded">
           <h2>Сведения об объекте</h2>
+          <CreateSignalButton property={row} onChange={detail.reload} />
           <dl>
             <dt>Застройщик</dt>
             <dd>

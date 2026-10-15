@@ -155,8 +155,10 @@ class Command(Base):
 class AnalysisJob(Base):
     __tablename__ = 'analysis_jobs'
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    advertisement_id: Mapped[UUID] = mapped_column(ForeignKey('advertisements.id'), index=True)
-    advertisement_revision: Mapped[int] = mapped_column(Integer)
+    advertisement_id: Mapped[UUID | None] = mapped_column(ForeignKey('advertisements.id'), index=True)
+    advertisement_revision: Mapped[int | None] = mapped_column(Integer)
+    signal_id: Mapped[UUID | None] = mapped_column(ForeignKey('signals.id'), index=True)
+    target_revision: Mapped[int | None] = mapped_column(Integer)
     kind: Mapped[str] = mapped_column(String(30), default='ANALYZE')
     state: Mapped[str] = mapped_column(String(20), default='QUEUED', index=True)
     stage: Mapped[str] = mapped_column(String(100), default='Ожидает обработки')
@@ -198,3 +200,26 @@ class PropertyMatch(Base):
     reasons: Mapped[list] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(String(20), default='PENDING')
     revision: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class Signal(Base):
+    __tablename__ = 'signals'
+    __table_args__ = (
+        UniqueConstraint('property_id', 'version', name='uq_property_signal_version'),
+        UniqueConstraint('previous_signal_id', name='uq_signal_previous'),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    property_id: Mapped[UUID] = mapped_column(ForeignKey('properties.id'), index=True)
+    previous_signal_id: Mapped[UUID | None] = mapped_column(ForeignKey('signals.id'))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    state: Mapped[str] = mapped_column(String(20), default='DRAFT')
+    # Snapshots are assigned once. Decisions append through a separate JSON column.
+    snapshot: Mapped[dict] = mapped_column(JSON)
+    decisions: Mapped[list] = mapped_column(JSON, default=list)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    created_by_details: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    pdf_state: Mapped[str] = mapped_column(String(20), default='NOT_REQUESTED')
+    pdf_asset_id: Mapped[UUID | None] = mapped_column(ForeignKey('assets.id'))
+    pdf_job_id: Mapped[UUID | None] = mapped_column()

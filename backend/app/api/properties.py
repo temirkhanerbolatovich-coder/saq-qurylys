@@ -8,7 +8,8 @@ from starlette.exceptions import HTTPException
 
 from app import dto
 from app.dependencies import DB, Actor, get_property
-from app.models import Advertisement, ExtractionResult, Property, utcnow
+from app.models import Advertisement, ExtractionResult, Property, Signal, utcnow
+from app.signals import signal_view
 from app.views import factor_views, legal_views, property_view, unknown_information
 
 router = APIRouter()
@@ -117,8 +118,20 @@ def dashboard(
         'zones': {value: sum(row.risk.zone == value for row in rows) for value in ['GREEN', 'YELLOW', 'RED']},
         'new_advertisements': db.scalar(select(func.count()).select_from(query.subquery())),
         'pending_hypotheses': pending,
-        'pending_signals': 0,
+        'pending_signals': db.scalar(
+            select(func.count())
+            .select_from(Signal)
+            .where(Signal.state == 'DRAFT', Signal.property_id.in_([row.id for row in rows]))
+        ),
         'unknown_legal_bases': sum(row.legal_verification_status in {'UNKNOWN', 'PENDING'} for row in rows),
-        'latest_signals': [],
+        'latest_signals': [
+            signal_view(db, item).model_dump(mode='json')
+            for item in db.scalars(
+                select(Signal)
+                .where(Signal.property_id.in_([row.id for row in rows]))
+                .order_by(Signal.created_at.desc())
+                .limit(5)
+            )
+        ],
         'calculated_at': utcnow().isoformat(),
     }
