@@ -219,6 +219,7 @@ export function Zone({ risk }: { risk: Property["risk"] }) {
 export function useData<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState("");
+  const [resolvedPath, setResolvedPath] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
@@ -226,13 +227,22 @@ export function useData<T>(path: string) {
       .then((value) => {
         setData(value);
         setError("");
+        setResolvedPath(path);
       })
       .catch((e) => {
-        if (e.name !== "AbortError") setError(e.message);
+        if (e.name !== "AbortError") {
+          setError(e.message);
+          setResolvedPath(path);
+        }
       });
     return () => controller.abort();
   }, [path, version]);
-  return { data, error, reload: () => setVersion((value) => value + 1) };
+  return {
+    data,
+    error,
+    resolvedPath,
+    reload: () => setVersion((value) => value + 1),
+  };
 }
 
 export function LoadState({
@@ -933,7 +943,9 @@ export function AdvertisementView({ id }: { id: string }) {
       <div className="object-summary">
         <Demo value={ad.is_demo} />
         <span>
-          {ad.status === "NEW" ? "Новый · ожидает анализа" : ad.status}
+          {ad.status === "NEW"
+            ? "Новый · ожидает анализа"
+            : statusLabel(ad.status)}
         </span>
       </div>
       <section className="panel padded">
@@ -981,6 +993,7 @@ export function NewAdvertisementView() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState<Advertisement | null>(null);
+  const savedPanel = useRef<HTMLElement>(null);
   const [draft, setDraft] = useState({
     text: "",
     source_label: "",
@@ -990,6 +1003,9 @@ export function NewAdvertisementView() {
   });
   const key = useRef<string | null>(null);
   const router = useRouter();
+  useEffect(() => {
+    if (saved) savedPanel.current?.focus();
+  }, [saved]);
   useEffect(() => {
     const value = sessionStorage.getItem("saq-ad-draft");
     if (value) {
@@ -1040,16 +1056,31 @@ export function NewAdvertisementView() {
           description="Оригинал и происхождение сохранены в базе данных."
           action={false}
         />
-        <section className="panel padded success">
+        <section
+          className="panel padded success"
+          aria-label="Результат сохранения публикации"
+          tabIndex={-1}
+          ref={savedPanel}
+        >
           <Check size={32} />
           <h2>Готово к следующему этапу</h2>
           <p>
             Зафиксировано: {date(saved.captured_at)}. Правовые выводы и факторы
             не начислялись.
           </p>
-          <Button onClick={() => router.push(`/advertisements/${saved.id}`)}>
-            Открыть публикацию <ArrowRight size={16} />
-          </Button>
+          <div className="success-actions">
+            <Button asChild>
+              <Link href={`/review?advertisement_id=${saved.id}`}>
+                Перейти к проверке <ArrowRight size={16} />
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/advertisements/${saved.id}`)}
+            >
+              Открыть публикацию
+            </Button>
+          </div>
         </section>
       </>
     );
@@ -1071,18 +1102,33 @@ export function NewAdvertisementView() {
           <Link href="/advertisements/upload">Файл · PNG / JPEG / TXT</Link>
         </div>
         <form onSubmit={submit}>
+          <div className="form-section-heading">
+            <span className="section-index" aria-hidden="true">
+              01
+            </span>
+            <div>
+              <h2>Материал и происхождение</h2>
+              <p>Два обязательных поля. Сохраните формулировки оригинала.</p>
+            </div>
+          </div>
           <label htmlFor="source">Источник / описание происхождения</label>
           <input
             id="source"
+            aria-describedby="source-help"
             required
             maxLength={300}
             value={draft.source_label}
             onChange={(e) => update("source_label", e.target.value)}
             placeholder="Например: собственный DEMO-баннер"
           />
+          <p id="source-help" className="field-help">
+            Где и кем получен материал: собственный баннер, публичная страница
+            или предоставленный документ.
+          </p>
           <label htmlFor="ad-text">Оригинальный текст</label>
           <textarea
             id="ad-text"
+            aria-describedby="ad-text-count"
             required
             maxLength={100000}
             rows={8}
@@ -1090,6 +1136,18 @@ export function NewAdvertisementView() {
             onChange={(e) => update("text", e.target.value)}
             placeholder="Вставьте текст публикации без изменений…"
           />
+          <p id="ad-text-count" className="field-help text-count">
+            {draft.text.length.toLocaleString("ru-RU")} / 100 000 символов
+          </p>
+          <div className="form-section-heading">
+            <span className="section-index" aria-hidden="true">
+              02
+            </span>
+            <div>
+              <h2>Контекст публикации</h2>
+              <p>Необязательные сведения. Неизвестную дату оставьте пустой.</p>
+            </div>
+          </div>
           <div className="form-columns">
             <div>
               <label htmlFor="url">

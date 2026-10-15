@@ -37,6 +37,12 @@ const pdfLabels: Record<Signal["pdf_state"], string> = {
   FAILED: "Генерация PDF завершилась ошибкой",
 };
 
+function signalVersionUrl(search: string, signalId: string) {
+  const next = new URLSearchParams(search);
+  next.set("signal_id", signalId);
+  return `/signals?${next.toString()}`;
+}
+
 // A failed network response can be retried with the same command key.
 function useCommandKey() {
   const current = useRef<{ payload: string; value: string } | null>(null);
@@ -122,17 +128,27 @@ export function CreateSignalButton({
 export function SignalsView() {
   const params = useSearchParams();
   const router = useRouter();
-  const [state, setState] = useState(params.get("state") || "");
-  const [stale, setStale] = useState(params.get("is_stale") || "");
-  const [propertyId, setPropertyId] = useState(params.get("property_id") || "");
-  const [page, setPage] = useState(1);
+  const state = params.get("state") || "";
+  const stale = params.get("is_stale") || "";
+  const propertyId = params.get("property_id") || "";
+  const requestedPage = Number(params.get("page") || 1);
+  const page =
+    Number.isSafeInteger(requestedPage) && requestedPage > 0
+      ? requestedPage
+      : 1;
   const registry = useData<Page<Property>>("/properties?page_size=100");
   const query = new URLSearchParams({ page: String(page), page_size: "25" });
   if (state) query.set("state", state);
   if (stale) query.set("is_stale", stale);
   if (propertyId) query.set("property_id", propertyId);
-  const queue = useData<Page<Signal>>(`/signals?${query}`);
-  const id = params.get("signal_id") || queue.data?.items[0]?.id;
+  const queuePath = `/signals?${query}`;
+  const queue = useData<Page<Signal>>(queuePath);
+  // A new filter must not present the previous result as its matching queue.
+  const queueError = queue.resolvedPath === queuePath ? queue.error : "";
+  const queueData =
+    queue.resolvedPath === queuePath && !queueError ? queue.data : null;
+  const id = params.get("signal_id") || queueData?.items[0]?.id;
+  const firstFilter = useRef<HTMLSelectElement>(null);
   const detailPanel = useRef<HTMLDivElement>(null);
   const focusRequested = useRef(false);
   const focusDetail = useCallback(() => {
@@ -147,10 +163,26 @@ export function SignalsView() {
     });
     return () => cancelAnimationFrame(frame);
   }, [id, focusDetail]);
-  function filter(change: () => void) {
-    change();
-    setPage(1);
-    router.replace("/signals", { scroll: false });
+  function filter(name: string, value: string) {
+    const next = new URLSearchParams(params);
+    if (value) next.set(name, value);
+    else next.delete(name);
+    if (name !== "page") next.delete("page");
+    next.delete("signal_id");
+    router.push(`/signals?${next.toString()}`, { scroll: false });
+  }
+  function resetFilters() {
+    const next = new URLSearchParams(params);
+    for (const name of [
+      "state",
+      "is_stale",
+      "property_id",
+      "page",
+      "signal_id",
+    ])
+      next.delete(name);
+    router.push(`/signals?${next.toString()}`, { scroll: false });
+    requestAnimationFrame(() => firstFilter.current?.focus());
   }
   return (
     <>
@@ -167,12 +199,17 @@ export function SignalsView() {
       )}
       <div className="signals-layout">
         <section className="panel padded signals-queue">
+          <div className="queue-heading">
+            <h2>Очередь сигналов</h2>
+            <p className="muted">Фильтры и страница сохраняются в ссылке.</p>
+          </div>
           <div className="review-form signals-filterbar">
             <label htmlFor="signal-property">Объект сигнала</label>
             <select
               id="signal-property"
+              ref={firstFilter}
               value={propertyId}
-              onChange={(e) => filter(() => setPropertyId(e.target.value))}
+              onChange={(e) => filter("property_id", e.target.value)}
             >
               <option value="">Все объекты</option>
               {registry.data?.items.map((property) => (
@@ -185,7 +222,7 @@ export function SignalsView() {
             <select
               id="signal-state"
               value={state}
-              onChange={(e) => filter(() => setState(e.target.value))}
+              onChange={(e) => filter("state", e.target.value)}
             >
               <option value="">Все статусы</option>
               {Object.entries(stateLabels).map(([value, label]) => (
@@ -198,23 +235,26 @@ export function SignalsView() {
             <select
               id="signal-stale"
               value={stale}
-              onChange={(e) => filter(() => setStale(e.target.value))}
+              onChange={(e) => filter("is_stale", e.target.value)}
             >
               <option value="">Все версии</option>
               <option value="false">Актуальные для решения</option>
               <option value="true">Устаревшие</option>
             </select>
           </div>
-          {registry.error && <Notice error={registry.error} />}
-          {queue.error && (
-            <LoadState error={queue.error} retry={queue.reload} />
+          {(state || stale || propertyId) && (
+            <Button variant="ghost" type="button" onClick={resetFilters}>
+              Сбросить фильтры сигналов
+            </Button>
           )}
-          {queue.data ? (
+          {registry.error && <Notice error={registry.error} />}
+          {queueError && <LoadState error={queueError} retry={queue.reload} />}
+          {queueData ? (
             <>
-              <p>Найдено сигналов: {queue.data.total}</p>
-              {queue.data.items.length ? (
+              <p>Найдено сигналов: {queueData.total}</p>
+              {queueData.items.length ? (
                 <div className="candidate-list" aria-label="Очередь сигналов">
-                  {queue.data.items.map((signal) => (
+                  {queueData.items.map((signal) => (
                     <article
                       className="candidate signal-queue-item"
                       key={signal.id}
@@ -235,9 +275,12 @@ export function SignalsView() {
                         variant="outline"
                         onClick={() => {
                           focusRequested.current = true;
-                          router.push(`/signals?signal_id=${signal.id}`, {
-                            scroll: false,
-                          });
+                          router.push(
+                            signalVersionUrl(params.toString(), signal.id),
+                            {
+                              scroll: false,
+                            },
+                          );
                           if (id === signal.id) {
                             requestAnimationFrame(focusDetail);
                             focusRequested.current = false;
@@ -260,12 +303,12 @@ export function SignalsView() {
                 label="Страницы сигналов"
                 page={page}
                 pageSize={25}
-                total={queue.data.total}
-                onPageChange={setPage}
+                total={queueData.total}
+                onPageChange={(nextPage) => filter("page", String(nextPage))}
               />
             </>
           ) : (
-            !queue.error && <p role="status">Загрузка сигналов…</p>
+            !queueError && <p role="status">Загрузка сигналов…</p>
           )}
         </section>
         <div
@@ -274,6 +317,14 @@ export function SignalsView() {
           ref={detailPanel}
           tabIndex={-1}
         >
+          {params.get("signal_id") &&
+            queueData &&
+            !queueData.items.some((signal) => signal.id === id) && (
+              <p className="notice">
+                Открыта версия по ссылке. Фильтры ограничивают очередь, а не
+                сохранённый снимок этой версии.
+              </p>
+            )}
           {id && <SignalCard key={id} id={id} onChange={queue.reload} />}
         </div>
       </div>
@@ -282,6 +333,7 @@ export function SignalsView() {
 }
 
 function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
+  const params = useSearchParams();
   const { user } = useContext(Auth);
   const writable = user?.role === "analyst";
   const router = useRouter();
@@ -351,7 +403,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
         previous_signal_id: id,
         expected_risk_revision: current.property.risk.revision,
       });
-      if (result) router.push(`/signals?signal_id=${result.id}`);
+      if (result) router.push(signalVersionUrl(params.toString(), result.id));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -644,14 +696,14 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
       {row.previous_signal_id && (
         <Link
           className="text-link"
-          href={`/signals?signal_id=${row.previous_signal_id}`}
+          href={signalVersionUrl(params.toString(), row.previous_signal_id)}
         >
           Предыдущая версия
         </Link>
       )}
       {history.data?.items.map((version) => (
         <p key={version.id}>
-          <Link href={`/signals?signal_id=${version.id}`}>
+          <Link href={signalVersionUrl(params.toString(), version.id)}>
             Версия {version.version}
           </Link>{" "}
           · {stateLabels[version.state]}

@@ -14,6 +14,7 @@
 
 ## Качество и воспроизводимость
 
+- [x] Улучшить путь материала к проверке и signals: группировка форм/hints/file size, прямой review/focus, четыре этапа с фактическим count, URL фильтры/history и запрет показа предыдущей очереди. **35 локальных browser tests passed**, responsive/console/static/build проверены; это технический результат, не UX-приёмка людьми.
 - [x] Внедрить постоянный repo Skill UI UX Pro Max, проверить Codex discovery/search, закрепить [каталог компонентов](UI_COMPONENTS.md) и [UI workflow](UI_IMPLEMENTATION_PLAN.md) в AGENTS. Общие pagination/table, reset filters, RU/KZ/reduced-motion regression; 30 локальных browser tests passed. Подробные результаты/свежая CI-ревизия — PROJECT_STATUS.
 - [x] Создать и реализовать [дизайн-систему](DESIGN_SYSTEM.md), [UX-рекомендации](UX_GUIDELINES.md) и [UI-аудит](UI_AUDIT.md). Проверить 375/768/1024/1440 px, отсутствие page overflow, keyboard/focus, loading/empty/error и контраст. Это техническая проверка интерфейса, не приёмка людьми или полная WCAG-сертификация.
 - [x] Создать и измерить новый synthetic corpus вне seed: 36 изображений, RU/KZ поровну, 32 читаемых (16 positive/16 negative), 4 нечитаемых, отдельный каталог 8 объектов. Автор не читал extractor/tests/seed; первичный baseline и post-fix case records сохранены. После исправления алиасов precision 80%, recall 75%, top-3 18/24; [методика и результаты](OCR_EVALUATION.md). Это измерительный этап, а не независимая внешняя приёмка.

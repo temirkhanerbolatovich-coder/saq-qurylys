@@ -71,6 +71,23 @@ Evidence (ignored): `.local/ui-infrastructure/{focused,browser-full,build-final,
 
 Открыты: UX 3–5 людьми, screen reader, touch devices, KZ human review и legacy CSS consolidation. Тёмная тема только предусмотрена semantic tokens, не реализована. Dialog/toast/Storybook и новая server sorting не добавлены без продуктового сценария; их отсутствие не скрывается под claims полной установки UI suite.
 
+## UX-блок: материал → проверка → сигналы
+
+Исходная ревизия `1577cac`. Выявлены лишний переход после сохранения текста (карточка → review), отсутствие понятной карты длинного review и потери фильтров сигналов при reload/открытии версии. Прежний useData сохранял data во время смены path, из-за чего очередь могла временно показывать старые строки под новым фильтром.
+
+Реализованы прямой Next Link в review (анализ остаётся отдельным действием), фокус результата сохранения, две смысловые группы в text/file формах, связанные hints/счётчик текста/имя и размер выбранного файла/aria-invalid для oversize. На review четыре anchor-этапа с фактическим count принятых/исправленных/отклонённых hypotheses, объяснениями готовности match/R2 и архивной версии; формы не unmount. Primary review относится к текущему материалу; добавление нового остаётся в разделе рекламы. Viewer получает описание ожидания аналитика, без кнопки запуска.
+
+В signals state/property_id/is_stale/page/signal_id хранятся в URL; выбор/создание/история версии сохраняют фильтры, Back/reload восстанавливают контекст. При смене фильтра page/выбранный id сбрасываются. `useData.resolvedPath` позволяет скрыть чужую текущему запросу очередь и показать loading/error; прежнее поведение остальных callers сохранено. Прямая версия вне фильтрованной очереди подписана отдельно. Это не изменение API/ролей/решений/снимков.
+
+Проверки 15.10.2026:
+
+- Финальный `npm run test:e2e` — **35 passed (1.1m)** с реальными OCR/R1–R6/сигналами/PDF. Новые 5 tests: прямой переход без автоанализа/с сохранением текста; выбор/oversize файла без upload; steps/count/focus/сохранение причины; URL/history/reload; отсутствие прежней очереди при удержанном запросе. Viewer — presentation mock auth/me, не серверная приёмка роли.
+- Focused 5/5 (11.3s) до последней viewer-copy; полный финальный прогон включает эту copy и проверку viewer. Первые отказы новых tests были преждевременным чтением URL/Back до завершения Next navigation; ожидания исправлены. Не ослаблялись существующие API assertions.
+- Повторены **28 authenticated + 4 login responsive observations** на 375/768/1024/1440: page overflow=0, authenticated pageerror=0, min measured text=12. Визуально просмотрены финальные review desktop/mobile, forms desktop/tablet/mobile и signals desktop; helpers приближены к полям, конкурирующая primary на review убрана.
+- `npm run typecheck`, `lint`, `format:check`, `npm audit --audit-level=high` (**0 vulnerabilities**), production Compose build frontend — passed. Контрастные token pairs и keyboard regressions входят в полный browser suite. Новый zoom/screen-reader/user test отдельно не выполнялся; прежняя zoom-проверка остаётся исторической.
+
+Evidence (ignored): `.local/ux-flow/{focused-final,browser-final,responsive-final,build-final}.log`, `.local/ui-design-after.json`, `output/design/after/*`. Exact-SHA GitHub CI фиксируется после публикации в PROJECT_STATUS. Внешняя приёмка ниже остаётся открытой.
+
 ## Внешняя приёмка
 
 Нужны UX-сессии с 3–5 аналитиками/читателями, проверка KZ/длинных имён, screen reader на целевой Windows-сборке и реальные touch devices. Визуальный аудит и функциональные тесты не устанавливают полное соответствие WCAG 2.2 AA.

@@ -31,6 +31,7 @@ export function FileUploadView() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const key = useRef(crypto.randomUUID());
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,6 +78,15 @@ export function FileUploadView() {
             key.current = crypto.randomUUID();
           }}
         >
+          <div className="form-section-heading">
+            <span className="section-index" aria-hidden="true">
+              01
+            </span>
+            <div>
+              <h2>Оригинал и происхождение</h2>
+              <p>Укажите источник и выберите один исходный файл.</p>
+            </div>
+          </div>
           <label htmlFor="image-source">Источник / происхождение</label>
           <input
             id="image-source"
@@ -87,11 +97,38 @@ export function FileUploadView() {
           <label htmlFor="image-file">Оригинальный PNG / JPEG / TXT</label>
           <input
             id="image-file"
+            aria-describedby="image-file-help image-file-selection"
+            aria-invalid={
+              selectedFile ? selectedFile.size > 10_485_760 : undefined
+            }
             type="file"
             name="file"
             accept="image/png,image/jpeg,text/plain,.txt"
+            onChange={(event) =>
+              setSelectedFile(event.currentTarget.files?.[0] || null)
+            }
             required
           />
+          <p id="image-file-help" className="field-help">
+            PNG, JPEG или UTF-8 TXT, не больше 10 МБ. PDF для рекламного OCR не
+            поддерживается.
+          </p>
+          <p id="image-file-selection" className="field-help file-selection">
+            {selectedFile
+              ? `${selectedFile.name} · ${(selectedFile.size / 1024).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} КБ${selectedFile.size > 10_485_760 ? " · превышен лимит 10 МБ" : ""}`
+              : "Файл пока не выбран."}
+          </p>
+          <div className="form-section-heading">
+            <span className="section-index" aria-hidden="true">
+              02
+            </span>
+            <div>
+              <h2>Контекст публикации</h2>
+              <p>
+                Ссылка и дата необязательны. Неизвестную дату оставьте пустой.
+              </p>
+            </div>
+          </div>
           <label htmlFor="image-url">Ссылка на источник · необязательно</label>
           <input id="image-url" name="source_url" type="url" maxLength={2048} />
           <label htmlFor="image-date">
@@ -127,6 +164,7 @@ export function ReviewView() {
         eyebrow="РУЧНАЯ ПРОВЕРКА"
         title="Оригинал → гипотезы → решение"
         description="OCR и сходство названий помогают найти факты. Только аналитик подтверждает привязку, доказательство и фактор риска."
+        action={false}
       />
       <label htmlFor="review-ad">Публикация</label>
       <select
@@ -253,8 +291,82 @@ function ReviewMaterial({
   }, [ad?.latest_job_id, ad?.status]);
   if (!ad) return <LoadState error={adData.error} retry={adData.reload} />;
   const active = ad.status === "ANALYZING";
+  const hasCurrentMatch =
+    !!extraction &&
+    !!latest &&
+    !!ad.confirmed_property_id &&
+    !!matches.data?.some(
+      (match) =>
+        match.property_id === ad.confirmed_property_id &&
+        match.status === "CONFIRMED",
+    );
+  const reviewedCount =
+    extraction?.hypotheses.filter((hypothesis) =>
+      ["CONFIRMED", "CORRECTED", "REJECTED"].includes(hypothesis.review_status),
+    ).length || 0;
+  const reviewSteps = [
+    {
+      title: "Оригинал",
+      href: `#review-original-${id}`,
+      detail: "Сверьте сохранённый источник",
+    },
+    {
+      title: "Гипотезы",
+      href: `#review-hypotheses-${id}`,
+      detail: extractions.error
+        ? "Не удалось загрузить"
+        : extraction
+          ? `Проверено ${reviewedCount} из ${extraction.hypotheses.length}`
+          : active
+            ? "Анализ выполняется"
+            : writable
+              ? "Сначала запустите анализ"
+              : "Ожидает анализа аналитиком",
+    },
+    {
+      title: "Объект и очередь",
+      href: extraction ? `#review-match-${id}` : null,
+      detail: matches.error
+        ? "Не удалось загрузить привязку"
+        : hasCurrentMatch
+          ? "Привязка подтверждена"
+          : "Нужна отдельная привязка",
+    },
+    {
+      title: "Фактор R2",
+      href: hasCurrentMatch ? `#review-factor-${id}` : null,
+      detail: hasCurrentMatch
+        ? "Отдельное решение по доказательству"
+        : "После анализа и привязки",
+    },
+  ];
   return (
     <>
+      <nav className="review-steps" aria-label="Этапы проверки материала">
+        <ol>
+          {reviewSteps.map((step, index) => (
+            <li key={step.title}>
+              {step.href ? (
+                <a href={step.href}>
+                  <span className="step-number" aria-hidden="true">
+                    0{index + 1}
+                  </span>
+                  <strong>{step.title}</strong>
+                  <small>{step.detail}</small>
+                </a>
+              ) : (
+                <span className="step-unavailable" aria-disabled="true">
+                  <span className="step-number" aria-hidden="true">
+                    0{index + 1}
+                  </span>
+                  <strong>{step.title}</strong>
+                  <small>{step.detail}</small>
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      </nav>
       <div className="review-toolbar">
         <Demo value={ad.is_demo} />
         <span>{date(ad.captured_at)}</span>
@@ -263,6 +375,7 @@ function ReviewMaterial({
         </Link>
         {writable && (
           <Button
+            aria-busy={busy || active}
             disabled={busy || active}
             onClick={async () => {
               const value = await mutate<Job>(`/advertisements/${id}/analyze`, {
@@ -291,6 +404,12 @@ function ReviewMaterial({
         </p>
       )}
       {job?.error && <Notice error={job.error.error.message} />}
+      {extraction && !latest && (
+        <p className="notice">
+          Открыта архивная версия текста. Для новой проверки выберите последнюю
+          версию; прежние сведения остаются в истории.
+        </p>
+      )}
       {ad.status === "FAILED" && !job?.error && (
         <p className="notice">
           Анализ завершился ошибкой. Запустите его повторно или проверьте
@@ -409,7 +528,11 @@ function ReviewMaterial({
             </>
           )}
         </section>
-        <section className="panel padded">
+        <section
+          className="panel padded"
+          id={`review-hypotheses-${id}`}
+          tabIndex={-1}
+        >
           <h2>Извлечённые гипотезы</h2>
           {extractions.error && <Notice error={extractions.error} />}
           {extraction ? (
@@ -467,7 +590,11 @@ function ReviewMaterial({
         </section>
       </div>
       {extraction && (
-        <section className="panel padded">
+        <section
+          className="panel padded"
+          id={`review-match-${id}`}
+          tabIndex={-1}
+        >
           <h2>Привязка к конкретному ЖК / очереди</h2>
           <p className="muted">
             Сходство — подсказка, а не вероятность. Проверьте адрес, очередь и
@@ -585,22 +712,15 @@ function ReviewMaterial({
             доказательства подтвердите её заново.
           </p>
         )}
-      {ad.confirmed_property_id &&
-        extraction &&
-        latest &&
-        matches.data?.some(
-          (m) =>
-            m.property_id === ad.confirmed_property_id &&
-            m.status === "CONFIRMED",
-        ) && (
-          <PaymentRisk
-            key={`${ad.confirmed_property_id}:${extraction.id}:${extraction.revision}`}
-            ad={ad}
-            extraction={extraction}
-            writable={writable}
-            onError={setError}
-          />
-        )}
+      {hasCurrentMatch && extraction && (
+        <PaymentRisk
+          key={`${ad.confirmed_property_id}:${extraction.id}:${extraction.revision}`}
+          ad={ad}
+          extraction={extraction}
+          writable={writable}
+          onError={setError}
+        />
+      )}
     </>
   );
 }
@@ -875,7 +995,11 @@ function PaymentRisk({
   }
   const evidenceIds = evidenceId ? [evidenceId] : factor?.evidence_ids || [];
   return (
-    <section className="panel padded">
+    <section
+      className="panel padded"
+      id={`review-factor-${ad.id}`}
+      tabIndex={-1}
+    >
       <div className="review-toolbar">
         <h2>R2 · прямое предложение платежа</h2>
         {property.data && <Zone risk={property.data.property.risk} />}

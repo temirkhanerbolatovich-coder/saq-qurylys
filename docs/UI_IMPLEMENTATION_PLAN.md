@@ -15,6 +15,10 @@
 | 5. Проверка | Focused/full browser, static/build/audit, 4 ширины, RU/KZ/console/визуальный просмотр | Записать команды/результаты и ограничения в существующий статус |
 | 6. Передача | Diff/секреты/ссылки, разрешённый GitHub push, exact-SHA CI | Локальный/удалённый SHA совпадают; user testing отдельно |
 
+## Продуктовый UX-блок
+
+После инфраструктуры реализован путь «материал → проверка → очередь сигналов»: две смысловые группы в формах, прямой переход после сохранения, anchor-этапы review с фактическим счётчиком, URL-context сигналов и защита от устаревшей выборки. Это реализация существующих сценариев, без новых API/ролей/правовых условий. Проверки и ревизия блока фиксируются в PROJECT_STATUS и UI_AUDIT; исходные этапы инфраструктуры выше — предыдущий завершённый checkpoint.
+
 ## Установка Skill и совместимость Codex
 
 Выбран [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/56ea9cf174ed86786187daa9de0e6247cb0747e4), commit `56ea9cf174ed86786187daa9de0e6247cb0747e4`, subtree `.claude/skills/ui-ux-pro-max`. Он установлен в `.agents/skills/ui-ux-pro-max` штатным skill-installer с явными ref/dest. 73 исходных файла сверены с Git blob SHA; LICENSE сохранён. Локальные дополнения только SOURCE.json, LICENSE и agents/openai.yaml; исходные scripts/data/SKILL не менялись. Python уже установлен; npm CLI, shell installer, OS software, services и hooks не устанавливались.

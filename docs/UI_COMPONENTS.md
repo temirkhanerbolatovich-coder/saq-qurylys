@@ -11,6 +11,7 @@
 | TableRegion | `frontend/components/ui/table-region.tsx` | Подписанная focusable scroll region, `label` и native table в children. Столбцы не скрываются, заголовки scope=col; применяется к реестру и сводке |
 | Notice | `frontend/components/workspace.tsx` | Inline ошибка `role=alert`; сообщения должны объяснять действие пользователя. Не использовать для нейтрального loading или постоянно повторяющегося polling |
 | LoadState | тот же файл | `error` + `retry`, иначе status «Загрузка данных…». Сетевой retry не должен повторять принятие решения человеком |
+| useData resolvedPath | тот же файл | Метаданные пути последнего завершённого запроса. Очередь сигналов показывает data/error только при совпадении с текущим queuePath; прежние строки не выдают за результат нового фильтра. Поведение остальных callers сохранено |
 | PageTitle | тот же файл | eyebrow/h1/description и существующее analyst action. Не создавать второй h1 или автоматически доступное viewer действие |
 | Demo / Zone | тот же файл | Явная DEMO-метка; серверные score/zone с текстом. UNKNOWN не даёт красного, зелёный не означает безопасность |
 | statusLabel | `frontend/lib/status-labels.ts` | Русская видимая подпись; значение API не меняется. Неизвестный код сохраняется как fallback, чтобы не скрыть новое состояние |
@@ -32,7 +33,7 @@ import { TableRegion } from "@/components/ui/table-region";
 />;
 ```
 
-Компонент пагинации не получает URL/API/роль и не делает fetch: ими управляет экран. Registry сохраняет фильтры/вид в URL; signals сохраняет существующую модель локальных фильтров. Это не изменение бизнес-процесса. Caller решает, скрывать ли paginator при единственной странице. Пустая выборка — страница 1 из 1; недоступная страница после изменения данных не маскируется выдуманными строками.
+Компонент пагинации не получает URL/API/роль и не делает fetch: ими управляет экран. Registry сохраняет фильтры/вид в URL; signals сохраняет property_id/state/is_stale/page и выбранный signal_id в URL. Смена фильтра сбрасывает страницу/выбор, переход к версии и history links сохраняет фильтры; Back/reload восстанавливает контекст. Caller решает, скрывать ли paginator при единственной странице. Пустая выборка — страница 1 из 1; недоступная страница после изменения данных не маскируется выдуманными строками.
 
 ## Native patterns и составные области
 
@@ -46,6 +47,8 @@ import { TableRegion } from "@/components/ui/table-region";
 | Tabs / View switch | native links text/file, кнопки list/map | Сейчас это переходы и toggle group aria-pressed; не присваивать role=tab без roving focus/tabpanel/keyboard-контракта |
 | Card / Panel | .panel, .padded, .compact | Документальная поверхность; выбирать по содержимому, а не оборачивать всё одинаковыми cards. KPI остаются полосой, таблица — строками |
 | Dossier sections | PropertyView | Anchor targets с tabIndex=-1, forms не unmount; черновик причины не теряется при переходе по разделам |
+| Review steps | ReviewMaterial в analysis-workspace.tsx | Четыре навигационных этапа: оригинал/гипотезы/объект/R2. Счётчик из существующих review_status; отсутствующий шаг объяснён, не фиктивно завершён. Anchor targets с tabIndex=-1, inputs остаются mounted; прогресс не начисляет баллы |
+| Intake form sections | NewAdvertisementView / FileUploadView | Две читаемые группы: оригинал+происхождение, необязательный контекст. Связанные hints, счётчик текста без noisy live updates, выбранные имя/размер и aria-invalid при oversize. Сохранение текста фокусирует результат; основной Next Link ведёт прямо в review, анализ остаётся отдельным действием |
 | Details / disclosure | R1 и construction forms | Native details/summary, Enter/Space. Причина отдельного решения R1 постоянно видна; сохранение материала и решение разделены |
 | Notifications / Success | role=alert/status и inline notice | Важный результат остаётся рядом с действием; никаких исчезающих единственных подтверждений. Toast runtime не установлен |
 | Empty / Error / Loading | PropertyTable/LoadState/очереди | Объяснение, действующие фильтры, retry для запроса, актуальная стадия операции. Не скрывать фильтры при пустом результате |
