@@ -1,6 +1,6 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: сигналы, неизменяемые snapshots, решения человека и PDF. Branch main; ревизия — `git log -1`. Исполнитель: Codex. GitHub-репозиторий создан; push и первый CI ожидаются. Deploy не выполнялся.
+Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: сигналы, неизменяемые snapshots, решения человека и PDF. Branch main; ревизия — `git log -1`. Исполнитель: Codex. Код и история опубликованы в GitHub, первый CI прошёл; итоговая документация передаётся следующим commit. Deploy не выполнялся.
 
 ## Текущее состояние — сигналы
 
@@ -21,7 +21,7 @@ Docker запущен по явному разрешению пользоват�
 | Миграции/зависимости | `alembic check`: новых upgrade operations нет; `pip check`: ошибок нет; `npm audit --audit-level=high`: 0 vulnerabilities |
 | PDF | `output/pdf/signal-demo.pdf`, 10 страниц, около 37 KiB; DEMO/RU/KZ текстовые маркеры проверены; визуально просмотрены все 10 страниц на contact sheet, страницы 1 и 9 дополнительно в полном размере, читаемо/без перекрытий |
 | Перед публикацией | Проверены 413 текущих/исторических Git blobs на известные secrets и явные credential patterns: 0 находок; это не полный security audit |
-| GitHub/CI | Создан публичный [saq-qurylys](https://github.com/temirkhanerbolatovich-coder/saq-qurylys); push пока ожидается, удалённый CI ещё не выполнялся. Workflow содержит PDF runtime dependencies и read-only permissions |
+| GitHub/CI | Создан публичный [saq-qurylys](https://github.com/temirkhanerbolatovich-coder/saq-qurylys); `main` отправлена, локальный/удалённый SHA `dc595e24d9dc249448289b15948a590691abcbac` совпали. Первый [CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38696142426) завершён **success**: backend и frontend. CI не включает browser E2E, их 16 passed получены локально. Workflow содержит PDF runtime dependencies и read-only permissions |
 
 Основные файлы: backend/app/{signals,signal_dto,signal_pdf,pdf_render}.py, backend/app/api/{signals,signal_pdf}.py, модели/worker/jobs/settings, миграция e87f4d01a921, backend/tests/test_{signals,signal_pdf}.py, frontend/components/signals-workspace.tsx и frontend/tests/signals.spec.ts, контракт/env/Dockerfile/CI. Документация: [FEATURE_SIGNALS](docs/FEATURE_SIGNALS.md), [ADR-006](docs/decisions/ADR-006-immutable-signals-pdf.md), README/ARCHITECTURE/PLAN и [оставшийся чеклист](docs/REMAINING_CHECKLIST.md). Исходные PDF/DOCX/TZ не менялись; новые зависимости закреплены.
 

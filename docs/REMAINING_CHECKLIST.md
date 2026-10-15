@@ -4,7 +4,8 @@
 
 ## Ближайшие задачи
 
-- [ ] Завершить push в созданный [GitHub-репозиторий](https://github.com/temirkhanerbolatovich-coder/saq-qurylys), сверить локальный и удалённый SHA, получить результат первого CI. Workflow подготовлен, но наличие файла workflow не означает успешный запуск.
+- [x] Код и история отправлены в [GitHub](https://github.com/temirkhanerbolatovich-coder/saq-qurylys), локальный/удалённый `dc595e2` совпали; первый [CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38696142426) прошёл для backend/frontend.
+- [ ] Добавить browser E2E с реальным OCR/сигналом/PDF в GitHub Actions. Текущие 16 browser-тестов прошли локально; удалённый workflow уже проверяет backend tests/migrations и frontend checks/build.
 - [ ] Добавить **supporting PDF upload**: безопасный приём исходных PDF-документов, ограничения размера/содержимого, хранение оригинала/SHA, авторизованный просмотр и тесты malformed/oversize/active content. PDF-экспорт сигнала уже работает и не закрывает этот пункт.
 - [ ] Реализовать карту: координаты DEMO-объектов, единые фильтры с реестром, выбранная карточка, атрибуция провайдера тайлов, обработка отсутствующих координат/сети и переход к реестру. Проверить mobile, клавиатуру и 200% zoom.
 - [ ] Получить разрешённый домен/URL и основание автоматической загрузки. **Collector BLOCKED** до этого; затем реализовать allowlist/SSRF/redirect/size/time limits и показать один фактический разрешённый импорт. Ручная ссылка или собственная HTML-заглушка не закрывают требование внешнего collector.
