@@ -36,6 +36,8 @@ URL тайлов должен быть HTTPS с `{z}`, `{x}`, `{y}` без ин�
 
 ## Проверки 15.10.2026
 
+Код опубликован в `718b28a`; [GitHub CI 38711042158](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38711042158) для точного SHA: frontend/backend/browser-e2e **success**, подтверждено API. Числа ниже относятся к локальным логам.
+
 - `npx playwright test tests/map.spec.ts`: 5 passed. Реальные API filters/risk/card, pagination, пустая выборка, missing/out-of-range coords, literal HTML/XSS, отказ/повтор тайлов и API, Enter/Space, ширины 390/640. Тайлы в CI подменены локальным SVG, публичный OSM не нагружается; негативные координаты/отказ API подменены только в браузерном тесте, БД не меняется.
 - `npm run test:e2e`: **22 passed (47.9s)** на текущем Docker Compose с настоящим OCR/PDF. Backend source/contract/migrations не менялись; отдельный локальный pytest этого блока не запускался.
 - `node --test scripts/test-map-config.mjs`: 1 test / 10 вариантов конфигурации; включён в frontend CI.
