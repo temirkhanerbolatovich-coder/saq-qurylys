@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
 import { api, command, date, upload } from "@/lib/api";
+import { statusLabel } from "@/lib/status-labels";
 import type {
   Advertisement,
   Extraction,
@@ -102,7 +103,7 @@ export function FileUploadView() {
             Демонстрационный материал (DEMO)
           </label>
           {error && <Notice error={error} />}
-          <Button disabled={busy}>
+          <Button disabled={busy} aria-busy={busy}>
             {busy ? "Сохранение…" : "Сохранить файл"}
           </Button>
         </form>
@@ -139,7 +140,7 @@ export function ReviewView() {
         {queue.data?.items.map((ad) => (
           <option key={ad.id} value={ad.id}>
             {ad.is_demo ? "DEMO · " : ""}
-            {ad.source_label} · {ad.status}
+            {ad.source_label} · {statusLabel(ad.status)}
           </option>
         ))}
       </select>
@@ -178,6 +179,7 @@ function ReviewMaterial({
   const [transcription, setTranscription] = useState<string | null>(null);
   const [transcriptionReason, setTranscriptionReason] = useState("");
   const key = useRef<{ payload: string; value: string } | null>(null);
+  const originalPanel = useRef<HTMLElement>(null);
   const ad = adData.data;
   const extraction =
     extractions.data?.find((e) => e.id === version) || extractions.data?.[0];
@@ -186,6 +188,15 @@ function ReviewMaterial({
   const currentSelection = extraction?.hypotheses.find(
     (h) => h.id === selected?.id,
   );
+  function showOriginal(hypothesis: Hypothesis) {
+    setSelected(hypothesis);
+    if (window.matchMedia("(max-width: 1000px)").matches) {
+      requestAnimationFrame(() => {
+        originalPanel.current?.focus({ preventScroll: true });
+        originalPanel.current?.scrollIntoView({ block: "start" });
+      });
+    }
+  }
   function reload() {
     adData.reload();
     extractions.reload();
@@ -287,8 +298,21 @@ function ReviewMaterial({
         </p>
       )}
       <div className="review-grid">
-        <section className="panel padded original-panel">
+        <section
+          className="panel padded original-panel"
+          id={`review-original-${id}`}
+          ref={originalPanel}
+          tabIndex={-1}
+        >
           <h2>Оригинал</h2>
+          {currentSelection && (
+            <a
+              className="text-link"
+              href={`#hypothesis-${currentSelection.id}`}
+            >
+              К выбранной гипотезе
+            </a>
+          )}
           {image ? (
             <ImageOriginal
               id={image.id}
@@ -421,7 +445,7 @@ function ReviewMaterial({
                   hypothesis={h}
                   writable={writable && latest}
                   busy={busy}
-                  onSelect={() => setSelected(h)}
+                  onSelect={() => showOriginal(h)}
                   onReview={(action, value, reason) =>
                     mutate(`/extractions/${extraction.id}/review`, {
                       expected_revision: extraction.revision,
@@ -471,7 +495,7 @@ function ReviewMaterial({
                     ?.name || m.property_id}
                 </strong>
                 <span>
-                  {m.similarity.toFixed(1)} / 100 · {m.status}
+                  {m.similarity.toFixed(1)} / 100 · {statusLabel(m.status)}
                 </span>
                 <p>{m.reasons.join(" ")}</p>
                 {writable && (
@@ -614,10 +638,10 @@ function HypothesisCard({
     NonNullable<Value["money"]>["currency"]
   >(value.money?.currency || "KZT");
   return (
-    <article className="hypothesis">
+    <article className="hypothesis" id={`hypothesis-${h.id}`} tabIndex={-1}>
       <div className="review-toolbar">
         <strong>{fieldLabels[h.field] || h.field}</strong>
-        <span className="status">{h.review_status}</span>
+        <span className="status">{statusLabel(h.review_status)}</span>
       </div>
       <p>{value.text}</p>
       {value.money && (
@@ -876,7 +900,8 @@ function PaymentRisk({
       )}
       {factor && (
         <p>
-          Текущий статус R2: <b>{factor.status}</b> · версия {factor.revision}
+          Текущий статус R2: <b>{statusLabel(factor.status)}</b> · версия{" "}
+          {factor.revision}
         </p>
       )}
       {writable && (

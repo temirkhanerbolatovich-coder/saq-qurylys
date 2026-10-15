@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ApiError, api, command, date } from "@/lib/api";
+import { statusLabel } from "@/lib/status-labels";
 import type {
   Job,
   Page,
@@ -131,6 +132,20 @@ export function SignalsView() {
   if (propertyId) query.set("property_id", propertyId);
   const queue = useData<Page<Signal>>(`/signals?${query}`);
   const id = params.get("signal_id") || queue.data?.items[0]?.id;
+  const detailPanel = useRef<HTMLDivElement>(null);
+  const focusRequested = useRef(false);
+  const focusDetail = useCallback(() => {
+    detailPanel.current?.focus({ preventScroll: true });
+    detailPanel.current?.scrollIntoView({ block: "start" });
+  }, []);
+  useEffect(() => {
+    if (!focusRequested.current) return;
+    const frame = requestAnimationFrame(() => {
+      focusDetail();
+      focusRequested.current = false;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [id, focusDetail]);
   function filter(change: () => void) {
     change();
     setPage(1);
@@ -144,108 +159,132 @@ export function SignalsView() {
         description="Неизменяемый снимок фактов, отдельное решение аналитика и PDF конкретной версии. Передачи в ведомства нет."
         action={false}
       />
-      <section className="panel padded">
-        <div className="review-form">
-          <label htmlFor="signal-property">Объект сигнала</label>
-          <select
-            id="signal-property"
-            value={propertyId}
-            onChange={(e) => filter(() => setPropertyId(e.target.value))}
-          >
-            <option value="">Все объекты</option>
-            {registry.data?.items.map((property) => (
-              <option key={property.id} value={property.id}>
-                {property.name}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="signal-state">Статус сигнала</label>
-          <select
-            id="signal-state"
-            value={state}
-            onChange={(e) => filter(() => setState(e.target.value))}
-          >
-            <option value="">Все статусы</option>
-            {Object.entries(stateLabels).map(([value, label]) => (
-              <option value={value} key={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="signal-stale">Актуальность сигнала</label>
-          <select
-            id="signal-stale"
-            value={stale}
-            onChange={(e) => filter(() => setStale(e.target.value))}
-          >
-            <option value="">Все версии</option>
-            <option value="false">Актуальные для решения</option>
-            <option value="true">Устаревшие</option>
-          </select>
-        </div>
-        {registry.error && <Notice error={registry.error} />}
-        {queue.error && <LoadState error={queue.error} retry={queue.reload} />}
-        {queue.data ? (
-          <>
-            <p>Найдено сигналов: {queue.data.total}</p>
-            {queue.data.items.length ? (
-              <div className="candidate-list" aria-label="Очередь сигналов">
-                {queue.data.items.map((signal) => (
-                  <article className="candidate" key={signal.id}>
-                    <Demo value={signal.is_demo} />
-                    <p>
-                      {registry.data?.items.find(
-                        (property) => property.id === signal.property_id,
-                      )?.name || "Объект"}
-                    </p>
-                    <Zone risk={signal.risk_snapshot} />
-                    <p>
-                      Версия {signal.version} · {stateLabels[signal.state]}
-                      {signal.is_stale ? " · Устарел" : ""}
-                    </p>
-                    <small>{date(signal.created_at)}</small>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        router.push(`/signals?signal_id=${signal.id}`, {
-                          scroll: false,
-                        })
-                      }
-                      aria-pressed={id === signal.id}
+      {id && (
+        <a className="text-link" href="#selected-signal">
+          К выбранному сигналу
+        </a>
+      )}
+      <div className="signals-layout">
+        <section className="panel padded signals-queue">
+          <div className="review-form signals-filterbar">
+            <label htmlFor="signal-property">Объект сигнала</label>
+            <select
+              id="signal-property"
+              value={propertyId}
+              onChange={(e) => filter(() => setPropertyId(e.target.value))}
+            >
+              <option value="">Все объекты</option>
+              {registry.data?.items.map((property) => (
+                <option key={property.id} value={property.id}>
+                  {property.name}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="signal-state">Статус сигнала</label>
+            <select
+              id="signal-state"
+              value={state}
+              onChange={(e) => filter(() => setState(e.target.value))}
+            >
+              <option value="">Все статусы</option>
+              {Object.entries(stateLabels).map(([value, label]) => (
+                <option value={value} key={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="signal-stale">Актуальность сигнала</label>
+            <select
+              id="signal-stale"
+              value={stale}
+              onChange={(e) => filter(() => setStale(e.target.value))}
+            >
+              <option value="">Все версии</option>
+              <option value="false">Актуальные для решения</option>
+              <option value="true">Устаревшие</option>
+            </select>
+          </div>
+          {registry.error && <Notice error={registry.error} />}
+          {queue.error && (
+            <LoadState error={queue.error} retry={queue.reload} />
+          )}
+          {queue.data ? (
+            <>
+              <p>Найдено сигналов: {queue.data.total}</p>
+              {queue.data.items.length ? (
+                <div className="candidate-list" aria-label="Очередь сигналов">
+                  {queue.data.items.map((signal) => (
+                    <article
+                      className="candidate signal-queue-item"
+                      key={signal.id}
                     >
-                      Открыть версию {signal.version}
-                    </Button>
-                  </article>
-                ))}
+                      <Demo value={signal.is_demo} />
+                      <p>
+                        {registry.data?.items.find(
+                          (property) => property.id === signal.property_id,
+                        )?.name || "Объект"}
+                      </p>
+                      <Zone risk={signal.risk_snapshot} />
+                      <p>
+                        Версия {signal.version} · {stateLabels[signal.state]}
+                        {signal.is_stale ? " · Устарел" : ""}
+                      </p>
+                      <small>{date(signal.created_at)}</small>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          focusRequested.current = true;
+                          router.push(`/signals?signal_id=${signal.id}`, {
+                            scroll: false,
+                          });
+                          if (id === signal.id) {
+                            requestAnimationFrame(focusDetail);
+                            focusRequested.current = false;
+                          }
+                        }}
+                        aria-pressed={id === signal.id}
+                      >
+                        Открыть версию {signal.version}
+                      </Button>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="notice">
+                  Сигналов по выбранным фильтрам нет. Черновик создаётся в
+                  карточке объекта после проверки материалов.
+                </p>
+              )}
+              <div className="review-actions">
+                <Button
+                  variant="outline"
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Предыдущая страница
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={page * 25 >= queue.data.total}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Следующая страница
+                </Button>
               </div>
-            ) : (
-              <p className="notice">
-                Сигналов по выбранным фильтрам нет. Черновик создаётся в
-                карточке объекта после проверки материалов.
-              </p>
-            )}
-            <div className="review-actions">
-              <Button
-                variant="outline"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-              >
-                Предыдущая страница
-              </Button>
-              <Button
-                variant="outline"
-                disabled={page * 25 >= queue.data.total}
-                onClick={() => setPage(page + 1)}
-              >
-                Следующая страница
-              </Button>
-            </div>
-          </>
-        ) : (
-          !queue.error && <p role="status">Загрузка сигналов…</p>
-        )}
-      </section>
-      {id && <SignalCard key={id} id={id} onChange={queue.reload} />}
+            </>
+          ) : (
+            !queue.error && <p role="status">Загрузка сигналов…</p>
+          )}
+        </section>
+        <div
+          className="signals-detail"
+          id="selected-signal"
+          ref={detailPanel}
+          tabIndex={-1}
+        >
+          {id && <SignalCard key={id} id={id} onChange={queue.reload} />}
+        </div>
+      </div>
     </>
   );
 }
@@ -433,7 +472,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
       {snapshot.factors.map((factor) => (
         <article className="hypothesis" key={factor.id}>
           <strong>
-            {factor.code} · {factor.status} ·{" "}
+            {factor.code} · {statusLabel(factor.status)} ·{" "}
             {factor.status === "CONFIRMED" ? `+${factor.weight}` : "0"}
           </strong>
           <p>
@@ -448,7 +487,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
       {snapshot.legal_bases.map((basis) => (
         <article className="hypothesis" key={basis.id}>
           <strong>
-            {basis.issuer} · {basis.verification_status}
+            {basis.issuer} · {statusLabel(basis.verification_status)}
           </strong>
           <p>
             {basis.document_number || "Номер не указан"} ·{" "}

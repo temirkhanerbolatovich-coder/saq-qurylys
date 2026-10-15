@@ -38,6 +38,7 @@ import type {
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { PropertyMap } from "@/components/property-map";
+import { statusLabel } from "@/lib/status-labels";
 import { AppealReview } from "@/components/appeal-review";
 import { ConstructionReview } from "@/components/construction-review";
 import { LegalAbsenceReview } from "@/components/legal-absence-review";
@@ -122,6 +123,9 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <Auth.Provider value={{ user, refresh }}>
       <div className="workspace">
+        <a className="skip-link" href="#main-content">
+          Перейти к содержимому
+        </a>
         <aside className="sidebar">
           <Link href="/dashboard" className="brand">
             <span className="brand-symbol">
@@ -179,7 +183,9 @@ export function Providers({ children }: { children: ReactNode }) {
             </span>
             <span className="demo-label">DEMO · синтетические данные</span>
           </header>
-          <main className="content">{children}</main>
+          <main className="content" id="main-content" tabIndex={-1}>
+            {children}
+          </main>
           <footer>
             SAQ QURYLYS · Прототип · Сигнал не устанавливает факт правонарушения
           </footer>
@@ -285,16 +291,21 @@ function PropertyTable({ rows }: { rows: Property[] }) {
       <div className="empty">Объекты по выбранным фильтрам не найдены.</div>
     );
   return (
-    <div className="table-scroll">
+    <div
+      className="table-scroll"
+      role="region"
+      aria-label="Реестр объектов — таблица с горизонтальной прокруткой"
+      tabIndex={0}
+    >
       <table>
         <thead>
           <tr>
-            <th>Объект / очередь</th>
-            <th>Правовое основание</th>
-            <th>Приоритет проверки</th>
-            <th>Факторы</th>
-            <th>Последняя проверка</th>
-            <th>
+            <th scope="col">Объект / очередь</th>
+            <th scope="col">Правовое основание</th>
+            <th scope="col">Приоритет проверки</th>
+            <th scope="col">Подтверждённые причины</th>
+            <th scope="col">Последняя проверка</th>
+            <th scope="col">
               <span className="sr-only">Открыть</span>
             </th>
           </tr>
@@ -322,7 +333,13 @@ function PropertyTable({ rows }: { rows: Property[] }) {
               </td>
               <td>
                 <span className="factor-codes">
-                  {row.risk.confirmed_codes.join(" · ") || "Нет подтверждённых"}
+                  {row.risk.confirmed_codes.length
+                    ? row.risk.confirmed_codes.map((code) => (
+                        <span key={code}>
+                          <b>{code}</b> · {factorLabels[code] || code}
+                        </span>
+                      ))
+                    : "Нет подтверждённых"}
                 </span>
               </td>
               <td className="date-cell">{date(row.last_reviewed_at)}</td>
@@ -353,7 +370,7 @@ export function DashboardView() {
         description="Объекты, источники и причины, требующие внимания аналитика."
       />
       <div className="context-line">
-        <span className="live-dot" /> Данные из PostgreSQL <span>·</span>{" "}
+        <span className="live-dot" /> Сведения реестра <span>·</span>{" "}
         {summary.data
           ? `Обновлено ${date(summary.data.calculated_at)}`
           : "Подключение…"}
@@ -393,6 +410,17 @@ export function DashboardView() {
           </div>
         ))}
       </div>
+      <nav className="workflow-links" aria-label="Основные рабочие сценарии">
+        <Link href="/advertisements">
+          01 · Собрать материалы<small>Оригиналы публикаций и источники</small>
+        </Link>
+        <Link href="/review">
+          02 · Проверить факты<small>Сверка гипотез и привязка к объекту</small>
+        </Link>
+        <Link href="/signals">
+          03 · Сигналы и PDF<small>История версий и решения аналитика</small>
+        </Link>
+      </nav>
       <section className="panel">
         <div className="panel-heading">
           <div>
@@ -672,13 +700,19 @@ export function PropertyView({ id }: { id: string }) {
         <Demo value={row.is_demo} />
         <span>Версия правил: {row.risk.rules_version}</span>
       </div>
+      <nav className="dossier-nav" aria-label="Разделы карточки объекта">
+        <a href="#dossier-summary">Сведения</a>
+        <a href="#dossier-bases">Основания</a>
+        <a href="#dossier-factors">Факторы и решения</a>
+        <a href="#dossier-materials">Материалы и проверки</a>
+      </nav>
       {detail.data.unknown_information.map((value) => (
         <p className="notice" key={value}>
           {value}
         </p>
       ))}
       <div className="detail-grid">
-        <section className="panel padded">
+        <section className="panel padded" id="dossier-summary" tabIndex={-1}>
           <h2>Сведения об объекте</h2>
           <CreateSignalButton property={row} onChange={detail.reload} />
           <dl>
@@ -715,7 +749,7 @@ export function PropertyView({ id }: { id: string }) {
             <ArrowRight size={14} />
           </Link>
         </section>
-        <section className="panel padded">
+        <section className="panel padded" id="dossier-bases" tabIndex={-1}>
           <h2>Основания и документы</h2>
           {detail.data.legal_bases.length ? (
             detail.data.legal_bases.map((basis) => (
@@ -748,7 +782,7 @@ export function PropertyView({ id }: { id: string }) {
           )}
         </section>
       </div>
-      <section className="panel">
+      <section className="panel" id="dossier-factors" tabIndex={-1}>
         <div className="panel-heading">
           <div>
             <h2>Факторы и решения</h2>
@@ -769,7 +803,7 @@ export function PropertyView({ id }: { id: string }) {
               </div>
               <span className="points">
                 {factor.status === "CONFIRMED" ? `+${factor.weight}` : "0"}
-                <small>{factor.status}</small>
+                <small>{statusLabel(factor.status)}</small>
               </span>
               <Button
                 variant="outline"
@@ -792,6 +826,13 @@ export function PropertyView({ id }: { id: string }) {
           <div className="empty">Подтверждённых факторов пока нет.</div>
         )}
       </section>
+      <div id="dossier-materials" tabIndex={-1}>
+        <h2>Материалы и проверки</h2>
+        <p className="muted">
+          Сохраните источник и область его применения. Подтверждение каждого
+          фактора выполняется отдельно.
+        </p>
+      </div>
       {user?.role === "analyst" && (
         <LegalAbsenceReview
           key={row.id}
@@ -830,7 +871,7 @@ export function AdvertisementsView() {
             <h2>Публикации</h2>
             <p>
               {result.data ? `${result.data.total} материалов` : "Загрузка…"} ·
-              Новые тексты ожидают следующего этапа анализа
+              Оригиналы, состояние обработки и ручная проверка
             </p>
           </div>
         </div>
@@ -840,11 +881,7 @@ export function AdvertisementsView() {
               <div>
                 <div className="ad-meta">
                   <Demo value={ad.is_demo} />
-                  <span>
-                    {ad.status === "NEW"
-                      ? "Новый материал"
-                      : "Учебный сценарий"}
-                  </span>
+                  <span>{statusLabel(ad.status)}</span>
                   <span>{date(ad.captured_at)}</span>
                 </div>
                 <Link className="object-name" href={`/advertisements/${ad.id}`}>
@@ -1092,7 +1129,7 @@ export function NewAdvertisementView() {
           </label>
           {error && <Notice error={error} />}
           <div className="form-actions">
-            <Button disabled={busy}>
+            <Button disabled={busy} aria-busy={busy}>
               {busy ? "Сохранение…" : "Сохранить публикацию"}
               <ArrowRight size={16} />
             </Button>
@@ -1135,12 +1172,7 @@ export function LoginView() {
       <section className="login-story">
         <ShieldCheck size={40} />
         <p className="eyebrow">SAQ QURYLYS</p>
-        <h1>
-          От публикации
-          <br />к проверяемому
-          <br />
-          сигналу.
-        </h1>
+        <h1>Проверка рекламы и документов.</h1>
         <p>
           Реклама, объект и доказательства — в одном рабочем процессе аналитика.
         </p>
@@ -1170,7 +1202,7 @@ export function LoginView() {
               maxLength={512}
             />
             {error && <Notice error={error} />}
-            <Button disabled={busy}>
+            <Button disabled={busy} aria-busy={busy}>
               {busy ? "Проверка…" : "Войти"}
               <ArrowRight size={16} />
             </Button>

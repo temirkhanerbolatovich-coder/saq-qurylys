@@ -148,7 +148,7 @@ test("human decisions turn a payment hypothesis into R2 and can remove the score
     .filter({ hasText: "Условие оплаты" })
     .first();
   await expect(payment).toBeVisible({ timeout: 30000 });
-  await expect(payment).toContainText("PENDING");
+  await expect(payment.locator(".status")).toHaveText("На проверке");
   await payment.getByRole("button", { name: /показать в оригинале/ }).click();
   await expect(page.locator("mark")).toContainText("Первоначальный взнос 20%");
   await payment
@@ -157,7 +157,7 @@ test("human decisions turn a payment hypothesis into R2 and can remove the score
   await payment
     .getByRole("button", { name: "Подтвердить гипотезу", exact: true })
     .click();
-  await expect(payment).toContainText("CONFIRMED");
+  await expect(payment.locator(".status")).toHaveText("Подтверждено");
   await page
     .getByLabel("ЖК / очередь · можно выбрать вручную")
     .selectOption(property.id);
@@ -304,7 +304,7 @@ test("payment evidence waits for the current property factor before saving", asy
   await payment
     .getByRole("button", { name: "Подтвердить гипотезу", exact: true })
     .click();
-  await expect(payment).toContainText("CONFIRMED");
+  await expect(payment.locator(".status")).toHaveText("Подтверждено");
 
   let releaseResponse!: () => void;
   const held = new Promise<void>((resolve) => {

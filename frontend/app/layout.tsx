@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Providers } from "@/components/workspace";
 import "./globals.css";
+import "./design-system.css";
 
 export const metadata: Metadata = {
   title: "SAQ QURYLYS · Мониторинг",

@@ -1,8 +1,22 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: измерение OCR/payment/matching на новом synthetic corpus и исправление алиасов. Исполнитель Codex; branch main, предыдущая опубликованная ревизия `ffaf5de`, текущая — `git log -1`. Контракт 0.8.0-mvp, схема и формула риска не менялись. Пользователь повторно разрешил закончить этап и push. Deploy не выполнялся.
+Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: дизайн-система и UX рабочего досье. Исполнитель Codex; branch main, исходная опубликованная ревизия `59e870a`, текущая — `git log -1`. Контракт 0.8.0-mvp, API, схема и формула риска не менялись. Действует разрешение пользователя закончить этап и push; облачный deploy не выполнялся.
 
-## Текущий блок — OCR evaluation и aliases
+## Текущий блок — дизайн-система и UX
+
+По запросу пользователя изучены frontend/роли/основные сценарии и публичные материалы shadcn, Radix, Lucide, Refactoring UI, NN/g, WCAG 2.2 и UI UX Pro Max. Локальная установка Pro Max не найдена; генератор не устанавливался и не запускался. До реализации показаны краткий аудит, визуальное направление «рабочее досье аналитика» и план. Сохранён существующий стек Next/React/Tailwind/Radix Slot/Lucide; новых dependencies нет. Зелёная навигация, тёплое светлое поле, графитовый текст, ограниченные семантические цвета, таблицы/разделители вместо одинаковых cards, спокойные 6/8 px скругления.
+
+Реализованы tokens/типографика/состояния в design-system.css, общая KPI-полоса и рабочие маршруты, читаемые таблицы с расшифровкой R1–R6, русские статусы, пять разделов и профиль/выход на mobile. Добавлены skip-to-main, focusable table region/scope=col, anchor-навигация досье без unmount форм, видимое обоснование решения R1, focus выбранного сигнала и оригинала с возвратом к гипотезе. Сигналы используют очередь рядом с деталями на широком экране; формы/карта имеют увеличенные touch targets, экран входа компактный. Backend/контракт/roles/auth/CSRF/handlers решений/revisions/idempotency/исторические snapshots сохранены; баллы на клиенте не рассчитываются.
+
+Проверки: `npm run test:e2e` — **27 passed (1.0m)** с реальными OCR/review/R1–R6/сигналами/PDF. После финальных visual-only изменений login/spacing/aria-busy повторены production Compose build frontend и `npx playwright test tests/design-system.spec.ts` — **5 passed (8.5s)**; ранее focused design+analysis **11 passed (22.8s)**. `npm run lint`, `typecheck`, `format:check` — passed; `npm audit --audit-level=high` — **0 vulnerabilities**. Повторены 7 authenticated routes × 4 ширины 375/768/1024/1440 и login на тех же ширинах: **32 наблюдения без page overflow**, 28 authenticated без pageerror, logout виден, измеренный рабочий текст минимум 12 px. Keyboard/skip/table scroll/досье/сохранение draft/selected focus/loading/empty/503 retry проверены. Viewer проверен только presentation mock auth/me, не новая серверная приёмка прав.
+
+Контраст: 13 token pairs проходят text ≥4,5/control-focus ≥3; ограниченная выборка текстовых DOM nodes семи заполненных desktop-страниц даёт минимум 5,30:1. Настоящий Chromium zoom `setZoom(2)`/getZoom=2, DPR=2, viewport/scrollWidth=720/720, 8 real OSM responses HTTP200/8 markers; Enter/card/attribution доступны. Визуально просмотрены desktop/tablet/mobile screenshots; исправлены мелкие mobile actions, растянутые badges в очереди и пустой блок login. Это не полная WCAG 2.2 AA сертификация и не user/screen-reader testing. Отдельный локальный backend pytest не повторялся: backend не менялся; последний опубликованный CI `cba28ec` — 294 backend/22 browser/27 tooling.
+
+Файлы: frontend/app/{layout.tsx,design-system.css}, components/{workspace,analysis-workspace,signals-workspace,legal-absence-review,property-map}.tsx, ui/button.tsx, lib/status-labels.ts, tests/design-system.spec.ts и три ожидаемые видимые status-строки в analysis.spec.ts. Созданы [DESIGN_SYSTEM](docs/DESIGN_SYSTEM.md), [UX_GUIDELINES](docs/UX_GUIDELINES.md), [UI_AUDIT](docs/UI_AUDIT.md); AGENTS требует их чтения перед frontend-задачами. README/UX_UI_SPEC/CHANGELOG/чеклист синхронизированы. Нового ADR нет: архитектура и зависимости сохранены; дизайн-решение/обоснование записаны в DESIGN_SYSTEM. Legacy globals.css остаётся для специализированных modules, дальнейшая консолидация — отдельный ограниченный refactor с теми же E2E.
+
+Локальное evidence (ignored): `.local/design-{final-browser,focused-final,smoke-final,responsive-final,build,map-zoom}.log`, `.local/ui-design-{before,after}.json`, `.local/design-rendered-contrast.json`, `output/design/{before,after}` и `output/qa/map-zoom-200-*.png`. Пересоздан только SAQ frontend с обоими Compose-файлами и `--no-deps`; db/api/worker и volumes сохранены, сторонние проекты не запускались. Независимое read-only review diff/docs не выявило блокирующих замечаний. Перед публикацией `git diff --check` passed; проверены 20 изменённых/новых UTF-8 файлов, 71 локальная Markdown-ссылка, известных локальных secrets и явных credential patterns не найдено. Это ограниченный scan, не полный security audit. После fetch локальный HEAD и origin/main совпали (`59e870a`). Следующее действие текущего блока — commit/push и GitHub CI точного SHA. Внешняя UX-проверка 3–5 людьми, screen reader, реальные touch devices и предметная приёмка остаются открыты.
+
+## Предыдущий блок — OCR evaluation и aliases
 
 Добавлены [36 новых synthetic RU/KZ cases](data/evaluation/README.md), составленных отдельным агентом без чтения extractor/OCR/tests/seed. 32 читаемых, 16 положительных/16 отрицательных; 4 нечитаемых, каталог 8 вымышленных объектов; 24 known targets/8 unknown. Все тексты уникальны, названия каталога не совпадают с seed. Это ограниченная независимость разработки, не human/external acceptance. После просмотра ошибок корпус стал regression-набором.
 
@@ -77,6 +91,7 @@ Docker запущен по явному разрешению пользоват�
 | Сигналы/версии/решения/PDF | VERIFIED локально | Retention, нагрузка и эксплуатационная приёмка отдельно; локальное восстановление проверено |
 | Supporting PDF upload | VERIFIED в Linux Docker | Native Windows PDF 503; строгая политика отклоняет часть легитимных интерактивных/подписанных форм. Это не антивирус/очистка PDF |
 | Карта | VERIFIED локально | Общие filters/page/card/fallback; 5 новых E2E, mobile/keyboard/200% zoom. Текущая страница, без геокодирования/offline tiles |
+| Дизайн-система/UX | Реализовано и технически проверено локально | 27 browser tests, 32 responsive observations, keyboard/contrast/zoom; UX 3–5 людьми, screen reader и реальные устройства отдельно |
 | Источники реестров | Каталог проверен, интеграции OPEN | 11 ссылок предоставлены; паспорт/выгрузка/условия конкретного набора и реальный импорт не проверены |
 | Рекламный collector C-01 | BLOCKED | Нужен подходящий рекламный URL/условия, SSRF/redirect/limits и реальный импорт; каталог реестров не закрывает C-01 |
 | PostgreSQL+storage backup/restore | VERIFIED на текущем ПК | 16 таблиц, история, 171 Asset, 6 PDF; внешний backup, второй ПК и job recovery отдельно |
@@ -84,9 +99,11 @@ Docker запущен по явному разрешению пользоват�
 
 ## Следующее конкретное действие
 
-Измерительный OCR-блок и alias fix завершены. Для качества: targeted regression tests исторического контекста, тыс./переносов и KZ-названий; затем новый внешний holdout и ручная проверка KZ-разметки. Для P1-реестра — паспорт/охват/выгрузка Ashyq либо data.egov.kz по DATA_SOURCES. Рекламный collector C-01 остаётся BLOCKED до подходящего рекламного URL/условий. Независимо остаются второй ПК, UX/предметная приёмка, питч/демо/сдаваемый SHA. Автопамять не перенастраивать: пользователь пояснил смену аккаунта, контекст сохранён здесь.
+После публикации дизайн-системы — UX-проверка с 3–5 людьми по UI_AUDIT/UX_GUIDELINES: понимание причин риска и прохождение review без обучения, screen reader и реальные touch devices. Для OCR: targeted regression tests исторического контекста, тыс./переносов и KZ-названий; затем новый внешний holdout и ручная проверка KZ-разметки. Для P1-реестра — паспорт/охват/выгрузка Ashyq либо data.egov.kz по DATA_SOURCES. Рекламный collector C-01 остаётся BLOCKED до подходящего рекламного URL/условий. Независимо остаются второй ПК, предметная приёмка, питч/демо/сдаваемый SHA. Автопамять не перенастраивать: пользователь пояснил смену аккаунта, контекст сохранён здесь.
 
 ## История сессий
+
+- 15.10.2026, Codex: от `59e870a` выполнены аудит/направление и дизайн-система рабочего досье; 27 browser, финальный UI smoke 5/5, 32 responsive observations, contrast/keyboard/real zoom, static/build passed. Backend/API/данные/риск сохранены. Документация и правило AGENTS добавлены; публикация и exact-SHA CI фиксируются выше после выполнения.
 
 - 15.10.2026, Codex: продолжение от ffaf5de; 36 synthetic cases/evaluator, baseline/alias fix 8→18 из24 top-3, quality targets OPEN; 293 Linux backend +15 focused,27 Linux tool,22 browser passed; код cba28ec и evidence опубликованы; CI 38756623850 success: 294 backend/22 browser/27 tooling, качество OPEN.
 

@@ -380,43 +380,51 @@ export function LegalAbsenceReview({
             </p>
           </fieldset>
         </form>
+        <Button form="legal-absence-capture" disabled={busy || !reason.trim()}>
+          Сохранить проверку отсутствия
+        </Button>
+      </details>
+      <div className="decision-panel">
         <label htmlFor="absence-decision-reason">Обоснование решения R1</label>
+        <p id="absence-decision-help" className="muted">
+          Укажите обоснование, чтобы сохранить проверку или принять отдельное
+          решение по R1. Без него кнопки недоступны.
+        </p>
         <textarea
           id="absence-decision-reason"
+          form="legal-absence-capture"
+          aria-describedby="absence-decision-help"
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           maxLength={2000}
           disabled={busy}
           required
         />
-        <Button form="legal-absence-capture" disabled={busy || !reason.trim()}>
-          Сохранить проверку отсутствия
-        </Button>
-      </details>
-      {factor && (
-        <>
-          <p className="muted">
-            После обновления страницы решение относится к сохранённым
-            доказательствам фактора. Новые материалы сначала сохраните через
-            форму выше.
-          </p>
-          <div className="review-actions">
-            <Button
-              disabled={busy || !reason.trim() || !canConfirm}
-              onClick={() => void review("CONFIRMED")}
-            >
-              Подтвердить R1 · +35
-            </Button>
-            <Button
-              variant="outline"
-              disabled={busy || !reason.trim() || !factor.as_of}
-              onClick={() => void review("REJECTED")}
-            >
-              Отклонить R1
-            </Button>
-          </div>
-        </>
-      )}
+        {factor && (
+          <>
+            <p className="muted">
+              После обновления страницы решение относится к сохранённым
+              доказательствам фактора. Новые материалы сначала сохраните через
+              форму выше.
+            </p>
+            <div className="review-actions">
+              <Button
+                disabled={busy || !reason.trim() || !canConfirm}
+                onClick={() => void review("CONFIRMED")}
+              >
+                Подтвердить R1 · +35
+              </Button>
+              <Button
+                variant="danger"
+                disabled={busy || !reason.trim() || !factor.as_of}
+                onClick={() => void review("REJECTED")}
+              >
+                Отклонить R1
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
       {saved && (
         <p>
           Дата состояния сохранённой проверки: {date(saved.asOf)} · полнота{" "}

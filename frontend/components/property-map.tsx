@@ -85,8 +85,8 @@ export function PropertyMap({ rows }: { rows: Property[] }) {
             icon: L.divIcon({
               html: label,
               className: `property-marker ${row.risk.zone.toLowerCase()}`,
-              iconSize: [38, 38],
-              iconAnchor: [19, 19],
+              iconSize: [44, 44],
+              iconAnchor: [22, 22],
             }),
             title: `Выбрать ${row.name}: ${row.risk.score}, ${zones[row.risk.zone]} зона`,
             keyboard: true,
