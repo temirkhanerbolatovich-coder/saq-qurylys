@@ -39,9 +39,11 @@ import type {
 import { Button } from "@/components/ui/button";
 import { AppealReview } from "@/components/appeal-review";
 import { ConstructionReview } from "@/components/construction-review";
+import { LegalAbsenceReview } from "@/components/legal-absence-review";
 import {
   LegalBasisCreate,
   LegalBasisDecision,
+  mechanismLabels,
 } from "@/components/legal-basis-review";
 
 export const Auth = createContext<{
@@ -551,6 +553,27 @@ function EvidenceItem({ id }: { id: string }) {
         </p>
       )}
       {item.data.methodology && <p>Методика: {item.data.methodology}</p>}
+      {item.data.absence_as_of && (
+        <p>
+          Дата проверки отсутствия: {date(item.data.absence_as_of)}
+          <br />
+          Охват: {item.data.scope_description}
+        </p>
+      )}
+      {item.data.legal_checks?.map((check) => (
+        <p key={check.mechanism}>
+          {mechanismLabels[check.mechanism]}:{" "}
+          {check.result === "DOCUMENTED_ABSENT"
+            ? "Отсутствие документировано"
+            : check.result === "NOT_FOUND"
+              ? "Не найдено в выборке — недостаточно для R1"
+              : check.result === "UNAVAILABLE"
+                ? "Источник недоступен"
+                : "Не проверено"}
+          <br />
+          {check.reason}
+        </p>
+      ))}
       <a className="text-link" href={`/api/v1/assets/${item.data.asset_id}`}>
         Скачать исходник <ArrowRight size={14} />
       </a>
@@ -610,6 +633,12 @@ export function PropertyView({ id }: { id: string }) {
             <dd>{legalLabels[row.legal_verification_status]}</dd>
             <dt>Проверено</dt>
             <dd>{date(row.last_reviewed_at)}</dd>
+            {row.legal_absence_as_of && (
+              <>
+                <dt>Отсутствие документировано на дату</dt>
+                <dd>{date(row.legal_absence_as_of)} · решение R1</dd>
+              </>
+            )}
           </dl>
           <Link
             className="text-link"
@@ -669,6 +698,7 @@ export function PropertyView({ id }: { id: string }) {
               <div>
                 <strong>{factorLabels[factor.code] || factor.code}</strong>
                 <small>{factor.reason}</small>
+                <small>Дата оценки: {date(factor.as_of)}</small>
               </div>
               <span className="points">
                 {factor.status === "CONFIRMED" ? `+${factor.weight}` : "0"}
@@ -695,6 +725,13 @@ export function PropertyView({ id }: { id: string }) {
           <div className="empty">Подтверждённых факторов пока нет.</div>
         )}
       </section>
+      {user?.role === "analyst" && (
+        <LegalAbsenceReview
+          key={row.id}
+          detail={detail.data}
+          onSaved={detail.reload}
+        />
+      )}
       {user?.role === "analyst" && (
         <AppealReview detail={detail.data} onSaved={detail.reload} />
       )}

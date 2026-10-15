@@ -7,6 +7,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, HttpUrl, field
 RiskCode = Literal['R1', 'R2', 'R3', 'R4', 'R5', 'R6']
 RiskZone = Literal['GREEN', 'YELLOW', 'RED']
 LegalStatus = Literal['UNKNOWN', 'PENDING', 'VERIFIED_VALID', 'VERIFIED_ABSENT', 'REJECTED']
+LegalMechanism = Literal['KZHK_GUARANTEE', 'BANK_WITH_MIO_PERMIT', 'FRAME_WITH_MIO_PERMIT']
 
 
 class DTO(BaseModel):
@@ -114,6 +115,7 @@ class PropertyOut(DTO):
     progress_percent: float | None
     progress_as_of: datetime | None
     legal_verification_status: LegalStatus
+    legal_absence_as_of: datetime | None = None
     risk: RiskSummaryOut
     is_demo: bool
     revision: int
@@ -137,7 +139,7 @@ class RiskFactorOut(DTO):
 class LegalBasisOut(DTO):
     id: UUID
     property_id: UUID
-    mechanism: Literal['KZHK_GUARANTEE', 'BANK_WITH_MIO_PERMIT', 'FRAME_WITH_MIO_PERMIT']
+    mechanism: LegalMechanism
     document_number: str | None
     document_date: str | None
     issuer: str

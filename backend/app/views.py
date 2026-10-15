@@ -34,11 +34,13 @@ def property_view(row: Property, factors: list[dto.RiskFactorOut]) -> dto.Proper
     values = {
         name: getattr(row, name)
         for name in dto.PropertyOut.model_fields
-        if name not in {'risk', 'developer', 'authorized_company', 'contractor'}
+        if name not in {'risk', 'developer', 'authorized_company', 'contractor', 'legal_absence_as_of'}
     }
     session = object_session(row)
     if session:
         values['legal_verification_status'] = legal_status_at(session, row)
+    absence = next((factor for factor in factors if factor.code == 'R1' and factor.status == 'CONFIRMED'), None)
+    values['legal_absence_as_of'] = absence.as_of if absence else None
     return dto.PropertyOut(**values, developer=dto.DeveloperOut.model_validate(row.developer), risk=risk)
 
 

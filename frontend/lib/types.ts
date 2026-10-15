@@ -20,6 +20,7 @@ export type Property = {
   stage: string;
   progress_percent: number | null;
   legal_verification_status: string;
+  legal_absence_as_of?: string | null;
   is_demo: boolean;
   last_reviewed_at: string | null;
   developer: { name: string; bin: string | null };
@@ -61,6 +62,7 @@ export type PropertyDetail = {
     code: string;
     status: string;
     weight: number;
+    as_of: string;
     evidence_ids: string[];
     reason: string | null;
   }[];
@@ -154,4 +156,13 @@ export type Evidence = {
   planned_completion_at?: string | null;
   actual_completion_at?: string | null;
   delay_status?: "NOT_COMPLETED" | "COMPLETED_LATE" | null;
+  absence_as_of?: string | null;
+  scope_description?: string | null;
+  legal_checks?:
+    | {
+        mechanism: string;
+        result: "DOCUMENTED_ABSENT" | "NOT_FOUND" | "UNAVAILABLE" | "UNKNOWN";
+        reason: string;
+      }[]
+    | null;
 };

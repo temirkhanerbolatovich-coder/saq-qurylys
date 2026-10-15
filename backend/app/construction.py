@@ -14,7 +14,12 @@ from app.models import Advertisement, Asset, Evidence, ExtractionResult, Propert
 from app.storage import read_asset
 
 DocumentPurpose = Literal[
-    'COLLECTIVE_APPEAL', 'LEGAL_BASIS', 'CONSTRUCTION_STAGE', 'PROGRESS_MEASUREMENT', 'DELAY_DOCUMENT'
+    'COLLECTIVE_APPEAL',
+    'LEGAL_BASIS',
+    'LEGAL_ABSENCE_REVIEW',
+    'CONSTRUCTION_STAGE',
+    'PROGRESS_MEASUREMENT',
+    'DELAY_DOCUMENT',
 ]
 CONSTRUCTION_KINDS = {'CONSTRUCTION_STAGE', 'PROGRESS_MEASUREMENT', 'DELAY_DOCUMENT'}
 FACT_FIELDS = (

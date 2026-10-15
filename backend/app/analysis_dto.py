@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field, HttpUrl, field_validator, model_validator
 
 from app.dto import DTO, ErrorOut, RiskCode, RiskFactorOut, RiskSummaryOut
+from app.legal_absence import LegalMechanismCheck
 
 
 class ReviewInput(DTO):
@@ -173,6 +174,9 @@ class EvidenceCreate(ReviewInput):
     planned_completion_at: AwareDatetime | None = None
     actual_completion_at: AwareDatetime | None = None
     delay_status: Literal['NOT_COMPLETED', 'COMPLETED_LATE'] | None = None
+    absence_as_of: AwareDatetime | None = None
+    scope_description: str | None = Field(default=None, min_length=1, max_length=2000)
+    legal_checks: list[LegalMechanismCheck] | None = Field(default=None, min_length=1, max_length=3)
     is_demo: bool
 
 

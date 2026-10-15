@@ -22,6 +22,14 @@ from app.construction import (
 from app.dependencies import DB, Actor, check_csrf
 from app.dto import AssetOut, Page
 from app.extraction import payment_offer
+from app.legal_absence import (
+    ABSENCE_FIELDS,
+    LegalAbsenceFacts,
+    LegalMechanismCheck,
+    absence_document,
+    validate_absence_factor,
+    validate_joint_r1_r2_date,
+)
 from app.models import (
     Advertisement,
     Asset,
@@ -68,6 +76,9 @@ async def upload_document(
     planned_completion_at: Annotated[AwareDatetime | None, Form()] = None,
     actual_completion_at: Annotated[AwareDatetime | None, Form()] = None,
     delay_status: Annotated[Literal['NOT_COMPLETED', 'COMPLETED_LATE'] | None, Form()] = None,
+    absence_as_of: Annotated[AwareDatetime | None, Form()] = None,
+    scope_description: Annotated[str | None, Form(min_length=1, max_length=2000)] = None,
+    legal_checks: Annotated[str | None, Form(max_length=20000)] = None,
 ):
     analyst(actor)
     if purpose == 'COLLECTIVE_APPEAL' and signatory_count is None:
@@ -88,6 +99,19 @@ async def upload_document(
         )
     except ValidationError as exc:
         raise HTTPException(422, exc.errors()[0]['msg']) from None
+    absence_facts = None
+    if purpose == 'LEGAL_ABSENCE_REVIEW':
+        try:
+            absence_facts = LegalAbsenceFacts(
+                event_at=event_at,
+                absence_as_of=absence_as_of,
+                scope_description=scope_description,
+                legal_checks=TypeAdapter(list[LegalMechanismCheck]).validate_json(legal_checks or 'null'),
+            )
+        except ValidationError as exc:
+            raise HTTPException(422, exc.errors()[0]['msg']) from None
+    elif any(value is not None for value in [absence_as_of, scope_description, legal_checks]):
+        raise HTTPException(422, 'Поля проверки отсутствия относятся только к LEGAL_ABSENCE_REVIEW')
     if not source_label.strip() or not methodology.strip() or event_at > utcnow():
         raise HTTPException(422, 'Нужны источник, основание проверки и дата не в будущем')
     try:
@@ -117,6 +141,8 @@ async def upload_document(
         'purpose': purpose,
     }
     metadata |= facts.model_dump(mode='json', exclude={'purpose', 'event_at'}, exclude_none=True)
+    if absence_facts:
+        metadata |= absence_facts.model_dump(mode='json', exclude={'event_at'})
     previous, digest = begin_command(
         db,
         actor.id,
@@ -196,7 +222,7 @@ def property_locked(db, id):
     return row
 
 
-def construction_evidence(body, request, actor, db, idempotency_key, digest):
+def scoped_evidence(body, request, actor, db, idempotency_key, digest):
     ad = None
     if body.kind == 'ADVERTISEMENT_PUBLICATION' and body.advertisement_id:
         ad = db.scalar(
@@ -210,7 +236,7 @@ def construction_evidence(body, request, actor, db, idempotency_key, digest):
         raise HTTPException(422, 'Нельзя смешивать DEMO и реальные материалы')
     details = body.model_dump(mode='json', exclude={'property_id', 'asset_id'})
     # All typed facts and provenance are copied from the immutable source, never client replacements.
-    details |= {field: None for field in (*FACT_FIELDS, 'signatory_count')}
+    details |= {field: None for field in (*FACT_FIELDS, *ABSENCE_FIELDS, 'signatory_count')}
     row = Evidence(id=uuid4(), property_id=prop.id, asset_id=body.asset_id, details=details)
     root = request.app.state.settings.storage_root
     if body.kind == 'ADVERTISEMENT_PUBLICATION':
@@ -228,8 +254,12 @@ def construction_evidence(body, request, actor, db, idempotency_key, digest):
     else:
         if any([body.advertisement_id, body.extraction_id, body.hypothesis_id, body.fragment, body.legal_basis_id]):
             raise HTTPException(422, 'Используйте самостоятельный документ, без рекламных/правовых ссылок')
-        asset, source, _ = document_source(db, prop, body.asset_id, body.kind, root)
-        details |= {field: source.get(field) for field in FACT_FIELDS}
+        if body.kind == 'LEGAL_ABSENCE_REVIEW':
+            asset, source, _ = absence_document(db, prop, body.asset_id, root)
+            details |= {field: source.get(field) for field in ABSENCE_FIELDS}
+        else:
+            asset, source, _ = document_source(db, prop, body.asset_id, body.kind, root)
+            details |= {field: source.get(field) for field in FACT_FIELDS}
         details |= {field: source.get(field) for field in ('source_label', 'source_url', 'event_at', 'methodology')}
         details['captured_at'] = asset.captured_at.isoformat()
     details['created_by'] = str(actor.id)
@@ -349,10 +379,12 @@ def create_evidence(body: dto.EvidenceCreate, request: Request, actor: Actor, db
         getattr(body, field) is not None for field in FACT_FIELDS
     ):
         raise HTTPException(422, 'Факты строительства относятся только к документам соответствующего назначения')
+    if body.kind != 'LEGAL_ABSENCE_REVIEW' and any(getattr(body, field) is not None for field in ABSENCE_FIELDS):
+        raise HTTPException(422, 'Поля отсутствия относятся только к заключению о проверке всех механизмов')
     if body.kind == 'COLLECTIVE_APPEAL':
         return appeal_evidence(body, request, actor, db, idempotency_key, digest)
-    if body.kind in CONSTRUCTION_KINDS | {'ADVERTISEMENT_PUBLICATION'}:
-        return construction_evidence(body, request, actor, db, idempotency_key, digest)
+    if body.kind in CONSTRUCTION_KINDS | {'ADVERTISEMENT_PUBLICATION', 'LEGAL_ABSENCE_REVIEW'}:
+        return scoped_evidence(body, request, actor, db, idempotency_key, digest)
     if body.kind != 'ADVERTISEMENT_FRAGMENT' or not body.advertisement_id:
         raise HTTPException(422, 'Для этого вида доказательства нужен отдельный поддерживаемый сценарий')
     ad = db.scalar(
@@ -401,6 +433,8 @@ def create_evidence(body: dto.EvidenceCreate, request: Request, actor: Actor, db
 def validate_evidence(db, prop, ids, as_of=None, code='R2', storage_root=None):
     if not ids:
         raise HTTPException(422, 'Нужно хотя бы одно доказательство')
+    if code == 'R1':
+        return validate_absence_factor(db, prop, ids, as_of or utcnow(), storage_root)
     if code in {'R3', 'R5', 'R6'}:
         return validate_construction_factor(db, prop, ids, as_of or utcnow(), code, storage_root)
     for id in set(ids):
@@ -446,11 +480,6 @@ def create_factor(id: UUID, body: dto.RiskFactorCreate, request: Request, actor:
     prop = property_locked(db, id)
     if body.as_of > utcnow():
         raise HTTPException(422, 'Дата проверки не может быть в будущем')
-    if body.code not in {'R2', 'R3', 'R4', 'R5', 'R6'}:
-        raise HTTPException(
-            422,
-            'R1 требует отдельной проверки отсутствия всех применимых оснований; этот сценарий ещё не реализован',
-        )
     if db.scalar(select(RiskFactor.id).where(RiskFactor.property_id == id, RiskFactor.code == body.code)):
         raise HTTPException(409, 'Фактор уже существует. Откройте его ручную проверку.')
     validate_evidence(db, prop, body.evidence_ids, body.as_of, body.code, request.app.state.settings.storage_root)
@@ -503,13 +532,12 @@ def review_factor(id: UUID, body: dto.RiskFactorReview, request: Request, actor:
         select(RiskFactor).where(RiskFactor.id == id).with_for_update().execution_options(populate_existing=True)
     )
     revision(row.revision, body.expected_revision)
-    if row.code not in {'R2', 'R3', 'R4', 'R5', 'R6'}:
-        raise HTTPException(422, 'R1 требует отдельной проверки всех механизмов')
-    assessment_at = body.as_of or (row.as_of if row.code in {'R3', 'R5', 'R6'} else utcnow())
+    assessment_at = body.as_of or (row.as_of if row.code in {'R1', 'R3', 'R5', 'R6'} else utcnow())
     if assessment_at > utcnow():
         raise HTTPException(422, 'Дата оценки не может быть в будущем')
     if body.status == 'CONFIRMED':
         validate_evidence(db, prop, body.evidence_ids, assessment_at, row.code, request.app.state.settings.storage_root)
+        validate_joint_r1_r2_date(db, prop, row.code, assessment_at, body.evidence_ids)
     elif any(not db.get(Evidence, id) or db.get(Evidence, id).property_id != prop.id for id in body.evidence_ids):
         raise HTTPException(422, 'Доказательства должны относиться к этому ЖК')
     before = {'status': row.status, 'evidence_ids': row.evidence_ids, 'as_of': row.as_of.isoformat()}
@@ -518,6 +546,10 @@ def review_factor(id: UUID, body: dto.RiskFactorReview, request: Request, actor:
     row.evidence_ids = [str(value) for value in body.evidence_ids]
     row.reviewed_by, row.reviewed_at, row.reason = actor.id, utcnow(), body.reason
     row.as_of = assessment_at
+    previous_legal_status = prop.legal_verification_status
+    if row.code == 'R1' and prop.legal_verification_status == 'VERIFIED_ABSENT':
+        # New reviews are dated facts; retire the legacy timeless DEMO aggregate on explicit review.
+        prop.legal_verification_status = 'UNKNOWN'
     prop.revision += 1
     prop.last_reviewed_at = utcnow()
     audit(
@@ -532,6 +564,14 @@ def review_factor(id: UUID, body: dto.RiskFactorReview, request: Request, actor:
             'property_id': str(prop.id),
             'before': before,
             'after': {'status': row.status, 'evidence_ids': row.evidence_ids, 'as_of': row.as_of.isoformat()},
+            **(
+                {
+                    'before_property_legal_status': previous_legal_status,
+                    'after_property_legal_status': prop.legal_verification_status,
+                }
+                if row.code == 'R1'
+                else {}
+            ),
         },
     )
     db.flush()

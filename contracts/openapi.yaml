@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.5.0-mvp",
-    "description": "SAQ QURYLYS target contract with honest per-operation status. Registry/OCR, dated legal document review and manual R2-R6 evidence workflows implemented. All-mechanism absence/R1, signals and PDF remain incomplete. JSON serialization is valid YAML 1.2."
+    "version": "0.6.0-mvp",
+    "description": "SAQ QURYLYS target contract with per-operation status. Registry/OCR, dated legal document review and manual R1-R6 implemented. R1 is an all-mechanism dated human absence review; empty registry results do not prove absence. Signals/PDF and permitted collector remain incomplete. JSON serialization is valid YAML 1.2."
   },
   "servers": [
     {
@@ -856,7 +856,7 @@
       "post": {
         "operationId": "reviewLegalBasis",
         "summary": "Review scoped document applicability",
-        "description": "Supports VERIFIED_VALID and REJECTED, requires own evidence IDs and revision. Confirmation requires document number/date/start of applicability and applicable nonfuture as_of; matching dated CONFIRMED R1 is conflict 409. VERIFIED_ABSENT=422 until all-mechanism absence workflow exists. Server actor/time and before/after audit. Current property legal status is derived from document periods; rejection/expiry never proves absence.",
+        "description": "VERIFIED_VALID/REJECTED with own evidence and revision. Applicable confirmed R1 conflicts with valid document at the same dated scope (409). VERIFIED_ABSENT is not a status for a single document (422); all-mechanism absence is a separate LEGAL_ABSENCE_REVIEW/R1 workflow. Rejection/expiry does not prove absence.",
         "x-origin": "proposal",
         "responses": {
           "200": {
@@ -937,7 +937,7 @@
       "post": {
         "operationId": "createRiskFactor",
         "summary": "Create a pending factor with evidence",
-        "description": "Supports R2/R3/R4/R5/R6 with typed evidence and separate PENDING/CONFIRMED decisions, atomic risk/audit and optimistic revision. R1 remains unsupported (422). R3 requires known dated publication with confirmed version match plus independent UNDER_CONSTRUCTION source on the same project-calendar day. R5 exactly two distinct-SHA DECLARED/VERIFIED sources, same date/method/comparison_key and absolute difference >=20 percentage points. R6 dated delay document with planned/actual/checked facts, explicit human significance review. Assessment as_of separate from reviewed_at for new dated factors.",
+        "description": "Manual R1-R6 with typed evidence, separate PENDING/CONFIRMED decisions, revisions and audit. R1 requires exactly one all-mechanism LEGAL_ABSENCE_REVIEW evidence with all 3 DOCUMENTED_ABSENT, original hash, scope and exact assessment date. Applicable VERIFIED_VALID/PENDING bases block R1 with 409; new absence is dated, never a sticky current property status. R3/R5/R6 dated provenance guards remain in force. When confirming R1 or R2 and the counterpart is already CONFIRMED, at least one reviewed R2 publication must have known published_at equal to R1.as_of as an exact instant; otherwise 409. captured_at is not a substitute. The scorer formula is unchanged.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -1011,7 +1011,7 @@
             }
           }
         },
-        "x-implementation-status": "PARTIAL_NO_R1"
+        "x-implementation-status": "IMPLEMENTED_MANUAL_RISK_SLICE"
       }
     },
     "/api/v1/properties/{id}/audit": {
@@ -1952,7 +1952,7 @@
       "post": {
         "operationId": "uploadEvidenceAsset",
         "summary": "Store supporting document or image",
-        "description": "Property-scoped TXT/PNG/JPEG <=10MiB, TXT<=100000 chars, image<=25MP; purpose determines required facts, copied into immutable provenance. Supports appeal/legal/stage/measurement/delay purposes. Date and methodology required, no active content or PDF yet. Client facts cannot replace provenance after upload.",
+        "description": "Standalone TXT/PNG/JPEG with immutable provenance and typed facts by purpose. LEGAL_ABSENCE_REVIEW requires absence_as_of, scope_description and JSON legal_checks (unique mechanisms). Absent date <= document event_at <= now. Other purposes reject these fields. PDF remains unsupported.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -2099,7 +2099,7 @@
       "post": {
         "operationId": "createEvidence",
         "summary": "Create a version-specific evidence link",
-        "description": "Supports reviewed payment fragments, collective appeal, typed construction/progress/delay document snapshots, and dated ADVERTISEMENT_PUBLICATION with latest confirmed match. Source provenance/typed facts copied from immutable assets. Legal document evidence is created through legal basis attachment; all-mechanism absence remains unsupported.",
+        "description": "Typed R1-R6 evidence copied from immutable sources. LEGAL_ABSENCE_REVIEW copies dated per-mechanism checks and scope from its standalone upload; incomplete/unknown material never proves R1. LEGAL_DOCUMENT evidence is created through legal-basis attachment; direct creation is rejected.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -2164,7 +2164,7 @@
             }
           }
         },
-        "x-implementation-status": "PARTIAL_NO_ABSENCE"
+        "x-implementation-status": "IMPLEMENTED_MANUAL_EVIDENCE_SLICE"
       }
     },
     "/api/v1/evidence/{id}": {
@@ -2236,7 +2236,7 @@
       "post": {
         "operationId": "reviewRiskFactor",
         "summary": "Review factor and atomically recalculate risk",
-        "description": "Supports R2/R3/R4/R5/R6 with typed evidence and separate PENDING/CONFIRMED decisions, atomic risk/audit and optimistic revision. R1 remains unsupported (422). R3 requires known dated publication with confirmed version match plus independent UNDER_CONSTRUCTION source on the same project-calendar day. R5 exactly two distinct-SHA DECLARED/VERIFIED sources, same date/method/comparison_key and absolute difference >=20 percentage points. R6 dated delay document with planned/actual/checked facts, explicit human significance review. Assessment as_of separate from reviewed_at for new dated factors.",
+        "description": "Manual R1-R6 with typed evidence, separate PENDING/CONFIRMED decisions, revisions and audit. R1 requires exactly one all-mechanism LEGAL_ABSENCE_REVIEW evidence with all 3 DOCUMENTED_ABSENT, original hash, scope and exact assessment date. Applicable VERIFIED_VALID/PENDING bases block R1 with 409; new absence is dated, never a sticky current property status. R3/R5/R6 dated provenance guards remain in force. When confirming R1 or R2 and the counterpart is already CONFIRMED, at least one reviewed R2 publication must have known published_at equal to R1.as_of as an exact instant; otherwise 409. captured_at is not a substitute. The scorer formula is unchanged.",
         "x-origin": "CODEX_TZ",
         "responses": {
           "200": {
@@ -2310,7 +2310,7 @@
             }
           }
         },
-        "x-implementation-status": "PARTIAL_NO_R1"
+        "x-implementation-status": "IMPLEMENTED_MANUAL_RISK_SLICE"
       }
     },
     "/api/v1/signals": {
@@ -3387,6 +3387,14 @@
                 "type": "null"
               }
             ]
+          },
+          "legal_absence_as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of confirmed R1 assessment, separate from the current legal document status. Does not establish timeless current absence."
           }
         },
         "required": [
@@ -4795,6 +4803,32 @@
                 "type": "null"
               }
             ]
+          },
+          "absence_as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "scope_description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "legal_checks": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/LegalMechanismCheck"
+            },
+            "minItems": 1,
+            "maxItems": 3
           }
         },
         "required": [
@@ -5044,6 +5078,32 @@
                 "type": "null"
               }
             ]
+          },
+          "absence_as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "scope_description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "legal_checks": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/LegalMechanismCheck"
+            },
+            "minItems": 1,
+            "maxItems": 3
           }
         },
         "required": [
@@ -5111,7 +5171,8 @@
               "LEGAL_BASIS",
               "CONSTRUCTION_STAGE",
               "PROGRESS_MEASUREMENT",
-              "DELAY_DOCUMENT"
+              "DELAY_DOCUMENT",
+              "LEGAL_ABSENCE_REVIEW"
             ],
             "default": "COLLECTIVE_APPEAL"
           },
@@ -5202,6 +5263,31 @@
                 "type": "null"
               }
             ]
+          },
+          "absence_as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Required for LEGAL_ABSENCE_REVIEW. Exact dated absence covered by document, not later than event_at."
+          },
+          "scope_description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "Required exact phase/building/scope for LEGAL_ABSENCE_REVIEW."
+          },
+          "legal_checks": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20000,
+            "description": "JSON array of 1..3 unique LegalMechanismCheck objects. All 3 DOCUMENTED_ABSENT are required for R1; incomplete/unknown checks may be saved as material only."
           }
         },
         "required": [
@@ -5373,7 +5459,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Optional explicit nonfuture assessment date. R1/R3/R5/R6 preserve prior date if omitted. R1 must match immutable absence_as_of; server reviewed_at stays separate."
           }
         },
         "required": [
@@ -5382,7 +5469,7 @@
           "evidence_ids",
           "reason"
         ],
-        "description": "Optional explicit assessment date, never in future. R3/R5/R6 preserve prior assessment date when omitted, separate from server reviewed_at."
+        "description": "Optional as_of; R1/R3/R5/R6 preserve previous assessment date when omitted. Server reviewed_at is separate."
       },
       "RiskDetail": {
         "type": "object",
@@ -5935,6 +6022,39 @@
         "required": [
           "expected_revision",
           "text",
+          "reason"
+        ]
+      },
+      "LegalMechanismCheck": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mechanism": {
+            "type": "string",
+            "enum": [
+              "KZHK_GUARANTEE",
+              "BANK_WITH_MIO_PERMIT",
+              "FRAME_WITH_MIO_PERMIT"
+            ]
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "DOCUMENTED_ABSENT",
+              "NOT_FOUND",
+              "UNAVAILABLE",
+              "UNKNOWN"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "mechanism",
+          "result",
           "reason"
         ]
       }

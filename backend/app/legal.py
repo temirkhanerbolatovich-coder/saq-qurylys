@@ -30,7 +30,7 @@ def legal_status_at(db, prop, at=None):
         )
     if any(b.details['verification_status'] == 'VERIFIED_VALID' and applies_at(b.details, at) for b in bases):
         return 'VERIFIED_VALID'
-    # Legacy explicit absence in DEMO is retained; new absence decisions are not implemented yet.
+    # Legacy DEMO status is retained. New R1 evidence establishes absence only at its explicit as_of.
     if prop.legal_verification_status == 'VERIFIED_ABSENT':
         return 'VERIFIED_ABSENT'
     if any(b.details['verification_status'] == 'PENDING' for b in bases):

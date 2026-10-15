@@ -12,7 +12,7 @@ from app.api.analysis import Key, analyst, audit, revision
 from app.api.reviews import property_locked
 from app.commands import begin_command, finish_command
 from app.dependencies import DB, Actor, check_csrf, get_property
-from app.dto import LegalBasisOut
+from app.dto import LegalBasisOut, LegalMechanism
 from app.legal import applies_at, document_calendar_date, legal_status_at
 from app.models import Asset, Developer, Evidence, LegalBasis, RiskFactor, utcnow
 from app.storage import read_asset
@@ -22,7 +22,7 @@ router = APIRouter()
 
 
 class LegalBasisCreate(ReviewInput):
-    mechanism: Literal['KZHK_GUARANTEE', 'BANK_WITH_MIO_PERMIT', 'FRAME_WITH_MIO_PERMIT']
+    mechanism: LegalMechanism
     document_number: str | None = Field(max_length=300)
     document_date: date | None
     issuer: str = Field(min_length=1, max_length=300)
@@ -234,7 +234,9 @@ def review_basis(id: UUID, body: LegalBasisReview, request: Request, actor: Acto
                 RiskFactor.property_id == prop.id, RiskFactor.code == 'R1', RiskFactor.status == 'CONFIRMED'
             )
         ):
-            if applies_at(row.details, factor.as_of):
+            if applies_at(row.details, factor.as_of) and (
+                date.fromisoformat(row.details['document_date']) <= document_calendar_date(factor.as_of)
+            ):
                 raise HTTPException(
                     409, 'Подтверждённый R1 противоречит документу на ту же дату. Сначала разрешите противоречие.'
                 )
