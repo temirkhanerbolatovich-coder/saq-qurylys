@@ -6,12 +6,14 @@ from uuid import uuid4
 from rapidfuzz import fuzz
 
 PAYMENT = re.compile(
-    r'\b(?:платн\w*\s+брон\w*|брон\w*|депозит\w*|задат\w*|аванс\w*|'
+    r'\b(?:платн\w*\s+брон\w*|плат[ауы]\s+за\s+брон\w*|брон\w*|резервирован\w*|депозит\w*|задат\w*|аванс\w*|'
     r'(?:первоначальн\w*|перв\w*)\s+взнос\w*|внесите\s+(?:взнос|деньги)|'
-    r'а[қк]ылы\s+брондау|брондау|кеп[іи]ла[қк]ы|(?:бастап[қк]ы|ал[ғг]аш[қк]ы)\s+жарна|алдын\s+ала\s+т[өо]лем)',
+    r'а[қк]ылы\s+брондау|брондау|кеп[іи]ла[қк]ы|(?:бастап[қк]ы|ал[ғг]аш[қк]ы)\s+жарна|'
+    r'алдын\s+ала\s+т[өо]л(?:ем|еңіз))',
     re.I,
 )
-NUMBER = r'(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)(?:[.,]\d{1,2})?'
+NUMBER_GAP = r'(?:[ \t\u00a0\u202f]+|[ \t\u00a0\u202f]*\r?\n[ \t\u00a0\u202f]*)'
+NUMBER = rf'(?:\d{{1,3}}(?:{NUMBER_GAP}\d{{3}})+|\d+)(?:[.,]\d{{1,2}})?'
 MONEY = re.compile(
     rf'(?P<amount>{NUMBER})\s*(?P<scale>млн|миллион\w*|мың|тыс\.?)?\s*(?P<currency>₸|тенге|теңге|тг\b|KZT\b|USD\b|\$|EUR\b|€)',
     re.I,
@@ -22,6 +24,18 @@ FREE = r'бесплатн\w*|тегін|ақысыз|без\s+оплат\w*'
 UNDER = re.compile(r'строящ\w*|строит\w*|строится|до\s+сдачи|салынып\s+жатыр|құрылыс\s+кезең', re.I)
 COMPLETED = re.compile(r'(?:дом\s+)?(?:введ[её]н|готовые\s+квартиры)|пайдалануға\s+берілген', re.I)
 NAME_PREFIX = re.compile(r'(?:\bЖК\b|\bТК\b|жилой\s+комплекс|тұрғын\s+үй\s+кешені)\s*[«"“]?([^\n;,.!?»"”]{2,70})', re.I)
+CLAUSE_BOUNDARY = re.compile(
+    r'[.!?;](?=\s|$)|\n+|,[ \t]*(?=(?:(?:а\s+|но\s+)?(?:сейчас|теперь|сегодня|енді|қазір)|'
+    r'(?:но\s+)?(?:внесите|оплатите|перечислите))\b)',
+    re.I,
+)
+HISTORICAL_CONTEXT = re.compile(
+    r'(?:прошлогодн\w*|стар(?:ый|ая|ое|ые|ой|ого|ому|ым|ыми|ых|ую|ом)\b|архивн\w*)'
+    r'.{0,80}(?:упоминал\w*|действовал\w*|предлагал\w*)|'
+    r'(?:былтыр\w*|бұрынғы|ескі).{0,100}(?:жазылған\s+еді|аталған)',
+    re.I | re.S,
+)
+KAZAKH_OCR_LETTERS = {'ә': 'әа', 'ғ': 'ғг', 'қ': 'қк', 'ң': 'ңн', 'ө': 'өо', 'ұ': 'ұу', 'ү': 'үу', 'і': 'іи'}
 
 
 def normalized(value: str) -> str:
@@ -31,7 +45,7 @@ def normalized(value: str) -> str:
 
 
 def payment_is_positive(sentence: str, match: re.Match) -> bool:
-    if WARNING.search(sentence):
+    if WARNING.search(sentence) or HISTORICAL_CONTEXT.search(sentence):
         return False
     before, term, after = (
         sentence[max(0, match.start() - 40) : match.start()],
@@ -40,30 +54,90 @@ def payment_is_positive(sentence: str, match: re.Match) -> bool:
     )
     if re.search(r'(?:\bбез|\bне|\bнет)\s+(?:\w+\s+){0,2}$', before, re.I):
         return False
-    if re.match(r'\s*(?:не\s+(?:нуж\w*|треб\w*)|алынбайды|жоқ|қабылданбайды|ұсынылмайды)', after, re.I):
+    if re.match(
+        r'\s*(?:не\s+(?:нуж\w*|треб\w*)|отсутств\w*|алынбайды|жоқ|қабылданбайды|ұсынылмайды|'
+        r'талап\s+етілмейді|жасамаңыз)',
+        after,
+        re.I,
+    ):
         return False
-    if 'брон' in term.casefold():
+    if re.search(r'брон|резерв', term, re.I):
         if re.search(rf'(?:{FREE})\s*$', before, re.I) or re.match(rf'\s*(?:[-—:=]\s*)?(?:{FREE})', after, re.I):
             return False
     return True
 
 
-def payment_offer(text: str) -> bool:
+def clauses(text: str):
+    """Keep source spans; only join a wrapped amount or an unfinished payment phrase."""
+    start = 0
+    for boundary in CLAUSE_BOUNDARY.finditer(text):
+        before, after = text[start : boundary.start()], text[boundary.end() : boundary.end() + 100]
+        if boundary.group().startswith(',') and not HISTORICAL_CONTEXT.search(before):
+            continue
+        if boundary.group() == '.' and re.search(r'\bтыс$', before, re.I):
+            continue
+        if boundary.group() == '\n':
+            amount_continues = re.search(r'\d\s*$', before) and re.match(
+                r'[ \t]*(?:\d{3}\b|тыс\b|млн\b|мың\b|тенге\b|теңге\b|KZT\b|USD\b|EUR\b|[₸$€])', after, re.I
+            )
+            payment_continues = PAYMENT.search(before) and re.match(
+                r'[ \t]*(?:\d|в[ \t]+размере\b|размере\b|тенге\b|теңге\b|[₸$€])', after, re.I
+            )
+            term_continues = re.search(r'(?:алдын\s+ала|первоначальн\w*|платн\w*)\s*$', before, re.I) and re.match(
+                r'[ \t]*(?:т[өо]л|взнос|брон)', after, re.I
+            )
+            if amount_continues or payment_continues or term_continues:
+                continue
+        end = boundary.end()
+        left, right = start, end
+        while left < right and text[left].isspace():
+            left += 1
+        while right > left and text[right - 1].isspace():
+            right -= 1
+        if right > left:
+            yield left, right
+        start = end
+    if text[start:].strip():
+        yield start + len(text[start:]) - len(text[start:].lstrip()), len(text.rstrip())
+
+
+def number_value(amount: str) -> Decimal:
+    return Decimal(re.sub(r'\s', '', amount).replace(',', '.'))
+
+
+def payment_terms(text: str) -> list:
+    terms = []
+    amounts = [*MONEY.finditer(text), *PERCENT.finditer(text)]
     for match in PAYMENT.finditer(text):
         if not payment_is_positive(text, match):
             continue
-        close = [
-            value
-            for value in [*MONEY.finditer(text), *PERCENT.finditer(text)]
-            if min(abs(value.start() - match.end()), abs(match.start() - value.end())) <= 65
-        ]
-        if close and any(
-            Decimal(re.sub(r'[ \u00a0\u202f]', '', item['amount']).replace(',', '.')) > 0 for item in close
-        ):
-            return True
-        if re.search(r'платн|а[қк]ылы|внесите', match.group(), re.I):
-            return True
-    return False
+
+        def distance(amount):
+            return max(0, amount.start() - match.end(), match.start() - amount.end())
+
+        nearest = min(amounts, key=distance) if amounts else None
+        if nearest and distance(nearest) <= 65:
+            value = number_value(nearest['amount'])
+            if value > 0 and ('currency' in nearest.re.groupindex or value <= 100):
+                terms.append((match, nearest))
+        elif re.search(r'платн|плат[ауы]\s+за|а[қк]ылы|внесите|төлеңіз', match.group(), re.I):
+            terms.append((match, None))
+    return terms
+
+
+def payment_offer(text: str) -> bool:
+    return not WARNING.search(text) and any(payment_terms(text[start:end]) for start, end in clauses(text))
+
+
+def money_value(money: re.Match) -> dict:
+    amount = number_value(money['amount'])
+    scale = (money['scale'] or '').casefold()
+    amount *= 1_000_000 if scale.startswith(('млн', 'миллион')) else 1000 if scale else 1
+    currency = money['currency'].upper()
+    return {
+        'amount': format(amount, 'f'),
+        'currency': 'USD' if currency in {'USD', '$'} else 'EUR' if currency in {'EUR', '€'} else 'KZT',
+    }
 
 
 def fragment(text: str, start: int, end: int, asset_id, extraction_id, words: list[dict]) -> dict:
@@ -129,55 +203,46 @@ def extract(
             if found and not any(start < found.end() and end > found.start() for start, end in matched_spans):
                 matched_spans.append(found.span())
                 add('PROPERTY_NAME', found.start(), found.end(), {'text': found.group()})
-    for clause in re.finditer(r'[^\n]+', text):
-        for sentence in re.finditer(r'.+?(?:[.!?;](?=\s)|$)', clause.group()):
-            content = sentence.group().strip()
-            if not content:
-                continue
-            start = clause.start() + sentence.start() + len(sentence.group()) - len(sentence.group().lstrip())
-            if payment_offer(content) and not WARNING.search(text):
-                value = {'text': content[:2000]}
-                terms = [m for m in PAYMENT.finditer(content) if payment_is_positive(content, m)]
-
-                def distance(amount):
-                    return min(min(abs(amount.start() - m.end()), abs(m.start() - amount.end())) for m in terms)
-
-                amounts = sorted([*MONEY.finditer(content), *PERCENT.finditer(content)], key=distance)
-                nearest = amounts[0] if amounts and distance(amounts[0]) <= 65 else None
-                money = nearest if nearest and 'currency' in nearest.re.groupindex else None
-                percent = nearest if nearest and 'currency' not in nearest.re.groupindex else None
-                if money:
-                    amount = Decimal(re.sub(r'[ \u00a0\u202f]', '', money['amount']).replace(',', '.'))
-                    scale = (money['scale'] or '').casefold()
-                    amount *= 1_000_000 if scale.startswith(('млн', 'миллион')) else 1000 if scale else 1
-                    currency = money['currency'].upper()
-                    value['money'] = {
-                        'amount': format(amount, 'f'),
-                        'currency': 'USD' if currency in {'USD', '$'} else 'EUR' if currency in {'EUR', '€'} else 'KZT',
-                    }
-                elif percent and Decimal(percent['amount'].replace(',', '.').replace(' ', '')) <= 100:
-                    value['percent'] = float(Decimal(percent['amount'].replace(',', '.').replace(' ', '')))
-                add('PAYMENT_TERM', start, start + min(len(content), 2000), value)
-            for amount in MONEY.finditer(content):
-                value = Decimal(re.sub(r'[ \u00a0\u202f]', '', amount['amount']).replace(',', '.'))
-                scale = (amount['scale'] or '').casefold()
-                value *= 1_000_000 if scale.startswith(('млн', 'миллион')) else 1000 if scale else 1
-                currency = amount['currency'].upper()
-                add(
-                    'AMOUNT',
-                    start + amount.start(),
-                    start + amount.end(),
-                    {
-                        'money': {
-                            'amount': format(value, 'f'),
-                            'currency': 'USD'
-                            if currency in {'USD', '$'}
-                            else 'EUR'
-                            if currency in {'EUR', '€'}
-                            else 'KZT',
-                        }
-                    },
+        if not matched_spans:
+            # Restrict OCR fallback to known Kazakh letter confusions, never arbitrary typos.
+            for base in sorted(registered_names, key=lambda value: (-len(value), value.casefold())):
+                if sum(char.isalpha() for char in base) < 6 or not any(
+                    c in KAZAKH_OCR_LETTERS for c in base.casefold()
+                ):
+                    continue
+                pattern = ''.join(
+                    f'[{KAZAKH_OCR_LETTERS[c]}]' if c in KAZAKH_OCR_LETTERS else re.escape(c) for c in base.casefold()
                 )
+                found = re.search(r'(?<!\w)' + pattern + r'(?!\w)', text, re.I)
+                if not found or any(start < found.end() and end > found.start() for start, end in matched_spans):
+                    continue
+                matched_spans.append(found.span())
+                add('PROPERTY_NAME', found.start(), found.end(), {'text': found.group()})
+            if matched_spans:
+                warnings.append(
+                    'Название найдено с возможной потерей казахской диакритики. Сверьте объект по оригиналу.'
+                )
+    for start, end in clauses(text):
+        content = text[start:end]
+        terms = payment_terms(content) if not WARNING.search(text) else []
+        if terms:
+            term, nearest = terms[0]
+            required_start = min(term.start(), nearest.start()) if nearest is not None else term.start()
+            required_end = max(term.end(), nearest.end()) if nearest is not None else term.end()
+            quote_start = max(0, required_start - 120) if len(content) > 2000 else 0
+            quote_end = min(len(content), quote_start + 2000)
+            value = {'text': content[quote_start:quote_end]}
+            if nearest is not None:
+                if 'currency' in nearest.re.groupindex:
+                    value['money'] = money_value(nearest)
+                else:
+                    value['percent'] = float(number_value(nearest['amount']))
+            if required_end <= quote_end:
+                add('PAYMENT_TERM', start + quote_start, start + quote_end, value)
+            else:
+                warnings.append('Условие оплаты слишком длинное для фрагмента. Проверьте его вручную по оригиналу.')
+        for amount in MONEY.finditer(content):
+            add('AMOUNT', start + amount.start(), start + amount.end(), {'money': money_value(amount)})
     completed = COMPLETED.search(text)
     under = UNDER.search(text)
     selected = completed or under

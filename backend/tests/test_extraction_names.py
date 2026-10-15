@@ -113,3 +113,45 @@ def test_explicit_name_prefix_still_takes_precedence_over_alias_fallback():
 
     names = [item for item in hypotheses if item['field'] == 'PROPERTY_NAME']
     assert [item['value']['text'] for item in names] == ['Береговой']
+
+
+@pytest.mark.parametrize(
+    ('registered', 'observed'),
+    [('Бұлтқұс', 'Булткус'), ('Таңзерек', 'Танзерек'), ('Жапырақмұнара', 'Жапыракмунара'), ('Айжапырақ', 'Айжапырак')],
+)
+def test_kazakh_ocr_confusions_keep_original_name_and_pending_candidates(registered, observed):
+    property_item = SimpleNamespace(id=uuid4(), name='DEMO Тестовый объект', aliases=[registered])
+    text = f'🏠 Жаңа пәтерлер\n«{observed}» сатылымда.'
+    start = text.index(observed)
+    words = [{'start': start, 'end': start + len(observed), 'x': 10, 'y': 20, 'width': 110, 'height': 15}]
+    hypotheses, warnings = extract(text, uuid4(), uuid4(), [property_item], words)
+    names = [item for item in hypotheses if item['field'] == 'PROPERTY_NAME']
+    assert len(names) == 1
+    assert names[0]['value']['text'] == names[0]['fragment']['quote'] == observed
+    assert names[0]['fragment']['start_offset'] == start
+    assert names[0]['fragment']['end_offset'] == start + len(observed)
+    assert names[0]['fragment']['bbox'] == {'x': 10, 'y': 20, 'width': 110, 'height': 15}
+    assert names[0]['review_status'] == 'PENDING'
+    assert any('диакритики' in warning for warning in warnings)
+    candidates = match_candidates(text, hypotheses, [property_item])
+    assert candidates[0]['property_id'] == property_item.id
+    assert candidates[0]['similarity'] < 100
+
+
+@pytest.mark.parametrize('observed', ['МегаБулткус', '_Булткус', 'Булткус2', 'Булткс', 'Булткас', 'Неизвестное'])
+def test_kazakh_ocr_fallback_does_not_accept_embedded_names_or_arbitrary_typos(observed):
+    item = SimpleNamespace(name='DEMO Бұлтқұс', aliases=[])
+    hypotheses, _ = extract(observed, uuid4(), uuid4(), [item])
+    assert not any(h['field'] == 'PROPERTY_NAME' for h in hypotheses)
+
+
+def test_kazakh_ocr_fallback_does_not_expand_short_aliases():
+    item = SimpleNamespace(name='DEMO Тестовый объект', aliases=['Күн'])
+    hypotheses, _ = extract('Кун', uuid4(), uuid4(), [item])
+    assert not any(h['field'] == 'PROPERTY_NAME' for h in hypotheses)
+
+
+def test_exact_name_takes_precedence_over_diacritic_fallback():
+    item = SimpleNamespace(name='DEMO Бұлтқұс', aliases=['Таңзерек'])
+    hypotheses, _ = extract('Бұлтқұс. Рядом Танзерек.', uuid4(), uuid4(), [item])
+    assert [h['value']['text'] for h in hypotheses if h['field'] == 'PROPERTY_NAME'] == ['Бұлтқұс']

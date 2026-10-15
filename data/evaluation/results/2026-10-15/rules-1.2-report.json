@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "corpus_id": "synthetic-ru-kz-v1",
+  "provenance": {
+    "kind": "synthetic",
+    "author": "blind corpus agent",
+    "created_at": "2026-10-15",
+    "independence": "Original texts and expected labels authored from the assigned PAYMENT_OFFER definition and docs/REQUIREMENTS.md before accessing any extraction implementation, OCR code, existing tests, or seed data. No extractor was run during authorship. Generated synthetic evaluation material, not external or human-validated acceptance evidence."
+  },
+  "created_at": "2026-10-15T18:02:11.729693+00:00",
+  "case_count": 36,
+  "manifest_sha256": "36736e64d28bb7b5607217d27018f557a5cdf635398e0e0fc0e6021c80ec8690",
+  "runtime": {
+    "python": "3.12.15",
+    "pillow": "12.3.0",
+    "rapidfuzz": "3.14.6",
+    "tesseract": "tesseract 5.3.0",
+    "languages": "rus+kaz+eng",
+    "traineddata_sha256": {
+      "rus": "e16e5e036cce1d9ec2b00063cf8b54472625b9e14d893a169e2b0dedeb4df225",
+      "kaz": "fcc01eed3815a42b9c6321c4c9d3606f39b166cbf95ade98b7d8d12063eae53d",
+      "eng": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2"
+    },
+    "font_sha256": "abdc775b21b1bc470d50c97e790d276f2054b7504e56e5bd3e64f48d68582322"
+  },
+  "source_sha256": {
+    "scripts/evaluate_ocr.py": "1ffa6adc0d5bcf948046b8bf26c96477ce10aa23d160b6a2945f7d7112165bba",
+    "backend/app/extraction.py": "bb9394f86cac0e4e06e4838bdc93f92709710a9e1d2d61ae81967afc030a2921",
+    "backend/app/ocr.py": "e226f5e8548ec4058af388b88c20954c376c0f5ecf62a98148c523201b7b2457",
+    "backend/app/uploads.py": "33522b847064982fb719f2b9994c6ab210f274529dc8c5b6078f0b836366d17d"
+  },
+  "inputs_changed_during_run": [],
+  "protocol_eligible": true,
+  "unique_image_count": 36,
+  "summaries": {
+    "all": {
+      "text_baseline": {
+        "readable_count": 32,
+        "evaluated_count": 32,
+        "coverage": 1.0,
+        "payment": {
+          "tp": 16,
+          "fp": 0,
+          "fn": 0,
+          "tn": 16,
+          "expected_positive": 16,
+          "precision": 1.0,
+          "recall_completed": 1.0,
+          "recall_end_to_end": 1.0
+        },
+        "matching": {
+          "known_target_count": 24,
+          "top1_hits": 22,
+          "top1_rate": 0.9166666666666666,
+          "top3_hits": 22,
+          "top3_rate": 0.9166666666666666,
+          "unmatched_count": 8,
+          "unmatched_evaluated": 8,
+          "unmatched_with_candidates": 1,
+          "unmatched_false_candidate_rate": 0.125
+        },
+        "ocr": {
+          "evaluated_count": 32,
+          "character_errors": 0,
+          "reference_characters": 6311,
+          "eligible_reference_characters": 6311,
+          "character_coverage": 1.0,
+          "cer": 0.0
+        },
+        "unreadable": {
+          "count": 4,
+          "with_text": 0,
+          "with_payment": 0,
+          "with_candidates": 0
+        }
+      },
+      "image_pipeline": {
+        "readable_count": 32,
+        "evaluated_count": 32,
+        "coverage": 1.0,
+        "payment": {
+          "tp": 16,
+          "fp": 0,
+          "fn": 0,
+          "tn": 16,
+          "expected_positive": 16,
+          "precision": 1.0,
+          "recall_completed": 1.0,
+          "recall_end_to_end": 1.0
+        },
+        "matching": {
+          "known_target_count": 24,
+          "top1_hits": 24,
+          "top1_rate": 1.0,
+          "top3_hits": 24,
+          "top3_rate": 1.0,
+          "unmatched_count": 8,
+          "unmatched_evaluated": 8,
+          "unmatched_with_candidates": 1,
+          "unmatched_false_candidate_rate": 0.125
+        },
+        "ocr": {
+          "evaluated_count": 32,
+          "character_errors": 157,
+          "reference_characters": 6311,
+          "eligible_reference_characters": 6311,
+          "character_coverage": 1.0,
+          "cer": 0.024877198542227856
+        },
+        "unreadable": {
+          "count": 4,
+          "with_text": 0,
+          "with_payment": 0,
+          "with_candidates": 0
+        }
+      }
+    },
+    "ru": {
+      "text_baseline": {
+        "readable_count": 16,
+        "evaluated_count": 16,
+        "coverage": 1.0,
+        "payment": {
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "tn": 8,
+          "expected_positive": 8,
+          "precision": 1.0,
+          "recall_completed": 1.0,
+          "recall_end_to_end": 1.0
+        },
+        "matching": {
+          "known_target_count": 12,
+          "top1_hits": 10,
+          "top1_rate": 0.8333333333333334,
+          "top3_hits": 10,
+          "top3_rate": 0.8333333333333334,
+          "unmatched_count": 4,
+          "unmatched_evaluated": 4,
+          "unmatched_with_candidates": 1,
+          "unmatched_false_candidate_rate": 0.25
+        },
+        "ocr": {
+          "evaluated_count": 16,
+          "character_errors": 0,
+          "reference_characters": 3268,
+          "eligible_reference_characters": 3268,
+          "character_coverage": 1.0,
+          "cer": 0.0
+        },
+        "unreadable": {
+          "count": 2,
+          "with_text": 0,
+          "with_payment": 0,
+          "with_candidates": 0
+        }
+      },
+      "image_pipeline": {
+        "readable_count": 16,
+        "evaluated_count": 16,
+        "coverage": 1.0,
+        "payment": {
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "tn": 8,
+          "expected_positive": 8,
+          "precision": 1.0,
+          "recall_completed": 1.0,
+          "recall_end_to_end": 1.0
+        },
+        "matching": {
+          "known_target_count": 12,
+          "top1_hits": 12,
+          "top1_rate": 1.0,
+          "top3_hits": 12,
+          "top3_rate": 1.0,
+          "unmatched_count": 4,
+          "unmatched_evaluated": 4,
+          "unmatched_with_candidates": 1,
+          "unmatched_false_candidate_rate": 0.25
+        },
+        "ocr": {
+          "evaluated_count": 16,
+          "character_errors": 66,
+          "reference_characters": 3268,
+          "eligible_reference_characters": 3268,
+          "character_coverage": 1.0,
+          "cer": 0.020195838433292534
+        },
+        "unreadable": {
+          "count": 2,
+          "with_text": 0,
+          "with_payment": 0,
+          "with_candidates": 0
+        }
+      }
+    },
+    "kz": {
+      "text_baseline": {
+        "readable_count": 16,
+        "evaluated_count": 16,
+        "coverage": 1.0,
+        "payment": {
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "tn": 8,
+          "expected_positive": 8,
+          "precision": 1.0,
+          "recall_completed": 1.0,
+          "recall_end_to_end": 1.0
+        },
+        "matching": {
+          "known_target_count": 12,
+          "top1_hits": 12,
+          "top1_rate": 1.0,
+          "top3_hits": 12,
+          "top3_rate": 1.0,
+          "unmatched_count": 4,
+          "unmatched_evaluated": 4,
+          "unmatched_with_candidates": 0,
+          "unmatched_false_candidate_rate": 0.0
+        },
+        "ocr": {
+          "evaluated_count": 16,
+          "character_errors": 0,
+          "reference_characters": 3043,
+          "eligible_reference_characters": 3043,
+          "character_coverage": 1.0,
+          "cer": 0.0
+        },
+        "unreadable": {
+          "count": 2,
+          "with_text": 0,
+          "with_payment": 0,
+          "with_candidates": 0
+        }
+      },
+      "image_pipeline": {
+        "readable_count": 16,
+        "evaluated_count": 16,
+        "coverage": 1.0,
+        "payment": {
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "tn": 8,
+          "expected_positive": 8,
+          "precision": 1.0,
+          "recall_completed": 1.0,
+          "recall_end_to_end": 1.0
+        },
+        "matching": {
+          "known_target_count": 12,
+          "top1_hits": 12,
+          "top1_rate": 1.0,
+          "top3_hits": 12,
+          "top3_rate": 1.0,
+          "unmatched_count": 4,
+          "unmatched_evaluated": 4,
+          "unmatched_with_candidates": 0,
+          "unmatched_false_candidate_rate": 0.0
+        },
+        "ocr": {
+          "evaluated_count": 16,
+          "character_errors": 91,
+          "reference_characters": 3043,
+          "eligible_reference_characters": 3043,
+          "character_coverage": 1.0,
+          "cer": 0.029904699309891553
+        },
+        "unreadable": {
+          "count": 2,
+          "with_text": 0,
+          "with_payment": 0,
+          "with_candidates": 0
+        }
+      }
+    }
+  },
+  "errors": [],
+  "proposed_targets_met": true,
+  "limitations": [
+    "Synthetic results are not real-world accuracy or independent human acceptance.",
+    "Once inspected for changes this corpus is a regression set, not a fresh holdout.",
+    "Payment metrics are document-level detection, not correctness of sums/currencies or legal risk."
+  ]
+}
