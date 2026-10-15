@@ -27,6 +27,18 @@
   --space-4: 16px;
   --space-6: 24px;
   --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --font-sans: "Segoe UI", Roboto, Arial, sans-serif;
+  --text-h1: 28px;
+  --text-h2: 19px;
+  --text-h3: 16px;
+  --text-h4: 15px;
+  --text-h5: 14px;
+  --text-h6: 13px;
+  --text-body: 14px;
+  --text-caption: 12px;
+  --shadow-popover: 0 4px 16px rgb(28 45 40 / 12%);
   --radius-control: 6px;
   --radius-panel: 8px;
   --ink: var(--color-text);
@@ -38,28 +50,43 @@
 }
 
 body {
-  font-family: "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: 14px;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
   line-height: 1.6;
 }
 h1 {
-  font-size: 28px;
+  font-size: var(--text-h1);
   line-height: 36px;
   letter-spacing: -0.7px;
   font-weight: 650;
 }
 h2 {
-  font-size: 19px;
+  font-size: var(--text-h2);
   line-height: 28px;
   font-weight: 650;
 }
 h3 {
-  font-size: 16px;
+  font-size: var(--text-h3);
   line-height: 24px;
   font-weight: 650;
 }
+h4 {
+  font-size: var(--text-h4);
+  line-height: 24px;
+  font-weight: 650;
+}
+h5 {
+  font-size: var(--text-h5);
+  line-height: 22px;
+  font-weight: 650;
+}
+h6 {
+  font-size: var(--text-h6);
+  line-height: 20px;
+  font-weight: 650;
+}
 small {
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 button:disabled {
   cursor: not-allowed;

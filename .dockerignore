@@ -2,6 +2,7 @@
 .venv
 .env*
 .local
+.agents
 storage
 frontend/node_modules
 frontend/.next

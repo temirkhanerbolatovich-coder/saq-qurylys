@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+  "commit": "56ea9cf174ed86786187daa9de0e6247cb0747e4",
+  "source_path": ".claude/skills/ui-ux-pro-max",
+  "installed_files": 73,
+  "verification": "All 73 installed source files matched Git blob SHA from pinned tree before local metadata was added.",
+  "codex_scope": "repo .agents/skills",
+  "runtime": "Python 3 standard library; search commands without --persist are read-only",
+  "local_additions": [
+    "LICENSE",
+    "SOURCE.json",
+    "agents/openai.yaml"
+  ]
+}

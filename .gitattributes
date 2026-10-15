@@ -2,3 +2,5 @@
 *.pdf binary
 *.docx binary
 *.png binary
+# Preserve pinned third-party sources byte-for-byte; owned code keeps normal whitespace checks.
+.agents/skills/ui-ux-pro-max/** -whitespace

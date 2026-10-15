@@ -37,6 +37,10 @@ jobs:
       - run: pip install -r backend/requirements-dev.txt
       - name: Check local backup and evaluation tooling
         run: python -m unittest discover -s scripts -p "test_*.py" -v
+      - name: Verify repository UI skill search (offline standard library)
+        run: |
+          python .agents/skills/ui-ux-pro-max/scripts/search.py "filter chips wrap" --domain ux --json > /tmp/saq-ui-guidance.json
+          python -c "import json; data=json.load(open('/tmp/saq-ui-guidance.json')); assert data['domain']=='ux' and data['count'] > 0; print('Repository UI skill search passed')"
       - run: python -m ruff check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py
       - run: python -m ruff format --check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py
       - name: Evaluate synthetic RU/KZ corpus (quality targets reported separately)

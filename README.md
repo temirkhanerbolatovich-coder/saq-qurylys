@@ -6,6 +6,8 @@
 
 Интерфейс обновлён в направлении «рабочее досье аналитика»: читаемые таблицы, объяснения факторов, навигация по карточке и доступные действия на телефоне. [Дизайн-система](docs/DESIGN_SYSTEM.md) и [UX-рекомендации](docs/UX_GUIDELINES.md) обязательны перед frontend-задачами. Локально **27 browser-тестов прошли**, затем повторены 5 UI-тестов и 32 responsive-проверки после финальной визуальной правки. Ширины 375/768/1024/1440 px, клавиатура, контраст tokens и настоящий browser zoom 200% проверены; границы — [UI-аудит](docs/UI_AUDIT.md). Новых зависимостей и изменений API/формулы риска нет.
 
+UI/UX-инфраструктура дополнена repo Skill `.agents/skills/ui-ux-pro-max` (pinned upstream, Python standard library, настоящий Codex discovery проверен), [каталогом компонентов](docs/UI_COMPONENTS.md) и [планом поддержки](docs/UI_IMPLEMENTATION_PLAN.md). Общие Pagination/TableRegion, tokens H1–H6 и сброс фильтров с возвратом focus внедрены; новый полный локальный прогон — **30 browser passed**. Skill передаётся через Git, второй fork и декоративные библиотеки не устанавливались.
+
 Опубликованный [CI 53e9ef0](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38762778431) подтвердил **294 backend / 27 browser / 27 tool tests**, frontend checks/build. Качество OCR измерено отдельно и цели ещё не достигнуты. Полная приёмка P0 остаётся открытой: разрешённый collector, новый внешний OCR holdout, второй ПК и UX/предметная проверка людьми. Docker работает, запущены только контейнеры SAQ. Ревизии и проверки записаны в [статусе](PROJECT_STATUS.md); остальные задачи — [в чеклисте](docs/REMAINING_CHECKLIST.md). Изменения только Markdown не запускают повторную полную сборку.
 
 ## Быстрый запуск через Docker
@@ -152,6 +154,8 @@ API и worker используют одну Docker-сборку и общий st
 | [Дизайн-система](docs/DESIGN_SYSTEM.md) | Направление, tokens, типографика, компоненты, responsive и доступность |
 | [UX-рекомендации](docs/UX_GUIDELINES.md) | Пользовательские сценарии, отдельные решения, формы и ошибки |
 | [UI-аудит](docs/UI_AUDIT.md) | Найденные проблемы, исправления, фактические проверки и ограничения |
+| [UI-компоненты](docs/UI_COMPONENTS.md) | Существующие компоненты, native patterns, контракты и примеры переиспользования |
+| [UI-процесс и Skill](docs/UI_IMPLEMENTATION_PLAN.md) | Pin/установка/discovery, библиотеки, этапы и передача между Codex-агентами |
 | [OCR и review](docs/IMPLEMENTATION_SLICE_02.md) | Рабочий путь, конфигурация, фактические проверки и пределы OCR/R2 |
 | [Стройка R3/R5/R6](docs/FEATURE_CONSTRUCTION_REVIEW.md) | Независимые датированные источники, сопоставимость и отдельные решения |
 | [Отсутствие оснований R1](docs/FEATURE_LEGAL_ABSENCE.md) | Три механизма, точная дата, противоречия и отдельное подтверждение |

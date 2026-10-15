@@ -1,0 +1,7 @@
+interface:
+  display_name: "UI UX Pro Max"
+  short_description: "Search local UI/UX guidance for accessible, consistent interfaces"
+  default_prompt: "Use $ui-ux-pro-max to review this interface against the repository design system."
+
+policy:
+  allow_implicit_invocation: true

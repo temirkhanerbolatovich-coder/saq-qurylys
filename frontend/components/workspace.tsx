@@ -37,6 +37,8 @@ import type {
   User,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
+import { TableRegion } from "@/components/ui/table-region";
 import { PropertyMap } from "@/components/property-map";
 import { statusLabel } from "@/lib/status-labels";
 import { AppealReview } from "@/components/appeal-review";
@@ -291,12 +293,7 @@ function PropertyTable({ rows }: { rows: Property[] }) {
       <div className="empty">Объекты по выбранным фильтрам не найдены.</div>
     );
   return (
-    <div
-      className="table-scroll"
-      role="region"
-      aria-label="Реестр объектов — таблица с горизонтальной прокруткой"
-      tabIndex={0}
-    >
+    <TableRegion label="Реестр объектов — таблица с горизонтальной прокруткой">
       <table>
         <thead>
           <tr>
@@ -355,7 +352,7 @@ function PropertyTable({ rows }: { rows: Property[] }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </TableRegion>
   );
 }
 
@@ -477,6 +474,16 @@ export function PropertiesView() {
   apiParams.delete("view");
   const query = apiParams.toString();
   const showMap = params.get("view") === "map";
+  const searchInput = useRef<HTMLInputElement>(null);
+  const hasFilters = ["q", "zone", "legal_status"].some((name) =>
+    params.get(name),
+  );
+  function clearFilters() {
+    const next = new URLSearchParams(params);
+    for (const name of ["q", "zone", "legal_status", "page"]) next.delete(name);
+    router.replace(`/properties?${next.toString()}`, { scroll: false });
+    requestAnimationFrame(() => searchInput.current?.focus());
+  }
   function filter(name: string, value: string) {
     const next = new URLSearchParams(params);
     if (value) next.set(name, value);
@@ -500,6 +507,8 @@ export function PropertiesView() {
             </label>
             <input
               id="search"
+              ref={searchInput}
+              type="search"
               maxLength={300}
               placeholder="Название ЖК или адрес"
               value={params.get("q") || ""}
@@ -550,6 +559,11 @@ export function PropertiesView() {
           >
             Карта и список
           </Button>
+          {hasFilters && (
+            <Button type="button" variant="ghost" onClick={clearFilters}>
+              Сбросить фильтры
+            </Button>
+          )}
         </div>
         {/* A changed filter must never display the previous request's markers. */}
         <PropertyResults
@@ -588,25 +602,15 @@ function PropertyResults({
         <PropertyTable rows={data.items} />
       </div>
       {(pages > 1 || data.page > 1) && (
-        <nav className="registry-pagination" aria-label="Страницы реестра">
-          <Button
-            variant="outline"
-            disabled={data.page <= 1}
-            onClick={() => onPage(data.page - 1)}
-          >
-            Предыдущая
-          </Button>
-          <span>
-            Страница {data.page} из {pages}
-          </span>
-          <Button
-            variant="outline"
-            disabled={data.page >= pages}
-            onClick={() => onPage(data.page + 1)}
-          >
-            Следующая
-          </Button>
-        </nav>
+        <Pagination
+          label="Страницы реестра"
+          page={data.page}
+          pageSize={data.page_size}
+          total={data.total}
+          onPageChange={onPage}
+          previousLabel="Предыдущая"
+          nextLabel="Следующая"
+        />
       )}
       {registry.error && <Notice error={registry.error} />}
     </>

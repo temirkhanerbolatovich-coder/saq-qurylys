@@ -14,6 +14,7 @@ import type {
   SignalDetail,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Auth,
   Demo,
@@ -255,22 +256,13 @@ export function SignalsView() {
                   карточке объекта после проверки материалов.
                 </p>
               )}
-              <div className="review-actions">
-                <Button
-                  variant="outline"
-                  disabled={page === 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Предыдущая страница
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={page * 25 >= queue.data.total}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Следующая страница
-                </Button>
-              </div>
+              <Pagination
+                label="Страницы сигналов"
+                page={page}
+                pageSize={25}
+                total={queue.data.total}
+                onPageChange={setPage}
+              />
             </>
           ) : (
             !queue.error && <p role="status">Загрузка сигналов…</p>

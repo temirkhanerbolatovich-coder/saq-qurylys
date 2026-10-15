@@ -43,6 +43,9 @@
 | Заголовок страницы | 28/36 px, на мобильном 24/32 | 650 |
 | Раздел | 19/28 px | 650 |
 | Подраздел | 16/24 px | 650 |
+| H4 — малая группа | 15/24 px | 650 |
+| H5 — вложенная группа | 14/22 px | 650 |
+| H6 — нижний уровень | 13/20 px | 650 |
 | Основной текст/поля | 14/22 px; поля на mobile 16/24 | 400 |
 | Таблица/кнопки | 13/20 px | 400 / 600 |
 | Пояснение/дата/статус | 12/18 px | 400 / 600 |
@@ -51,6 +54,8 @@
 Не опускать рабочий текст ниже 12 px. Числа/баллы/даты — tabular numerals. Параграфы пояснений ограничивать примерно 72–80 символами в строке; оригинальный текст сохранять целиком, без преобразования юридического смысла. Метки формы должны быть видны постоянно; placeholder не заменяет label.
 
 ## Сетка, отступы и поверхности
+
+Шрифт и шкала заголовков задаются `--font-sans`, `--text-h1`…`--text-h6`, `--text-body`, `--text-caption`; уровень выбирается по структуре документа, не ради размера. H4–H6 готовы как базовые styles, но не создают новые уровни в экранах без смысловой необходимости. `--space-10/12` — 40/48 px, `--shadow-popover` зарезервирован для настоящего floating UI, не для всех panels.
 
 - Базовая шкала: 4, 8, 12, 16, 24, 32, 40, 48 px. Контекстные интервалы 20 px допустимы для строк таблицы/текста.
 - Sidebar 224 px при ≥1024 px; доступная ширина контента до 1440 px. Padding рабочего поля 32 px desktop, 24 px tablet, 16 px phone.
@@ -76,6 +81,10 @@
 
 ## Адаптивность и WCAG 2.2 AA
 
+Каталог повторного использования — [UI_COMPONENTS](UI_COMPONENTS.md). Pagination общая для реестра/сигналов, с серверными metadata и polite объявлением страницы; TableRegion задаёт доступную scroll-область. Сброс фильтров — один видимый control, сохраняющий list/map и возвращающий focus в поиск.
+
+Светлая тема реализована; тёмная пока не реализована. Семантические `--color-*` позволяют позднее определить значения под `[data-theme=dark]` без смены names компонентов. Перед включением потребуются отдельные проверки всех состояний/контраста/карты/исходников и консолидация legacy raw colors; одного media prefers-color-scheme недостаточно. Наличие tokens не означает текущую поддержку dark mode.
+
 Контрольные ширины 375/768/1024/1440 px. При <1024 px навигация переходит наверх; <640 px действия и формы переносятся, поля 16 px. Оригинал/гипотезы на узком экране идут последовательно. Таблицы и карта имеют собственную область; не использовать глобальный overflow-x:hidden для маскировки дефекта.
 
 Целевые критерии: text contrast ≥4,5:1 (крупный ≥3:1), control/focus ≥3:1, reflow при 320 CSS px, zoom 200%, WCAG 2.5.8 минимум 24×24 CSS px с допустимыми исключениями; проектный touch target — 44×44. Все действия доступны без мыши, логичный порядок фокуса, skip link, landmarks, visible labels, reduced-motion, состояния не полагаются только на цвет. Sticky-области не перекрывают фокус. Autofill/password manager/paste не запрещать.
@@ -88,4 +97,6 @@
 
 Просмотрено 15.10.2026: [shadcn/ui](https://ui.shadcn.com/) — владение компонентами и доступные defaults; [Radix Primitives](https://www.radix-ui.com/primitives) — keyboard/focus сложных элементов; [Lucide](https://lucide.dev/) — согласованная функциональная иконография; [Refactoring UI](https://www.refactoringui.com/) — публичные материалы о hierarchy/spacing (платная книга не прочитана); [NN/g heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/) — видимость состояния, узнаваемость, контроль; [WCAG 2.2](https://www.w3.org/WAI/WCAG22/quickref/).
 
-[UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) локально не установлен; прочитаны публичные README/SKILL как рекомендации, локальный search/generator не запускался и не выдаётся за выполненный. [Linear public features](https://linear.app/features) использован как пример ясной иерархии рабочих действий, без копирования бренда/композиции. Закрытые Mobbin-экраны не просматривались. Новых UI/runtime dependencies нет; существующие Tailwind/Radix Slot/Lucide сохранены.
+[UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) установлен в `.agents/skills/ui-ux-pro-max` на commit `56ea9cf174ed86786187daa9de0e6247cb0747e4`; локальные searches/generator preview и Codex discovery проверены. Результаты — advisory: marketing hero/sales patterns и замена палитры/шрифтов отвергнуты; existing API не переносится в Server Actions ради generic hint. Этот документ остаётся единственным проектным master. Pin/безопасность/установка и библиотечная матрица — [UI_IMPLEMENTATION_PLAN](UI_IMPLEMENTATION_PLAN.md).
+
+[Linear public features](https://linear.app/features) использован как пример ясной иерархии рабочих действий, без копирования бренда/композиции. Изучены публичные Mobbin/Untitled UI; закрытые экраны/платные ресурсы не просматривались, Pageflows недоступен через текущий web-инструмент. Новых UI/runtime dependencies нет; существующие Tailwind/Radix Slot/Lucide сохранены. Magic UI/Motion совместимы, но не нужны для текущих задач аналитика.
