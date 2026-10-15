@@ -18,6 +18,8 @@ export type Property = {
   name: string;
   city: string;
   address: string;
+  latitude: number | null;
+  longitude: number | null;
   stage: string;
   progress_percent: number | null;
   legal_verification_status: string;

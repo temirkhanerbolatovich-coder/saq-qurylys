@@ -37,6 +37,7 @@ import type {
   User,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { PropertyMap } from "@/components/property-map";
 import { AppealReview } from "@/components/appeal-review";
 import { ConstructionReview } from "@/components/construction-review";
 import { LegalAbsenceReview } from "@/components/legal-absence-review";
@@ -429,10 +430,11 @@ export function DashboardView() {
         <section className="panel compact">
           <ClipboardCheck size={23} />
           <div>
-            <h2>Следующий этап разработки</h2>
-            <p>
-              OCR, сопоставление и ручная проверка гипотез ещё не подключены.
-            </p>
+            <h2>Объекты на карте</h2>
+            <p>Расположение DEMO-объектов и приоритет проверки из реестра.</p>
+            <Link className="text-link" href="/properties?view=map">
+              Открыть карту <ArrowRight size={14} />
+            </Link>
           </div>
         </section>
       </div>
@@ -443,13 +445,15 @@ export function DashboardView() {
 export function PropertiesView() {
   const params = useSearchParams();
   const router = useRouter();
-  const query = params.toString();
-  const registry = useData<Page<Property>>(`/properties?${query}`);
+  const apiParams = new URLSearchParams(params);
+  apiParams.delete("view");
+  const query = apiParams.toString();
+  const showMap = params.get("view") === "map";
   function filter(name: string, value: string) {
     const next = new URLSearchParams(params);
     if (value) next.set(name, value);
     else next.delete(name);
-    next.delete("page");
+    if (name !== "page" && name !== "view") next.delete("page");
     router.replace(`/properties?${next.toString()}`, { scroll: false });
   }
   return (
@@ -468,6 +472,7 @@ export function PropertiesView() {
             </label>
             <input
               id="search"
+              maxLength={300}
               placeholder="Название ЖК или адрес"
               value={params.get("q") || ""}
               onChange={(e) => filter("q", e.target.value)}
@@ -502,19 +507,80 @@ export function PropertiesView() {
             </select>
           </label>
         </div>
-        <div className="list-caption">
-          {registry.data
-            ? `Найдено объектов: ${registry.data.total}`
-            : "Поиск…"}
-          <span>Карта будет добавлена после основного сценария</span>
+        <div className="registry-views" role="group" aria-label="Вид реестра">
+          <Button
+            variant="outline"
+            aria-pressed={!showMap}
+            onClick={() => filter("view", "")}
+          >
+            Список
+          </Button>
+          <Button
+            variant="outline"
+            aria-pressed={showMap}
+            onClick={() => filter("view", "map")}
+          >
+            Карта и список
+          </Button>
         </div>
-        {registry.data ? (
-          <PropertyTable rows={registry.data.items} />
-        ) : (
-          <LoadState error={registry.error} retry={registry.reload} />
-        )}
-        {registry.error && registry.data && <Notice error={registry.error} />}
+        {/* A changed filter must never display the previous request's markers. */}
+        <PropertyResults
+          key={query}
+          query={query}
+          showMap={showMap}
+          onPage={(page) => filter("page", String(page))}
+        />
       </section>
+    </>
+  );
+}
+
+function PropertyResults({
+  query,
+  showMap,
+  onPage,
+}: {
+  query: string;
+  showMap: boolean;
+  onPage: (page: number) => void;
+}) {
+  const registry = useData<Page<Property>>(`/properties?${query}`);
+  if (!registry.data)
+    return <LoadState error={registry.error} retry={registry.reload} />;
+  const data = registry.data;
+  const pages = Math.max(1, Math.ceil(data.total / data.page_size));
+  return (
+    <>
+      <div className="list-caption">
+        Найдено объектов: {data.total}
+        <span>На странице: {data.items.length}</span>
+      </div>
+      {showMap && <PropertyMap rows={data.items} />}
+      <div id="property-list" tabIndex={-1} aria-label="Список объектов">
+        <PropertyTable rows={data.items} />
+      </div>
+      {(pages > 1 || data.page > 1) && (
+        <nav className="registry-pagination" aria-label="Страницы реестра">
+          <Button
+            variant="outline"
+            disabled={data.page <= 1}
+            onClick={() => onPage(data.page - 1)}
+          >
+            Предыдущая
+          </Button>
+          <span>
+            Страница {data.page} из {pages}
+          </span>
+          <Button
+            variant="outline"
+            disabled={data.page >= pages}
+            onClick={() => onPage(data.page + 1)}
+          >
+            Следующая
+          </Button>
+        </nav>
+      )}
+      {registry.error && <Notice error={registry.error} />}
     </>
   );
 }
