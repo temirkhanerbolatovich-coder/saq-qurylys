@@ -138,15 +138,18 @@ export function AppealReview({
           maxLength={300}
         />
         <label htmlFor="appeal-file">
-          Документ обращения · TXT / PNG / JPEG
+          Документ обращения · TXT / PNG / JPEG / PDF
         </label>
         <input
           id="appeal-file"
           name="file"
           type="file"
-          accept="text/plain,.txt,image/png,image/jpeg"
+          accept="text/plain,.txt,image/png,image/jpeg,application/pdf,.pdf"
           required
         />
+        <p className="muted">
+          PDF: обычный документ без пароля и интерактивных элементов.
+        </p>
         <label htmlFor="appeal-date">Дата обращения · +05:00</label>
         <input
           id="appeal-date"

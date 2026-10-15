@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     ocr_languages: str = Field(default='rus+kaz+eng', pattern=r'^[a-z+]+$')
     ocr_timeout_seconds: int = Field(default=60, ge=1, le=90)
     pdf_timeout_seconds: int = Field(default=60, ge=1, le=90)
+    pdf_validation_timeout_seconds: int = Field(default=10, ge=1, le=10)
+    pdf_max_pages: int = Field(default=100, ge=1, le=500)
     job_lease_seconds: int = Field(default=180, ge=120, le=600)
     job_max_attempts: int = Field(default=2, ge=1, le=3)
     worker_poll_seconds: float = Field(default=1, ge=0.1, le=10)

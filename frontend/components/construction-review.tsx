@@ -55,14 +55,17 @@ function SourceFields({ prefix, title }: { prefix: string; title: string }) {
   return (
     <fieldset className="review-form m-0">
       <legend>{title}</legend>
-      <label htmlFor={`${prefix}-file`}>{title} · TXT / PNG / JPEG</label>
+      <label htmlFor={`${prefix}-file`}>{title} · TXT / PNG / JPEG / PDF</label>
       <input
         id={`${prefix}-file`}
         name={`${prefix}-file`}
         type="file"
-        accept="text/plain,.txt,image/png,image/jpeg"
+        accept="text/plain,.txt,image/png,image/jpeg,application/pdf,.pdf"
         required
       />
+      <p className="muted">
+        PDF: обычный документ без пароля и интерактивных элементов.
+      </p>
       <label htmlFor={`${prefix}-source`}>Источник · {title}</label>
       <input
         id={`${prefix}-source`}

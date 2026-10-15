@@ -114,15 +114,18 @@ export function LegalBasisCreate({
             ))}
           </select>
           <label htmlFor="basis-file">
-            Документ основания · TXT / PNG / JPEG
+            Документ основания · TXT / PNG / JPEG / PDF
           </label>
           <input
             id="basis-file"
             name="file"
             type="file"
-            accept="text/plain,.txt,image/png,image/jpeg"
+            accept="text/plain,.txt,image/png,image/jpeg,application/pdf,.pdf"
             required
           />
+          <p className="muted">
+            PDF: обычный документ без пароля и интерактивных элементов.
+          </p>
           <label htmlFor="basis-source">Источник документа основания</label>
           <input
             id="basis-source"

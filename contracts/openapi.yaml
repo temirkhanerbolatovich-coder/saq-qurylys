@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.7.0-mvp",
-    "description": "SAQ QURYLYS target contract with per-operation status. Registry/OCR, dated legal review, manual R1-R6, immutable signals, human decisions and durable WeasyPrint PDF jobs implemented. Permitted collector remains planned. JSON is valid YAML 1.2."
+    "version": "0.8.0-mvp",
+    "description": "SAQ QURYLYS contract. Registry/OCR, dated legal review, manual R1-R6, immutable signals/human decisions/PDF export and passive supporting PDF upload implemented. Permitted collector remains planned. JSON is valid YAML 1.2."
   },
   "servers": [
     {
@@ -1952,7 +1952,7 @@
       "post": {
         "operationId": "uploadEvidenceAsset",
         "summary": "Store supporting document or image",
-        "description": "Standalone TXT/PNG/JPEG with immutable provenance and typed facts by purpose. LEGAL_ABSENCE_REVIEW requires absence_as_of, scope_description and JSON legal_checks (unique mechanisms). Absent date <= document event_at <= now. Other purposes reject these fields. PDF remains unsupported.",
+        "description": "Standalone TXT/PNG/JPEG or strictly validated passive PDF with immutable property/DEMO provenance and typed facts by purpose. PDF validation runs in bounded Linux subprocess; encrypted documents, forms, actions and attachments are rejected. Original bytes/SHA are retained; upload never confirms a factor. LEGAL_ABSENCE_REVIEW requires absence_as_of, scope_description and unique-mechanism JSON legal_checks. Absent date <= document event_at <= now.",
         "x-origin": "proposal",
         "responses": {
           "201": {
@@ -2017,7 +2017,7 @@
             }
           }
         },
-        "x-implementation-status": "PARTIAL_SUPPORT_DOCUMENTS"
+        "x-implementation-status": "IMPLEMENTED_SUPPORT_DOCUMENTS_SLICE"
       }
     },
     "/api/v1/assets/{id}": {

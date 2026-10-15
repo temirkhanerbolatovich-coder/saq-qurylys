@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 from pydantic import AwareDatetime, HttpUrl, TypeAdapter, ValidationError
 from sqlalchemy import or_, select
+from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException
 
 from app import analysis_dto as dto
@@ -41,6 +42,7 @@ from app.models import (
     RiskFactor,
     utcnow,
 )
+from app.pdf_validation import validate_pdf
 from app.storage import save_bytes
 from app.uploads import validate_image, validate_text
 from app.views import factor_views, property_view
@@ -123,7 +125,12 @@ async def upload_document(
     if len(content) > settings.max_upload_bytes:
         raise HTTPException(413, 'Файл превышает допустимый размер')
     mime = (file.content_type or '').split(';', 1)[0].lower().strip()
-    if mime == 'text/plain' or (file.filename or '').lower().endswith('.txt'):
+    if mime == 'application/pdf' or (file.filename or '').lower().endswith('.pdf') or content.startswith(b'%PDF-'):
+        if mime not in {'application/pdf', 'application/octet-stream', ''}:
+            raise HTTPException(415, 'Содержимое PDF не соответствует заявленному типу файла')
+        await run_in_threadpool(validate_pdf, content, settings)
+        mime, extension = 'application/pdf', 'pdf'
+    elif mime == 'text/plain' or (file.filename or '').lower().endswith('.txt'):
         if mime not in {'text/plain', 'application/octet-stream', ''}:
             raise HTTPException(415, 'Недопустимый MIME для TXT')
         validate_text(content)

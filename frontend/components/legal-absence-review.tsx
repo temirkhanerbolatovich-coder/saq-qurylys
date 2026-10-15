@@ -117,7 +117,7 @@ export function LegalAbsenceReview({
       if (!reason.trim()) throw new Error("Укажите обоснование решения R1");
       const file = form.get("file");
       if (!(file instanceof File) || !file.size)
-        throw new Error("Выберите непустой документ TXT, PNG или JPEG");
+        throw new Error("Выберите непустой документ TXT, PNG, JPEG или PDF");
       if (file.size > 10_485_760)
         throw new Error("Файл должен быть не больше 10 МБ");
       const source = String(form.get("source_label") || "").trim();
@@ -273,15 +273,18 @@ export function LegalAbsenceReview({
         >
           <fieldset className="review-form m-0" disabled={busy}>
             <label htmlFor="absence-file">
-              Документ проверки отсутствия · TXT / PNG / JPEG
+              Документ проверки отсутствия · TXT / PNG / JPEG / PDF
             </label>
             <input
               id="absence-file"
               name="file"
               type="file"
-              accept="text/plain,.txt,image/png,image/jpeg"
+              accept="text/plain,.txt,image/png,image/jpeg,application/pdf,.pdf"
               required
             />
+            <p className="muted">
+              PDF: обычный документ без пароля и интерактивных элементов.
+            </p>
             <label htmlFor="absence-source">Источник проверки отсутствия</label>
             <input
               id="absence-source"

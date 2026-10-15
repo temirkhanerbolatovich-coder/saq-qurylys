@@ -1,9 +1,9 @@
 # SAQ QURYLYS — план решения кейса
 
-Текущее состояние на 15.10.2026: реализован сквозной путь от нового материала через OCR, ручные R1–R6 и риск до снимка/решения сигнала и PDF. Итоговые проверки: 217 backend-тестов в Linux и 16 browser-тестов прошли; прежний R1 checkpoint отдельно перепроверен: 192/15. Контракт 0.7.0-mvp: 33 implemented + 2 partial + 1 planned. Подробности — [сигналы/PDF](FEATURE_SIGNALS.md) и [PROJECT_STATUS](../PROJECT_STATUS.md). Полный P0 ещё не принят.
+Текущее состояние на 15.10.2026: реализован сквозной путь от нового материала через OCR, ручные R1–R6 и риск до снимка/решения сигнала и PDF. Итоговые проверки: 279 backend-тестов в Linux и 17 browser-тестов прошли; прежний R1 checkpoint отдельно перепроверен: 192/15. Контракт 0.8.0-mvp: 34 implemented + 1 partial + 1 planned. Исходные passive PDF принимаются и сохраняются без изменения; новый browser-e2e job добавлен в CI. Подробности — [сигналы/PDF](FEATURE_SIGNALS.md) и [PROJECT_STATUS](../PROJECT_STATUS.md). Полный P0 ещё не принят.
 
 
-Следующие независимые блоки: supporting PDF upload, карта с fallback на реестр, независимый RU/KZ corpus с метриками, backup/restore, запуск на другом ПК и UX/предметная приёмка. Collector остаётся BLOCKED до разрешённого домена/URL. GitHub-репозиторий создан, код отправлен; первый [CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38696142426) для `dc595e2` прошёл. Браузерные E2E пока выполнялись локально. Конкретные условия закрытия — [REMAINING_CHECKLIST](REMAINING_CHECKLIST.md).
+Следующие независимые блоки: карта с fallback на реестр, независимый RU/KZ corpus с метриками, backup/restore, запуск на другом ПК и UX/предметная приёмка. Collector остаётся BLOCKED до разрешённого домена/URL. GitHub-репозиторий создан, код отправлен; первый [CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38696142426) для `dc595e2` прошёл. 17 браузерных E2E прошли локально; результат нового удалённого browser-e2e job фиксируется в PROJECT_STATUS. Конкретные условия закрытия — [REMAINING_CHECKLIST](REMAINING_CHECKLIST.md).
 
 ## Исходный календарный план и история
 

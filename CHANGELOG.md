@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0-mvp — 15.10.2026
+
+- Исходные PDF во всех supporting-document формах, pypdf strict в bounded Linux subprocess, неизменяемые байты/SHA и отдельный human review.
+- Лимиты страниц, памяти, CPU, времени и конкурентности; отклонение шифрования, действий, форм, вложений и внешних ссылок.
+- Browser E2E job с Compose/OCR/PDF и подготовкой прав Linux storage; Markdown-only commits не запускают повторную сборку.
+- Контракт 34 implemented + 1 partial + 1 planned, без миграции; pypdf 6.20.1 закреплён.
+
+
 ## 0.7.0-mvp — 15.10.2026
 
 - Неизменяемые сигналы, версии, явное подтверждение/возврат человеком с аудитом и защитой stale/revision.

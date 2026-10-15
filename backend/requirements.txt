@@ -23,6 +23,7 @@ pydantic-settings==2.16.0
 pydantic==2.14.1
 pydantic_core==2.50.1
 pydyf==0.13.0
+pypdf==6.20.1
 pyphen==0.18.1
 python-dotenv==1.2.4
 python-multipart==0.0.32

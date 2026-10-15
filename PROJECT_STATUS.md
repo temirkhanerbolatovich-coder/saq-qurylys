@@ -1,29 +1,31 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: сигналы, неизменяемые snapshots, решения человека и PDF. Branch main; ревизия — `git log -1`. Исполнитель: Codex. Код и история опубликованы в GitHub, первый CI прошёл; итоговая документация передаётся следующим commit. Deploy не выполнялся.
+Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: исходные supporting PDF и полный browser E2E в GitHub Actions. Branch main; ревизия — `git log -1`. Исполнитель: Codex. Код и история опубликованы в GitHub; CI для 043b647 завершён success. Новый PDF/CI блок проверен локально и сохраняется следующим commit. Deploy не выполнялся.
 
-## Текущее состояние — сигналы
+## Текущее состояние — сигналы и исходные PDF
 
 Docker запущен по явному разрешению пользователя. Работают только SAQ db/api/worker/frontend; сторонние проекты, включая AssetGuard, остались остановлены. Данные/volumes сохранены. Полный повтор предыдущего checkpoint 24b5c12: 192 backend passed (133.95s), 15 browser passed (38.2s), логи .local/signals-baseline-*.log. Прежний runtime BLOCKED закрыт этими проверками.
 
 Реализованы /signals: immutable snapshot объекта, оснований, факторов, evidence и SHA-256 assets; DRAFT → CONFIRMED/RETURNED с причиной/автором/временем; версии без разветвлений; stale/optimistic revision/CSRF/roles/idempotency/audit. Решение автоматически ставит PDF своей ревизии в общую PostgreSQL очередь. Worker использует lease/claim token и revision fencing. PDF WeasyPrint 70.0: escaped server template, без внешних/file ресурсов, DejaVu RU/KZ, subprocess timeout, immutable content-hash asset. GET не создаёт jobs; failed/corrupt PDF можно явно перегенерировать. Старый draft PDF сохраняется отдельным asset.
 
-Контракт 0.7.0-mvp: 36 операций = 33 implemented + 2 partial + 1 planned. Добавления: SignalSnapshot.assets, Signal.pdf_job_id; migration e87f4d01a921, nullable advertisement targets + signal/decision revision в общей AnalysisJob. Supporting upload без PDF остаётся partial. Отдельный LegalBasis review также partial по контракту: VERIFIED_ABSENT намеренно не выставляется одним документом, составной R1 уже реализован отдельным сценарием. Collector planned/BLOCKED без разрешённого источника. Полный P0 не принят.
+Контракт 0.8.0-mvp: 36 операций = 34 implemented + 1 partial + 1 planned. Supporting upload принимает TXT/PNG/JPEG и passive PDF без изменения байтов/SHA. pypdf 6.20.1 проверяет все xref/objStm в bounded Linux subprocess: память 512 MiB, CPU/wall timeout до 10s, до 100 страниц по умолчанию, лимиты объектов/глубины/узлов и два слота на API process. Отказ до сохранения файла/Asset; API ожидает проверку в thread pool. Host Windows PDF получает 503; malformed header/EOF — 415. Формы/пароль/действия/вложения/внешние файлы отклоняются. Оригинал выдаётся только authenticated attachment, автоматический OCR PDF и баллы за upload отсутствуют. Новых endpoint или миграций нет.
+
+Оставшийся partial у отдельного LegalBasis review намеренный: VERIFIED_ABSENT не выставляется одним документом, составной R1 уже реализован. Collector planned/BLOCKED без разрешённого источника. Полный P0 не принят. Добавлен GitHub job browser-e2e: fresh Compose, приватная конфигурация, права Linux storage, настоящий RU/KZ OCR и весь Playwright; Markdown-only commits не запускают полную сборку. Удалённый результат нового job ещё требует проверки после push.
 
 ## Итоговые проверки текущего блока
 
 | Проверка | Фактический результат 15.10.2026 |
 |---|---|
-| Полный backend в Linux | Временный Linux test container Compose api, `pytest -q`, отдельная schema, source/contracts подключены read-only, зависимости dev во временном venv с system-site-packages, cache/pyc отключены — **217 passed (124.31s)**, `.local/signals-final-container-pytest.log`; public не сбрасывался |
-| Полный browser | Из frontend `npm run test:e2e` — **16 passed (47.2s)**, `.local/signals-final-browser.log`; реальные OCR/БД/review/сигналы/PDF/mobile |
-| Focused проверки | Signals 18 passed; host PDF 6 passed / 1 skipped без Pango; focused browser 1 passed. Полный Linux-прогон выше закрывает host render skip |
-| Статика | Ruff check и format check — 50 файлов; frontend typecheck/lint/format check passed |
+| Полный backend в Linux | Временный Linux test container Compose api, `pytest -q`, отдельная schema, source/contracts подключены read-only, зависимости dev во временном venv с system-site-packages, cache/pyc отключены — **279 passed (110.26s)**, `.local/supporting-pdf-final-backend-rerun.log`; public не сбрасывался |
+| Полный browser | Из frontend `npm run test:e2e` — **17 passed (52.2s)**, `.local/supporting-pdf-final-browser.log`; реальные OCR/БД/review/сигналы/PDF/mobile |
+| Focused проверки | Новый validator: 46 passed / 2 skipped на Windows; в полном Linux-прогоне все 48 выполнялись. Проверены active/escaped/unreferenced/objStm, шифрование, формы/вложения, лимиты/timeout/concurrency/protocol. API проверяет все 6 назначений, оригинал/SHA/idempotency/auth/scope и отдельный review/snapshot |
+| Статика | Ruff check и format check — 53 файла; frontend typecheck/lint/format check passed |
 | Миграции/зависимости | `alembic check`: новых upgrade operations нет; `pip check`: ошибок нет; `npm audit --audit-level=high`: 0 vulnerabilities |
 | PDF | `output/pdf/signal-demo.pdf`, 10 страниц, около 37 KiB; DEMO/RU/KZ текстовые маркеры проверены; визуально просмотрены все 10 страниц на contact sheet, страницы 1 и 9 дополнительно в полном размере, читаемо/без перекрытий |
 | Перед публикацией | Проверены 413 текущих/исторических Git blobs на известные secrets и явные credential patterns: 0 находок; это не полный security audit |
 | GitHub/CI | Создан публичный [saq-qurylys](https://github.com/temirkhanerbolatovich-coder/saq-qurylys); `main` отправлена, локальный/удалённый SHA `dc595e24d9dc249448289b15948a590691abcbac` совпали. Первый [CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38696142426) завершён **success**: backend и frontend. CI не включает browser E2E, их 16 passed получены локально. Workflow содержит PDF runtime dependencies и read-only permissions |
 
-Основные файлы: backend/app/{signals,signal_dto,signal_pdf,pdf_render}.py, backend/app/api/{signals,signal_pdf}.py, модели/worker/jobs/settings, миграция e87f4d01a921, backend/tests/test_{signals,signal_pdf}.py, frontend/components/signals-workspace.tsx и frontend/tests/signals.spec.ts, контракт/env/Dockerfile/CI. Документация: [FEATURE_SIGNALS](docs/FEATURE_SIGNALS.md), [ADR-006](docs/decisions/ADR-006-immutable-signals-pdf.md), README/ARCHITECTURE/PLAN и [оставшийся чеклист](docs/REMAINING_CHECKLIST.md). Исходные PDF/DOCX/TZ не менялись; новые зависимости закреплены.
+Новые файлы блока: backend/app/pdf_validation.py, backend/tests/test_pdf_validation.py и test_supporting_pdf.py, frontend/tests/supporting-pdf.spec.ts; обновлены 4 upload-формы, route/settings/dependency pins/OpenAPI/env/CI. Документация: FEATURE_SUPPORTING_PDF.md и ADR-007. Предыдущий сигнальный блок: backend/app/{signals,signal_dto,signal_pdf,pdf_render}.py, backend/app/api/{signals,signal_pdf}.py, модели/worker/jobs/settings, миграция e87f4d01a921, backend/tests/test_{signals,signal_pdf}.py, frontend/components/signals-workspace.tsx и frontend/tests/signals.spec.ts, контракт/env/Dockerfile/CI. Документация: [FEATURE_SIGNALS](docs/FEATURE_SIGNALS.md), [ADR-006](docs/decisions/ADR-006-immutable-signals-pdf.md), README/ARCHITECTURE/PLAN и [оставшийся чеклист](docs/REMAINING_CHECKLIST.md). Исходные PDF/DOCX/TZ не менялись; новые зависимости закреплены.
 
 ## Текущий P0 checklist
 
@@ -31,18 +33,20 @@ Docker запущен по явному разрешению пользоват�
 |---|---|---|
 | Локальный реестр, DEMO 8/12, оригиналы, ручной ввод | VERIFIED локально | Другой ПК и предметная приёмка отдельно |
 | OCR/гипотезы/matching/ручные R1–R6/риск/аудит | VERIFIED на текущих тестах | Независимый RU/KZ corpus и precision/recall/top-3, правовая валидация с предметным специалистом |
-| Правовое основание и составной R1 | VERIFIED локально | PDF supporting document ещё не принимается; статус одного основания не заменяет составной R1 |
+| Правовое основание и составной R1 | VERIFIED локально | PDF поддерживается по строгой политике; статус одного основания не заменяет составной R1 |
 | Сигналы/версии/решения/PDF | VERIFIED локально | Retention, нагрузка, backup/restore и эксплуатационная приёмка отдельно |
-| Supporting PDF upload | OPEN | Безопасный приём/хранение/просмотр PDF и тесты hostile/oversize файлов |
+| Supporting PDF upload | VERIFIED в Linux Docker | Native Windows PDF 503; строгая политика отклоняет часть легитимных интерактивных/подписанных форм. Это не антивирус/очистка PDF |
 | Карта | OPEN | Координаты/тайлы/фильтры, fallback на реестр, keyboard/mobile/zoom |
 | Collector | BLOCKED | Нет разрешённого домена/URL; нужны разрешение, SSRF/redirect/limits и реальный импорт |
-| Полная приёмка/публикация | IN PROGRESS | Push/реальный CI, второй ПК, backup/restore, UX 3–5 людьми, защита и сдаваемый SHA |
+| Полная приёмка/публикация | IN PROGRESS | Новый удалённый browser-e2e результат, второй ПК, backup/restore, UX 3–5 людьми, защита и сдаваемый SHA |
 
 ## Следующее конкретное действие
 
-Завершить разрешённый push в созданный GitHub-репозиторий и проверить первый CI по точному SHA. Следующий продуктовый блок — безопасная загрузка supporting PDF; карта и независимые OCR/эксплуатационные проверки могут выполняться независимо. Collector остаётся BLOCKED до разрешённого источника. Полный список условий закрытия — [REMAINING_CHECKLIST](docs/REMAINING_CHECKLIST.md). Публикация кода не означает deploy, сдачу кейса или юридическую приёмку.
+Опубликовать новый PDF/CI checkpoint и проверить все три GitHub jobs по точному SHA. Следующий продуктовый блок — карта с фильтрами и fallback на реестр; независимые OCR/эксплуатационные проверки могут выполняться отдельно. Collector остаётся BLOCKED до разрешённого источника. Полный список условий закрытия — [REMAINING_CHECKLIST](docs/REMAINING_CHECKLIST.md). Публикация кода не означает deploy, сдачу кейса или юридическую приёмку.
 
 ## История сессий
+
+15.10.2026, исходные PDF: добавлены bounded validation, формы и полный browser CI job. Первый Linux-прогон дал 273 passed / 6 failed из-за общего signed/client fixture в новом тесте анонимного доступа; после отдельного anonymous TestClient полный повтор дал 279 passed. Browser 17 passed. Production-контроль доступа не менялся. Новая зависимость pypdf закреплена; данные/volumes и сторонние остановленные проекты сохранены.
 
 15.10.2026: после разрешения пользователя восстановлен Docker, проверен R1 baseline 192/15; реализованы сигналы/PDF и проведены итоговые 217/16, source checks и PDF QA. Работают только SAQ-контейнеры, сторонние остановленные проекты не запускались. Пользователь отдельно разрешил создать GitHub-репозиторий и выполнить push; репозиторий создан, завершение публикации фиксируется следующим обновлением статуса.
 
