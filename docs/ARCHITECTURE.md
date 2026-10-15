@@ -98,7 +98,7 @@ Uploads сейчас: PNG/JPEG/TXT для рекламы; supporting documents �
 
 PDF: только доверенный server-side шаблон, экранирование текста, локальные шрифты с RU/KZ, custom resource loader без сети и без произвольного file://. Оригинал рекламы не становится HTML/CSS шаблоном WeasyPrint. Логи не содержат секреты, session/CSRF tokens и лишние персональные данные.
 
-Аудит приложения append-only для штатных операций, но администратор БД технически может его изменить. SHA-256 обнаруживает изменение сохранённого файла, не доказывает авторство/законность/судебную допустимость. Production retention, backup/restore и усиление аудита — отдельный этап.
+Аудит приложения append-only для штатных операций, но администратор БД технически может его изменить. SHA-256 обнаруживает изменение сохранённого файла, не доказывает авторство/законность/судебную допустимость. Локальная проверка backup/restore выполнена: [LOCAL_BACKUP](LOCAL_BACKUP.md). Production retention, внешнее резервирование и усиление аудита — отдельный этап.
 
 ## Структура после согласования
 
@@ -120,6 +120,6 @@ Worker, uploads, анализ, предметные модули review, сиг�
 
 `contracts/openapi.yaml` — контракт 0.8.0-mvp с implementation metadata: 36 операций, 34 реализованы полностью, 1 частично и 1 PLANNED (collector). Login/me/CSRF, чтение объявления, review извлечения/документов/факторов R1–R6, выдача материалов и аудит расширяют исходный список CODEX_TZ; дополнения маркируются x-origin: proposal. Partial остаётся valid/rejected review отдельного LegalBasis: VERIFIED_ABSENT намеренно проходит отдельным составным R1, а не review одного основания.
 
-OpenAPI и схемы реальных ответов проверяются backend-тестами; локальные итоговые прогоны — 279 backend в Linux и 17 browser. Первый удалённый [CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38696142426) для `dc595e2` прошёл: backend tests/migrations и frontend checks/build; в новом [CI 20ab6f4](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38703582239) все три jobs прошли, включая browser-e2e с Compose/OCR/PDF (279 backend / 17 browser). Второй ПК, backup/restore и предметная приёмка остаются открыты: [чеклист](REMAINING_CHECKLIST.md).
+OpenAPI и схемы реальных ответов проверяются backend-тестами; локальные итоговые прогоны — 279 backend в Linux и 17 browser. Первый удалённый [CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38696142426) для `dc595e2` прошёл: backend tests/migrations и frontend checks/build; в новом [CI 20ab6f4](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38703582239) все три jobs прошли, включая browser-e2e с Compose/OCR/PDF (279 backend / 17 browser). Локальная пара PostgreSQL+storage восстановлена и проверена по таблицам/истории/HTTP/PDF (LOCAL_BACKUP.md). Второй ПК и предметная приёмка остаются открыты: [чеклист](REMAINING_CHECKLIST.md).
 
 Исходные PDF проходят строгую проверку pypdf в отдельном Linux subprocess с CPU/AS/wall limits и двумя слотами на процесс API; форма upload ждёт в thread pool. Оригинал не очищается и не переписывается. Рекламные uploads/OCR остаются TXT/PNG/JPEG. Подробнее — [FEATURE_SUPPORTING_PDF](FEATURE_SUPPORTING_PDF.md), [ADR-007](decisions/ADR-007-bounded-passive-pdf-upload.md).

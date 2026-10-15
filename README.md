@@ -90,6 +90,10 @@ Supporting documents принимают обычные PDF через [огра�
 
 ## Проверки разработки
 
+Локальная резервная копия PostgreSQL **вместе с файлами** и проверка восстановления в изолированный контейнер: `python scripts/backup_local.py create`, затем `python scripts/backup_local.py verify "ПУТЬ_КОПИИ"`. Копии остаются в приватной `.local/`, рабочая БД не перезаписывается. Подробные условия, краткая пауза API/worker и ограничения — [LOCAL_BACKUP](docs/LOCAL_BACKUP.md).
+
+Тесты инструмента без Docker и дополнительных пакетов: `python -m unittest discover -s scripts -p "test_*.py" -v`.
+
 Для host integration-тестов PostgreSQL должен быть доступен по localhost:55432 через dev override. Тесты создают случайную отдельную schema в SAQ-БД и удаляют только её, не сбрасывая public/пользовательские записи. Полный PDF runtime проверяется в Linux с Pango; Windows без этих библиотек пропускает render-тест. Полный прогон выполнен во временном Compose api test container с подключёнными read-only backend/contracts, временным venv (`--system-site-packages`) и отключёнными cache/pyc; рабочие API-зависимости не изменялись.
 
 Для самостоятельного Linux-окружения перед `pip install -r backend/requirements-dev.txt` установите `libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core`; OCR дополнительно требует Tesseract с rus/kaz/eng. Затем из backend выполните `python -m pytest -q`. Каталог contracts должен оставаться доступным рядом с backend.
@@ -149,6 +153,7 @@ API и worker используют одну Docker-сборку и общий st
 | [Исходные PDF](docs/FEATURE_SUPPORTING_PDF.md) | Приём формата, лимиты, Linux runtime и ограничения |
 | [Сигналы и PDF](docs/FEATURE_SIGNALS.md) | Снимки, решения, версии, очередь PDF и ограничения |
 | [Оставшаяся работа](docs/REMAINING_CHECKLIST.md) | Приоритеты, блокеры и критерии закрытия |
+| [Локальная копия и восстановление](docs/LOCAL_BACKUP.md) | PostgreSQL+storage, изоляция, проверка истории и сохранённых PDF |
 | [Первый срез](docs/IMPLEMENTATION_SLICE_01.md) | Реальное поведение, технические решения, ограничения |
 | [План](docs/PLAN.md) | Следующие срезы и приёмка |
 | [ADR](docs/decisions/ADR-001-mvp-baseline.md) | Почему выбран один backend и контролируемая обработка |
