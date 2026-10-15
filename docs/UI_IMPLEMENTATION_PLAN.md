@@ -4,6 +4,8 @@
 
 ## Проверяемые этапы
 
+Этапы 1–6 выполнены в заявленном scope. Код `d2d9c6b`, [CI 38768212690](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38768212690) success: 294 backend / 30 browser / 27 tool tests, Skill search и frontend checks/build. Точная история/команды — PROJECT_STATUS. Внешняя UX/предметная приёмка не заменяется этим CI.
+
 | Этап | Объём | Критерий |
 |---|---|---|
 | 1. Исследование | Требования/архитектура, роли analyst/viewer, frontend/API/risk/test inventory, прежний аудит и свежий Git | Не повторять завершённый редизайн; сохранить backend/контракт/данные |

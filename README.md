@@ -8,7 +8,7 @@
 
 UI/UX-инфраструктура дополнена repo Skill `.agents/skills/ui-ux-pro-max` (pinned upstream, Python standard library, настоящий Codex discovery проверен), [каталогом компонентов](docs/UI_COMPONENTS.md) и [планом поддержки](docs/UI_IMPLEMENTATION_PLAN.md). Общие Pagination/TableRegion, tokens H1–H6 и сброс фильтров с возвратом focus внедрены; новый полный локальный прогон — **30 browser passed**. Skill передаётся через Git, второй fork и декоративные библиотеки не устанавливались.
 
-Опубликованный [CI 53e9ef0](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38762778431) подтвердил **294 backend / 27 browser / 27 tool tests**, frontend checks/build. Качество OCR измерено отдельно и цели ещё не достигнуты. Полная приёмка P0 остаётся открытой: разрешённый collector, новый внешний OCR holdout, второй ПК и UX/предметная проверка людьми. Docker работает, запущены только контейнеры SAQ. Ревизии и проверки записаны в [статусе](PROJECT_STATUS.md); остальные задачи — [в чеклисте](docs/REMAINING_CHECKLIST.md). Изменения только Markdown не запускают повторную полную сборку.
+Опубликованный [CI d2d9c6b](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38768212690) подтвердил **294 backend / 30 browser / 27 tool tests**, offline Skill smoke и frontend checks/build. Качество OCR измерено отдельно и цели ещё не достигнуты. Полная приёмка P0 остаётся открытой: разрешённый collector, новый внешний OCR holdout, второй ПК и UX/предметная проверка людьми. Docker работает, запущены только контейнеры SAQ. Ревизии и проверки записаны в [статусе](PROJECT_STATUS.md); остальные задачи — [в чеклисте](docs/REMAINING_CHECKLIST.md). Изменения только Markdown не запускают повторную полную сборку.
 
 ## Быстрый запуск через Docker
 
