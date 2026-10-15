@@ -1,6 +1,6 @@
 # SAQ QURYLYS — что ещё сделать
 
-Состояние на 15.10.2026. Основной локальный сценарий от нового материала до исторического сигнала и PDF работает. После внедрения постоянной UI/UX-инфраструктуры локально прошли 30 browser-тестов, focused UI smoke 8/8 и 32 responsive-проверки; [exact-SHA CI d2d9c6b](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38768212690) подтвердил 294 backend / 30 browser / 27 tool tests, Skill smoke и frontend checks/build. Качество OCR измерено отдельно и цели ещё не достигнуты. Этот список описывает оставшуюся работу, а не повторную реализацию проверенных функций.
+Состояние на 15.10.2026. Основной локальный сценарий от нового материала до исторического сигнала и PDF работает. После продуктовых UX-улучшений локально прошли 35 browser-тестов и 32 responsive-проверки; [exact-SHA CI 8434d1b](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38779704092) подтвердил 294 backend / 35 browser / 27 tool tests, Skill smoke и frontend checks/build. Качество OCR измерено отдельно и цели ещё не достигнуты. Этот список описывает оставшуюся работу, а не повторную реализацию проверенных функций.
 
 ## Ближайшие задачи
 

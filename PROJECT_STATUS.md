@@ -4,6 +4,8 @@ Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: продукто�
 
 ## Текущий блок — UX материала, review и сигналов
 
+Код опубликован в **`8434d1b62c0825f45bf1c13bc04e407342fc8460`**; после push локальный/удалённый SHA совпали, дерево чистое. [GitHub CI 38779704092](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38779704092) для точного SHA **success** во всех трёх jobs. Из job logs подтверждены **294 backend passed (69.45s), 35 browser passed (40.2s), 27 tool tests OK**, offline Skill search passed, отсутствие новых upgrade operations и успешные frontend checks/build/audit0/config test. Финальная фиксация этого результата — Markdown-only commit; повторная сборка для него пропускается workflow. Следующий шаг — внешняя UX/предметная приёмка, а не повторная реализация текущего блока.
+
 По просьбе продолжить реализацию UI/UX использованы текущие DESIGN_SYSTEM/UX_GUIDELINES/UI_COMPONENTS и установленный ui-ux-pro-max: локальные searches `progress steps navigation` и `form labels error feedback` дали применимые правила progress/labels/keyboard/submit feedback. До изменений показаны три проблемы и план. Новый визуальный стиль/библиотеки/генерация master не требовались.
 
 Текстовая и файловая формы разделены на оригинал/происхождение и необязательный контекст; hints связаны с controls, текст имеет счётчик без noisy live region, файл показывает имя/размер и aria-invalid при oversize. После сохранения текста focus переходит к результату; primary Next Link ведёт сразу в review вместо двух переходов через карточку. Оригинал доступен отдельной secondary кнопкой; анализ автоматически не запускается.
@@ -142,7 +144,7 @@ Docker запущен по явному разрешению пользоват�
 
 ## История сессий
 
-- 15.10.2026, Codex: от `1577cac` реализован UX «материал → review → сигналы»: прямой переход/focus, группы форм/hints/file size, четыре этапа review/actual count, URL context/history и отсутствие предыдущей очереди при новом фильтре. 35 final browser passed, static/build/audit0 и 32 responsive observations passed; backend/API/данные/guards сохранены. Публикация/CI фиксируются выше после выполнения.
+- 15.10.2026, Codex: от `1577cac` реализован UX «материал → review → сигналы»: прямой переход/focus, группы форм/hints/file size, четыре этапа review/actual count, URL context/history и отсутствие предыдущей очереди при новом фильтре. 35 final browser passed, static/build/audit0 и 32 responsive observations passed; backend/API/данные/guards сохранены. Код `8434d1b` опубликован; exact-SHA CI `38779704092` success: 294 backend/35 browser/27 tool и Skill smoke. Результат сохранён Markdown-only commit.
 
 - 15.10.2026, Codex: от `5bd0cca` внедрены pinned repo UI UX Pro Max, два фактических Codex discovery/search, shared Pagination/TableRegion/reset, H1–H6 tokens, UI_COMPONENTS/UI_IMPLEMENTATION_PLAN и постоянные правила AGENTS. 30 browser / 8 focused, 32 responsive и visual RU/KZ passed; backend/API/данные/dependency locks сохранены. Код `d2d9c6b` опубликован; exact-SHA CI `38768212690` success: 294 backend/30 browser/27 tool и Skill smoke. Финальный статус — Markdown-only commit.
 

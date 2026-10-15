@@ -86,7 +86,7 @@ Evidence (ignored): `.local/ui-infrastructure/{focused,browser-full,build-final,
 - Повторены **28 authenticated + 4 login responsive observations** на 375/768/1024/1440: page overflow=0, authenticated pageerror=0, min measured text=12. Визуально просмотрены финальные review desktop/mobile, forms desktop/tablet/mobile и signals desktop; helpers приближены к полям, конкурирующая primary на review убрана.
 - `npm run typecheck`, `lint`, `format:check`, `npm audit --audit-level=high` (**0 vulnerabilities**), production Compose build frontend — passed. Контрастные token pairs и keyboard regressions входят в полный browser suite. Новый zoom/screen-reader/user test отдельно не выполнялся; прежняя zoom-проверка остаётся исторической.
 
-Evidence (ignored): `.local/ux-flow/{focused-final,browser-final,responsive-final,build-final}.log`, `.local/ui-design-after.json`, `output/design/after/*`. Exact-SHA GitHub CI фиксируется после публикации в PROJECT_STATUS. Внешняя приёмка ниже остаётся открытой.
+Evidence (ignored): `.local/ux-flow/{focused-final,browser-final,responsive-final,build-final}.log`, `.local/ui-design-after.json`, `output/design/after/*`. [Exact-SHA CI 8434d1b](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38779704092) **success**: **294 backend / 35 browser / 27 tool tests**, Skill smoke и frontend checks/build. Счётчики прочитаны из job logs; backend pytest прошёл в чистом Linux CI, локально не повторялся. Публикация зафиксирована в PROJECT_STATUS; внешняя приёмка ниже остаётся открытой.
 
 ## Внешняя приёмка
 
