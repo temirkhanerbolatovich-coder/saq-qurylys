@@ -1,8 +1,16 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: исходные supporting PDF и полный browser E2E в GitHub Actions. Branch main; ревизия — `git log -1`. Исполнитель: Codex. Код и история опубликованы в GitHub; CI для 043b647 завершён success. PDF/CI код опубликован в `20ab6f4`; все три [CI jobs](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38703582239) прошли. Текущая ревизия документации — `git log -1`. Deploy не выполнялся.
+Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: каталог предоставленных пользователем реестровых источников РК. Branch main; ревизия — `git log -1`. Исполнитель: Codex. Программный checkpoint не менялся: PDF/CI код опубликован в `20ab6f4`; все три [CI jobs](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38703582239) прошли, результат записан в `4bf01c6`. Текущий блок меняет только документацию. Deploy не выполнялся.
 
-## Текущее состояние — сигналы и исходные PDF
+## Текущий блок — источники данных
+
+Пользователь предоставил 11 уникальных ссылок на реестры РК и Ashyq-набор. Создан [DATA_SOURCES](docs/DATA_SOURCES.md): исходные URL, наблюдавшийся доступ 15.10.2026, приоритет и оставшиеся условия. Прочитана публичная форма E-License по БИН/номеру/дате и официальное описание API data.egov.kz. Homeportal/Qazreestr/eQurylys при прямом чтении дали JS-оболочки; для части порталов наблюдались ошибки/timeout. У Ashyq прочитаны только заголовок набора и требование JavaScript; паспорт/выгрузка/охват/актуальность не установлены. Поиск конкретных компаний, авторизация, API-запросы, загрузки наборов и интеграции не выполнялись.
+
+Реестровые ссылки больше не считаются отсутствующими. Следующий шаг для отдельного P1-импорта — проверить паспорт и условия выгрузки Ashyq или актуального набора data.egov.kz, затем ограниченный образец с происхождением и ручным сопоставлением. Рекламный C-01 остаётся BLOCKED: реестровый импорт не заменяет фактическую загрузку рекламного материала. Отсутствие строки/ошибка не дают R1; формула и процедуры review не изменены.
+
+Файлы блока: docs/DATA_SOURCES.md, REQUIREMENTS/RESEARCH_REVIEW/REMAINING_CHECKLIST/PLAN/ARCHITECTURE, README и этот статус. Уточнены также оставшиеся устаревшие описания поддержки PDF и версии контракта в README/ARCHITECTURE по текущему коду и контракту 0.8.0-mvp. Проверки: одноразовый Python через stdin — 8 UTF-8 файлов, 67 локальных Markdown-ссылок существуют, все 11 исходных URL присутствуют, явных credential patterns в добавленном тексте нет; `git diff --check` passed. Независимая read-only проверка каталога не нашла фактических замечаний. Backend/frontend не менялись, runtime-тесты этого блока не запускались. Новый ADR не нужен: архитектурного изменения нет.
+
+## Проверенный программный checkpoint — сигналы и исходные PDF
 
 Docker запущен по явному разрешению пользователя. Работают только SAQ db/api/worker/frontend; сторонние проекты, включая AssetGuard, остались остановлены. Данные/volumes сохранены. Полный повтор предыдущего checkpoint 24b5c12: 192 backend passed (133.95s), 15 browser passed (38.2s), логи .local/signals-baseline-*.log. Прежний runtime BLOCKED закрыт этими проверками.
 
@@ -10,9 +18,9 @@ Docker запущен по явному разрешению пользоват�
 
 Контракт 0.8.0-mvp: 36 операций = 34 implemented + 1 partial + 1 planned. Supporting upload принимает TXT/PNG/JPEG и passive PDF без изменения байтов/SHA. pypdf 6.20.1 проверяет все xref/objStm в bounded Linux subprocess: память 512 MiB, CPU/wall timeout до 10s, до 100 страниц по умолчанию, лимиты объектов/глубины/узлов и два слота на API process. Отказ до сохранения файла/Asset; API ожидает проверку в thread pool. Host Windows PDF получает 503; malformed header/EOF — 415. Формы/пароль/действия/вложения/внешние файлы отклоняются. Оригинал выдаётся только authenticated attachment, автоматический OCR PDF и баллы за upload отсутствуют. Новых endpoint или миграций нет.
 
-Оставшийся partial у отдельного LegalBasis review намеренный: VERIFIED_ABSENT не выставляется одним документом, составной R1 уже реализован. Collector planned/BLOCKED без разрешённого источника. Полный P0 не принят. Добавлен GitHub job browser-e2e: fresh Compose, приватная конфигурация, права Linux storage, настоящий RU/KZ OCR и весь Playwright; Markdown-only commits не запускают полную сборку. Удалённый [CI для 20ab6f4](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38703582239) завершён **success**: backend **279 passed (69.59s)**, browser-e2e **17 passed** с настоящим RU/KZ OCR, frontend checks/build. Результаты прочитаны из job logs; cleanup disposable Compose завершён успешно.
+Оставшийся partial у отдельного LegalBasis review намеренный: VERIFIED_ABSENT не выставляется одним документом, составной R1 уже реализован. Рекламный collector planned/BLOCKED; предоставленные реестровые источники исследуются отдельно. Полный P0 не принят. Добавлен GitHub job browser-e2e: fresh Compose, приватная конфигурация, права Linux storage, настоящий RU/KZ OCR и весь Playwright; Markdown-only commits не запускают полную сборку. Удалённый [CI для 20ab6f4](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38703582239) завершён **success**: backend **279 passed (69.59s)**, browser-e2e **17 passed** с настоящим RU/KZ OCR, frontend checks/build. Результаты прочитаны из job logs; cleanup disposable Compose завершён успешно.
 
-## Итоговые проверки текущего блока
+## Проверки программного PDF/CI checkpoint
 
 | Проверка | Фактический результат 15.10.2026 |
 |---|---|
@@ -37,14 +45,17 @@ Docker запущен по явному разрешению пользоват�
 | Сигналы/версии/решения/PDF | VERIFIED локально | Retention, нагрузка, backup/restore и эксплуатационная приёмка отдельно |
 | Supporting PDF upload | VERIFIED в Linux Docker | Native Windows PDF 503; строгая политика отклоняет часть легитимных интерактивных/подписанных форм. Это не антивирус/очистка PDF |
 | Карта | OPEN | Координаты/тайлы/фильтры, fallback на реестр, keyboard/mobile/zoom |
-| Collector | BLOCKED | Нет разрешённого домена/URL; нужны разрешение, SSRF/redirect/limits и реальный импорт |
+| Источники реестров | Каталог проверен, интеграции OPEN | 11 ссылок предоставлены; паспорт/выгрузка/условия конкретного набора и реальный импорт не проверены |
+| Рекламный collector C-01 | BLOCKED | Нужен подходящий рекламный URL/условия, SSRF/redirect/limits и реальный импорт; каталог реестров не закрывает C-01 |
 | Полная приёмка/публикация | IN PROGRESS | Второй ПК, backup/restore, UX 3–5 людьми, защита и сдаваемый SHA |
 
 ## Следующее конкретное действие
 
-PDF/CI checkpoint опубликован и все три GitHub jobs прошли. Следующий продуктовый блок — карта с фильтрами и fallback на реестр; независимые OCR/эксплуатационные проверки могут выполняться отдельно. Collector остаётся BLOCKED до разрешённого источника. Полный список условий закрытия — [REMAINING_CHECKLIST](docs/REMAINING_CHECKLIST.md). Публикация кода не означает deploy, сдачу кейса или юридическую приёмку.
+PDF/CI checkpoint опубликован и все три GitHub jobs прошли. Для реестров следующий шаг — паспорт/выгрузка Ashyq либо актуального набора data.egov.kz по DATA_SOURCES; это отдельный P1. Следующий продуктовый блок P0 — карта с фильтрами и fallback на реестр; независимые OCR/эксплуатационные проверки могут выполняться отдельно. Рекламный collector остаётся BLOCKED до подходящего разрешённого источника. Полный список условий закрытия — [REMAINING_CHECKLIST](docs/REMAINING_CHECKLIST.md). Публикация кода не означает deploy, сдачу кейса или юридическую приёмку.
 
 ## История сессий
+
+15.10.2026, источники РК: исследованы предоставленные пользователем публичные страницы, каталог из 11 исходных ссылок и условия дальнейшего исследования сохранены в DATA_SOURCES; требования/план/архитектура/исследование/чеклист/README синхронизированы. Программный код, контракт, исходные PDF/DOCX/TZ, данные и контейнеры не менялись. API и реестровый импорт не проверялись; C-01 остаётся рекламным collector. Проверки diff/ссылок прошли. Блок сохраняется отдельным Markdown-only commit по ранее полученному разрешению на GitHub push; до публикации origin/main = `4bf01c6`, ревизия самого блока — `git log -1`. Полная CI-сборка для Markdown-only изменений не запускается согласно workflow.
 
 15.10.2026, публикация PDF/CI: code commit `20ab6f4` отправлен в origin/main; GitHub run `38703582239` success. Из job logs подтверждены 279 backend/17 browser и успешный RU/KZ OCR. Изменения статуса/чеклиста сохраняются отдельным Markdown-only commit; повторный CI не требуется и не запускается согласно paths-ignore. Локальные данные и секреты не публиковались.
 
