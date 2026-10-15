@@ -5,7 +5,7 @@
 ## Ближайшие задачи
 
 - [x] Код и история отправлены в [GitHub](https://github.com/temirkhanerbolatovich-coder/saq-qurylys), локальный/удалённый `dc595e2` совпали; первый [CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38696142426) прошёл для backend/frontend.
-- [ ] Добавить browser E2E с реальным OCR/сигналом/PDF в GitHub Actions. Job browser-e2e уже добавлен, 17 тестов прошли локально; подтвердить первый фактический удалённый запуск перед закрытием этого пункта.
+- [x] Browser E2E с реальным OCR/сигналом/PDF включён в [GitHub CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/38703582239): все три jobs success, 279 backend и 17 browser-тестов прошли на чистом Linux runner.
 - [x] Добавить исходные PDF: bounded strict parser, оригинал/SHA, ручной review, authenticated attachment и тесты malformed/active/oversize. Поддерживается Linux API; пределы и совместимость — [FEATURE_SUPPORTING_PDF](FEATURE_SUPPORTING_PDF.md).
 - [ ] Реализовать карту: координаты DEMO-объектов, единые фильтры с реестром, выбранная карточка, атрибуция провайдера тайлов, обработка отсутствующих координат/сети и переход к реестру. Проверить mobile, клавиатуру и 200% zoom.
 - [ ] Получить разрешённый домен/URL и основание автоматической загрузки. **Collector BLOCKED** до этого; затем реализовать allowlist/SSRF/redirect/size/time limits и показать один фактический разрешённый импорт. Ручная ссылка или собственная HTML-заглушка не закрывают требование внешнего collector.
