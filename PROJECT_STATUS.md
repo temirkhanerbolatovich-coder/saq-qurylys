@@ -1,8 +1,22 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: карта реестра, общие фильтры и отказоустойчивый список. Исполнитель Codex, branch main; предыдущая опубликованная ревизия `0927727`, текущая — `git log -1`. Контракт 0.8.0-mvp и БД не менялись. Deploy не выполнялся.
+Updated: 2026-10-15 (Asia/Qyzylorda). Текущий блок: измерение OCR/payment/matching на новом synthetic corpus и исправление алиасов. Исполнитель Codex; branch main, предыдущая опубликованная ревизия `ffaf5de`, текущая — `git log -1`. Контракт 0.8.0-mvp, схема и формула риска не менялись. Пользователь повторно разрешил закончить этап и push. Deploy не выполнялся.
 
-## Текущий блок — карта объектов
+## Текущий блок — OCR evaluation и aliases
+
+Добавлены [36 новых synthetic RU/KZ cases](data/evaluation/README.md), составленных отдельным агентом без чтения extractor/OCR/tests/seed. 32 читаемых, 16 положительных/16 отрицательных; 4 нечитаемых, каталог 8 вымышленных объектов; 24 known targets/8 unknown. Все тексты уникальны, названия каталога не совпадают с seed. Это ограниченная независимость разработки, не human/external acceptance. После просмотра ошибок корпус стал regression-набором.
+
+`evaluate_ocr.py` вызывает production validate_image/recognize/extract/match_candidates, сохраняет оригиналы/manifest/raw OCR/все hypotheses/candidates, раздельные text/image метрики all/RU/KZ, coverage/CER/TP/FP/FN/TN и model/font/source SHA. Expected labels не передаются анализатору. No DB/API/settings/queue writes. Прогоны в disposable Linux Docker с network none/read-only/cap-drop, writable только output. До создания output проверяются Tesseract/models/font; output не перезаписывается, stage errors сохраняются. CI добавляет evaluator/tool tests и 14-day synthetic evidence artifact. Метрики диагностические; для quality gate нужен --require-targets.
+
+Первичный baseline: **precision 80%, recall 75%, top-3 8/24**. Выявлен и исправлен узкий дефект exact registered aliases без префикса ЖК/ТК: matcher знал aliases, а extractor не выделял их. После исправления на **тех же 36 image SHA/manifest/labels**: **precision 80%, recall 75%, top-3 18/24 (75%)**, CER 157/6311 (2,49%), coverage 32/32, ошибок обработки 0; цели 90%/85%/90% **НЕ достигнуты**. RU top-3 12/12, KZ 6/12; все 4 unreadable без OCR/payment/candidates. Сохранены исходный и post-fix report/case records в [data/evaluation/results/2026-10-15](data/evaluation/results/2026-10-15). Версия новых автоматических/ручных extraction rules-1.1, прежние записи не переписываются. Остались historical false positives, сокращения/переносы и KZ-name OCR; подробный разбор IDs — [OCR_EVALUATION](docs/OCR_EVALUATION.md).
+
+Проверки 15.10.2026: полный Linux `pytest -q -p no:cacheprovider` — **293 passed (119.72s)** в временном Compose API с read-only backend/contracts, dev venv в /tmp, отдельная случайная test schema; public/storage сохранены. Один дополнительный overlap regression добавлен после collection полного прогона: focused `pytest backend/tests/test_extraction_names.py -q` — **15 passed** на Windows. `python -m unittest discover -s scripts -p "test_*.py" -q` — **27 OK в Linux без skip**, Windows 27 OK / 1 symlink skip. `npm run test:e2e` — **22 passed (51.2s)** с обновлёнными API/worker и настоящим OCR/PDF. Ruff check/format backend (54 files) и двух новых scripts passed; build api/worker passed. Frontend source не менялся, отдельные lint/typecheck/frontend build не повторялись. Схема не менялась, alembic check отдельно не повторялся. Визуально просмотрены все 36 изображений на 6 contact sheets; 4 нечитаемых подтверждены видом изображения.
+
+Docker был остановлен; запущен по прежнему прямому разрешению пользователя. После старта engine автоматически поднял SAQ worker с restart policy; явно запущены только существующие SAQ db/api/frontend, затем пересобраны api/worker. Чужие проекты не запускались; volumes не удалялись. Временные test/evaluation контейнеры удалены. Локальное evidence: `.local/evaluation-{baseline,alias-fix,backend,browser,tool-tests-linux,runtime-build}.log`, `output/evaluation/{baseline-v1,alias-fix-v1}`. Публичные synthetic reports/JSONL содержат только вымышленные данные, без credentials. Перед публикацией: независимое read-only ревью evaluator/docs/CI не нашло блокирующих ошибок; self-review diff выполнен. `git diff --check` passed, проверены 19 изменённых/новых UTF-8 файлов, JSON/JSONL, 82 локальных Markdown-ссылки; известных локальных secrets и явных credential patterns не найдено. Локальный и origin/main до публикации совпали. GitHub CI нового кода ещё не завершён; его результат фиксируется отдельно после push.
+
+Документация: OCR_EVALUATION, corpus README, README/ARCHITECTURE/PLAN/REMAINING_CHECKLIST/CHANGELOG и этот статус. Нового ADR/зависимостей/API/миграций нет. Следующий шаг — targeted regression fixes оставшихся ошибок, затем новый holdout/проверка KZ носителем. Не считать завершёнными реальный collector, импорт госреестра, второй ПК, UX/предметную приёмку и защиту.
+
+## Предыдущий блок — карта объектов
 
 Реализована `/properties?view=map`: Leaflet 1.9.4, координаты из существующего API, серверные баллы/зоны, выбранная карточка и переход к полным сведениям. Поиск/зона/основание/страница общие со списком; переключение вида сохраняет URL. Добавлена явная пагинация, охват карты подписан как текущая страница. Непригодные координаты остаются в списке; ошибка тайла/JS не блокирует список, API-ошибка даёт retry без устаревших меток. Исправлена выявленная тестом активация метки Enter, поддержан Space. Публичные build args провайдера/атрибуции проходят проверку; default OSM, `disabled` отключает карту. Нет геокодирования, bulk/offline tiles, нового API и расчёта риска на клиенте. Устаревшая фраза об отсутствии OCR в обзоре заменена ссылкой на карту.
 
@@ -58,7 +72,7 @@ Docker запущен по явному разрешению пользоват�
 | Блок | Статус | Оставшаяся граница |
 |---|---|---|
 | Локальный реестр, DEMO 8/12, оригиналы, ручной ввод | VERIFIED локально | Другой ПК и предметная приёмка отдельно |
-| OCR/гипотезы/matching/ручные R1–R6/риск/аудит | VERIFIED на текущих тестах | Независимый RU/KZ corpus и precision/recall/top-3, правовая валидация с предметным специалистом |
+| OCR/гипотезы/matching/ручные R1–R6/риск/аудит | Функционально VERIFIED; quality OPEN | 36 synthetic cases измерены: precision 80%, recall 75%, top-3 75%; новый holdout/KZ review и цели качества не приняты |
 | Правовое основание и составной R1 | VERIFIED локально | PDF поддерживается по строгой политике; статус одного основания не заменяет составной R1 |
 | Сигналы/версии/решения/PDF | VERIFIED локально | Retention, нагрузка и эксплуатационная приёмка отдельно; локальное восстановление проверено |
 | Supporting PDF upload | VERIFIED в Linux Docker | Native Windows PDF 503; строгая политика отклоняет часть легитимных интерактивных/подписанных форм. Это не антивирус/очистка PDF |
@@ -70,9 +84,11 @@ Docker запущен по явному разрешению пользоват�
 
 ## Следующее конкретное действие
 
-Карта завершена. Следующий независимый проверяемый блок P0 — RU/KZ corpus и измерение precision/recall оплаты и top-3 matching без ответов seed; затем демонстрационный сценарий и запуск на втором ПК. Для P1-реестра — паспорт/охват/выгрузка Ashyq либо актуального набора data.egov.kz по DATA_SOURCES. Рекламный collector C-01 остаётся BLOCKED до подходящего рекламного URL/условий; реестры его не заменяют. Автопамять не восстанавливать без новой просьбы: пользователь пояснил смену аккаунта, рабочий контекст сохранён здесь.
+Измерительный OCR-блок и alias fix завершены. Для качества: targeted regression tests исторического контекста, тыс./переносов и KZ-названий; затем новый внешний holdout и ручная проверка KZ-разметки. Для P1-реестра — паспорт/охват/выгрузка Ashyq либо data.egov.kz по DATA_SOURCES. Рекламный collector C-01 остаётся BLOCKED до подходящего рекламного URL/условий. Независимо остаются второй ПК, UX/предметная приёмка, питч/демо/сдаваемый SHA. Автопамять не перенастраивать: пользователь пояснил смену аккаунта, контекст сохранён здесь.
 
 ## История сессий
+
+- 15.10.2026, Codex: продолжение от ffaf5de; 36 synthetic cases/evaluator, baseline/alias fix 8→18 из24 top-3, quality targets OPEN; 293 Linux backend +15 focused,27 Linux tool,22 browser passed; документы/evidence подготовлены к GitHub.
 
 - 15.10.2026, Codex: продолжение от `0927727`; карта/пагинация/fallback, 5 новых E2E, 22 browser passed, 10 вариантов конфигурации, production build и live OSM/200% zoom. Документация обновлена; код `718b28a`, GitHub run `38711042158` success для всех трёх jobs.
 

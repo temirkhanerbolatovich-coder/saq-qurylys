@@ -116,12 +116,19 @@ def extract(
             start = name.start(1)
             add('PROPERTY_NAME', start, start + len(content), {'text': content})
     if not names:
+        registered_names = set()
         for item in properties:
-            base = re.sub(r'^DEMO\s+', '', item.name, flags=re.I).split('·')[0].strip()
-            if base:
-                found = re.search(r'(?<!\w)' + re.escape(base) + r'(?!\w)', text, re.I)
-                if found:
-                    add('PROPERTY_NAME', found.start(), found.end(), {'text': found.group()})
+            for variant in [item.name, *getattr(item, 'aliases', [])]:
+                base = re.sub(r'^DEMO\s+', '', variant, flags=re.I).split('·')[0].strip()
+                if base:
+                    registered_names.add(base)
+        matched_spans = []
+        # Prefer the complete registered name when an alias is contained within it.
+        for base in sorted(registered_names, key=lambda value: (-len(value), value.casefold())):
+            found = re.search(r'(?<!\w)' + re.escape(base) + r'(?!\w)', text, re.I)
+            if found and not any(start < found.end() and end > found.start() for start, end in matched_spans):
+                matched_spans.append(found.span())
+                add('PROPERTY_NAME', found.start(), found.end(), {'text': found.group()})
     for clause in re.finditer(r'[^\n]+', text):
         for sentence in re.finditer(r'.+?(?:[.!?;](?=\s)|$)', clause.group()):
             content = sentence.group().strip()
