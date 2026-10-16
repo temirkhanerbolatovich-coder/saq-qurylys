@@ -7,15 +7,17 @@ import {
   ArrowRight,
   Building2,
   Check,
-  ChevronRight,
   ClipboardCheck,
   FileText,
   LayoutDashboard,
   LogOut,
+  MapPin,
+  ListFilter,
   Plus,
   Search,
   ShieldCheck,
   Siren,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   createContext,
@@ -40,7 +42,14 @@ import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { TableRegion } from "@/components/ui/table-region";
 import { PropertyMap } from "@/components/property-map";
+import { PropertyHistory } from "@/components/property-history";
+import { clearReviewDrafts } from "@/lib/use-review-draft";
 import { statusLabel } from "@/lib/status-labels";
+import {
+  factorLabels,
+  propertyDossierUrl,
+  zoneLabels,
+} from "@/lib/presentation";
 import { AppealReview } from "@/components/appeal-review";
 import { ConstructionReview } from "@/components/construction-review";
 import { LegalAbsenceReview } from "@/components/legal-absence-review";
@@ -55,6 +64,17 @@ export const Auth = createContext<{
   user: User | null;
   refresh: () => Promise<void>;
 }>({ user: null, refresh: async () => {} });
+const InterfaceMode = createContext<{
+  detailed: boolean;
+  setDetailed: (value: boolean) => void;
+}>({
+  detailed: false,
+  setDetailed: () => {},
+});
+
+export function useInterfaceMode() {
+  return useContext(InterfaceMode);
+}
 const legalLabels: Record<string, string> = {
   UNKNOWN: "Не проверено",
   PENDING: "На проверке",
@@ -68,15 +88,6 @@ const stageLabels: Record<string, string> = {
   UNDER_CONSTRUCTION: "Строится",
   COMPLETED: "Завершён",
 };
-const factorLabels: Record<string, string> = {
-  R1: "Отсутствие основания установлено",
-  R2: "Прямое предложение внести деньги",
-  R3: "Активная реклама строящегося жилья",
-  R4: "Коллективное обращение",
-  R5: "Расхождение готовности ≥20 п.п.",
-  R6: "Подтверждённая задержка",
-};
-const zoneLabels = { GREEN: "Зелёная", YELLOW: "Жёлтая", RED: "Красная" };
 const nav = [
   { href: "/dashboard", label: "Обзор", icon: LayoutDashboard },
   { href: "/properties", label: "Объекты", icon: Building2 },
@@ -85,11 +96,62 @@ const nav = [
   { href: "/signals", label: "Сигналы", icon: Siren },
 ];
 
+function WorkspaceContext({ pathname }: { pathname: string }) {
+  let parent: { href: string; label: string } | null = null;
+  let title = "";
+  if (pathname.startsWith("/properties/")) {
+    parent = { href: "/properties", label: "Объекты" };
+    title = "Досье объекта";
+  } else if (pathname.startsWith("/advertisements/")) {
+    parent = { href: "/advertisements", label: "Реклама" };
+    title =
+      (
+        {
+          "/advertisements/new": "Добавить текст",
+          "/advertisements/upload": "Загрузить файл",
+          "/advertisements/import-url": "Импорт по ссылке",
+        } as Record<string, string>
+      )[pathname] || "Оригинал публикации";
+  } else if (pathname.startsWith("/monitoring")) {
+    parent = { href: "/review", label: "Проверка" };
+    title = "Сверка находок";
+  }
+  return parent ? (
+    <nav className="breadcrumbs" aria-label="Путь к странице">
+      <Link href={parent.href}>{parent.label}</Link>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{title}</span>
+    </nav>
+  ) : (
+    <span>Рабочее место аналитика</span>
+  );
+}
+
 export function Providers({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
+  const [detailed, setDetailedState] = useState(false);
+  useEffect(() => {
+    try {
+      setDetailedState(
+        localStorage.getItem("saq-detailed-interface") === "true",
+      );
+    } catch {
+      // Storage may be unavailable; the current view remains usable.
+    }
+  }, []);
+  function setDetailed(value: boolean) {
+    setDetailedState(value);
+    try {
+      localStorage.setItem("saq-detailed-interface", String(value));
+    } catch {
+      // A display preference must never block access to the application.
+    }
+  }
   const pathname = usePathname();
+  const checking =
+    pathname.startsWith("/review") || pathname.startsWith("/monitoring");
   const router = useRouter();
   async function refresh() {
     try {
@@ -97,6 +159,7 @@ export function Providers({ children }: { children: ReactNode }) {
       setError("");
     } catch (e) {
       setUser(null);
+      if (e instanceof ApiError && e.status === 401) clearReviewDrafts();
       if (!(e instanceof ApiError && e.status === 401))
         setError((e as Error).message);
     } finally {
@@ -123,77 +186,113 @@ export function Providers({ children }: { children: ReactNode }) {
     );
   if (!user) return <main className="boot">Необходим вход…</main>;
   return (
-    <Auth.Provider value={{ user, refresh }}>
-      <div className="workspace">
-        <a className="skip-link" href="#main-content">
-          Перейти к содержимому
-        </a>
-        <aside className="sidebar">
-          <Link href="/dashboard" className="brand">
-            <span className="brand-symbol">
-              <ShieldCheck size={25} />
-            </span>
-            <span>
-              SAQ <b>QURYLYS</b>
-              <small>Рабочее место аналитика</small>
-            </span>
-          </Link>
-          <div className="sidebar-caption">МОНИТОРИНГ</div>
-          <nav aria-label="Основная навигация">
-            {nav.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className={pathname.startsWith(href) ? "active" : ""}
-                aria-current={pathname.startsWith(href) ? "page" : undefined}
-              >
-                <Icon size={18} />
-                {label}
-              </Link>
-            ))}
-          </nav>
-          <div className="sidebar-note">
-            <ShieldCheck size={20} />
-            <p>
-              Решение принимает человек
-              <small>Система формирует сигнал необходимости проверки.</small>
-            </p>
-          </div>
-          <div className="user">
-            <span className="avatar">А</span>
-            <div>
-              <strong>{user.display_name}</strong>
-              <small>{user.role === "analyst" ? "Аналитик" : "Просмотр"}</small>
-            </div>
+    <InterfaceMode.Provider value={{ detailed, setDetailed }}>
+      <Auth.Provider value={{ user, refresh }}>
+        <div
+          className={`workspace analyst-workspace ${detailed ? "detailed-view" : "simple-view"}`}
+        >
+          <a className="skip-link" href="#main-content">
+            Перейти к содержимому
+          </a>
+          <aside className="sidebar">
+            <Link href="/dashboard" className="brand">
+              <span className="brand-symbol">
+                <ShieldCheck size={25} aria-hidden="true" />
+              </span>
+              <span>
+                SAQ <b>QURYLYS</b>
+                <small>Аналитика строительства</small>
+              </span>
+            </Link>
+            <p className="sidebar-caption">РАБОЧИЕ ЗОНЫ</p>
+            <nav aria-label="Основная навигация">
+              {nav.map(({ href, label, icon: Icon }) => {
+                const active =
+                  pathname.startsWith(href) || (href === "/review" && checking);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={active ? "active" : ""}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <Icon size={18} aria-hidden="true" />
+                    {label}
+                  </Link>
+                );
+              })}
+            </nav>
             <button
-              aria-label="Выйти"
-              onClick={async () => {
-                await command("/auth/logout");
-                await refresh();
-                router.replace("/login");
-              }}
+              className="interface-toggle"
+              type="button"
+              aria-pressed={detailed}
+              onClick={() => setDetailed(!detailed)}
             >
-              <LogOut size={17} />
+              <SlidersHorizontal size={16} aria-hidden="true" />
+              {detailed ? "Краткий вид" : "Подробный вид"}
             </button>
+            <p className="sidebar-mode-help">
+              Вид меняет подробность экранов. Все рабочие зоны доступны всегда.
+            </p>
+            <div className="user">
+              <span className="avatar" aria-hidden="true">
+                {user.display_name.slice(0, 1)}
+              </span>
+              <div>
+                <strong>{user.display_name}</strong>
+                <small>
+                  {user.role === "analyst" ? "Аналитик" : "Просмотр"}
+                </small>
+              </div>
+              <button
+                aria-label="Выйти"
+                onClick={async () => {
+                  await command("/auth/logout");
+                  clearReviewDrafts();
+                  await refresh();
+                  router.replace("/login");
+                }}
+              >
+                <LogOut size={17} aria-hidden="true" />
+              </button>
+            </div>
+          </aside>
+          <div className="main-column">
+            <header className="topbar">
+              <WorkspaceContext pathname={pathname} />
+              <span className="demo-label">
+                Прототип · DEMO отмечено отдельно
+              </span>
+            </header>
+            {checking && (
+              <nav className="checking-nav" aria-label="Проверки">
+                <Link
+                  href="/review"
+                  aria-current={pathname === "/review" ? "page" : undefined}
+                >
+                  Материалы
+                </Link>
+                <Link
+                  href="/monitoring"
+                  aria-current={
+                    pathname.startsWith("/monitoring") ? "page" : undefined
+                  }
+                >
+                  Сверка
+                </Link>
+              </nav>
+            )}
+            <main className="content" id="main-content" tabIndex={-1}>
+              {children}
+            </main>
+            <footer>
+              SAQ QURYLYS · Прототип · Сигнал не устанавливает факт
+              правонарушения
+            </footer>
           </div>
-        </aside>
-        <div className="main-column">
-          <header className="topbar">
-            <span>
-              Региональный мониторинг <ChevronRight size={14} />{" "}
-              <strong>Усть-Каменогорск</strong>
-            </span>
-            <span className="demo-label">DEMO · синтетические данные</span>
-          </header>
-          <main className="content" id="main-content" tabIndex={-1}>
-            {children}
-          </main>
-          <footer>
-            SAQ QURYLYS · Прототип · Сигнал не устанавливает факт правонарушения
-          </footer>
         </div>
-      </div>
-    </Auth.Provider>
+      </Auth.Provider>
+    </InterfaceMode.Provider>
   );
 }
 
@@ -210,9 +309,46 @@ export function Demo({ value = true }: { value?: boolean }) {
 export function Zone({ risk }: { risk: Property["risk"] }) {
   return (
     <span className={`zone ${risk.zone.toLowerCase()}`}>
-      <span className="zone-dot" />
+      <span className="zone-dot" aria-hidden="true" />
       <strong>{risk.score}</strong> {zoneLabels[risk.zone]}
     </span>
+  );
+}
+
+export function RiskSummary({ risk }: { risk: Property["risk"] }) {
+  const { detailed } = useInterfaceMode();
+  return (
+    <section
+      className={`risk-summary ${risk.zone.toLowerCase()}`}
+      aria-label="Рассчитанный приоритет проверки"
+    >
+      <div className="risk-summary-score">
+        <span className="risk-number">
+          {risk.score}
+          <small> / 100</small>
+        </span>
+        <span className={`zone ${risk.zone.toLowerCase()}`}>
+          {zoneLabels[risk.zone]} зона
+        </span>
+      </div>
+      <div>
+        <h2>Приоритет проверки</h2>
+        <p>
+          Подтверждённые факторы:{" "}
+          <strong>{risk.confirmed_codes.join(" · ") || "нет"}</strong>
+        </p>
+        <p className="field-help">
+          Балл рассчитан сервером. Красная зона не устанавливает нарушение;
+          зелёная не гарантирует безопасность.
+        </p>
+      </div>
+      <div className="risk-summary-meta" hidden={!detailed}>
+        <span>
+          Ревизия {risk.revision} · {risk.rules_version}
+        </span>
+        <span>Оценка на {date(risk.as_of)}</span>
+      </div>
+    </section>
   );
 }
 
@@ -297,7 +433,15 @@ export function PageTitle({
   );
 }
 
-function PropertyTable({ rows }: { rows: Property[] }) {
+function PropertyTable({
+  rows,
+  registryQuery = "",
+  selectedId,
+}: {
+  rows: Property[];
+  registryQuery?: string;
+  selectedId?: string | null;
+}) {
   if (!rows.length)
     return (
       <div className="empty">Объекты по выбранным фильтрам не найдены.</div>
@@ -319,14 +463,24 @@ function PropertyTable({ rows }: { rows: Property[] }) {
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.id}>
+            <tr
+              key={row.id}
+              className={row.id === selectedId ? "is-map-selected" : undefined}
+            >
               <td>
-                <Link className="object-name" href={`/properties/${row.id}`}>
+                <Link
+                  className="object-name"
+                  href={propertyDossierUrl(row.id, registryQuery)}
+                >
                   {row.name}
                 </Link>
                 <small>
-                  {row.address} <Demo value={row.is_demo} />
+                  {row.city} · {row.address} <Demo value={row.is_demo} />
                 </small>
+                <small>{row.developer.name}</small>
+                {row.id === selectedId && (
+                  <small className="selected-row-label">Выбран на карте</small>
+                )}
               </td>
               <td>
                 <span
@@ -353,7 +507,7 @@ function PropertyTable({ rows }: { rows: Property[] }) {
               <td>
                 <Link
                   aria-label={`Открыть ${row.name}`}
-                  href={`/properties/${row.id}`}
+                  href={propertyDossierUrl(row.id, registryQuery)}
                 >
                   <ArrowRight size={18} />
                 </Link>
@@ -366,16 +520,218 @@ function PropertyTable({ rows }: { rows: Property[] }) {
   );
 }
 
-export function DashboardView() {
-  const summary = useData<Dashboard>("/dashboard/summary");
-  const registry = useData<Page<Property>>("/properties?page_size=100");
+function PropertyCards({
+  rows,
+  registryQuery = "",
+}: {
+  rows: Property[];
+  registryQuery?: string;
+}) {
+  return (
+    <div className="property-cards">
+      {rows.map((row, index) => (
+        <article className="property-card" key={row.id}>
+          <div className="property-card-top">
+            <span className="catalog-number" aria-hidden="true">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <Demo value={row.is_demo} />
+          </div>
+          <div className="property-card-name">
+            <p>{row.city}</p>
+            <h2>
+              <Link href={propertyDossierUrl(row.id, registryQuery)}>
+                {row.name}
+              </Link>
+            </h2>
+            <p>{row.address}</p>
+          </div>
+          <div className="property-card-state">
+            <Zone risk={row.risk} />
+            <span>{legalLabels[row.legal_verification_status]}</span>
+          </div>
+          <p className="property-card-reason">
+            {row.risk.confirmed_codes.length
+              ? row.risk.confirmed_codes
+                  .map((code) => factorLabels[code] || code)
+                  .join(" · ")
+              : "Подтверждённых факторов нет. Полнота данных требует проверки."}
+          </p>
+          <div className="property-card-footer">
+            <span>Проверено: {date(row.last_reviewed_at)}</span>
+            <Link
+              href={propertyDossierUrl(row.id, registryQuery)}
+              aria-label={`Открыть ${row.name}`}
+            >
+              <ArrowRight size={20} aria-hidden="true" />
+            </Link>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function DashboardHeading() {
+  const { user } = useContext(Auth);
   return (
     <>
       <PageTitle
-        eyebrow="СИТУАЦИЯ В РЕГИОНЕ"
-        title="Обзор мониторинга"
-        description="Объекты, источники и причины, требующие внимания аналитика."
+        eyebrow="РАБОЧЕЕ ПРОСТРАНСТВО"
+        title="Рабочий обзор"
+        description="Продолжите проверку материалов, разберите ошибки или откройте сохранённые сигналы."
       />
+      <div className="overview-links">
+        <Link className="text-link" href="/properties">
+          Найти объект <ArrowRight size={15} aria-hidden="true" />
+        </Link>
+        {user?.role === "viewer" && (
+          <Link className="text-link" href="/advertisements">
+            Открыть публикации
+          </Link>
+        )}
+      </div>
+    </>
+  );
+}
+
+function DashboardQueues({
+  summary,
+}: {
+  summary: ReturnType<typeof useData<Dashboard>>;
+}) {
+  const ready = useData<Page<Advertisement>>(
+    "/advertisements?status=READY_FOR_REVIEW&page_size=1",
+  );
+  const failed = useData<Page<Advertisement>>(
+    "/advertisements?status=FAILED&page_size=1",
+  );
+  const queues = [
+    {
+      title: "Новые публикации",
+      count: summary.data?.new_advertisements,
+      resource: summary,
+      note: "Сохранены и ожидают анализа. Подтверждения выполняются отдельно.",
+      href: "/advertisements?status=NEW",
+      action: "Открыть новые материалы",
+    },
+    {
+      title: "Ожидают проверки",
+      count: ready.data?.total,
+      resource: ready,
+      note: "Материалы после обработки. Проверьте гипотезы, объект и доказательства.",
+      href: "/review?status=READY_FOR_REVIEW",
+      action: "Проверить готовые материалы",
+    },
+    {
+      title: "Ошибки обработки",
+      count: failed.data?.total,
+      resource: failed,
+      note: "Проверьте оригинал и причину ошибки перед явным повтором анализа.",
+      href: "/review?status=FAILED",
+      action: "Открыть ошибки",
+    },
+    {
+      title: "Сигналы без решения",
+      count: summary.data?.pending_signals,
+      resource: summary,
+      note: "Сохранённые снимки ожидают отдельного решения аналитика.",
+      href: "/signals?state=DRAFT",
+      action: "Рассмотреть сигналы",
+    },
+  ];
+  return (
+    <div className="action-queues" role="group" aria-label="Следующие действия">
+      {queues.map((queue) => (
+        <section className="panel action-queue" key={queue.href}>
+          <h2>{queue.title}</h2>
+          <p className="rail-number">
+            {queue.resource.error ? "—" : (queue.count ?? "—")}
+          </p>
+          <p className="muted">{queue.note}</p>
+          {queue.resource.error ? (
+            <LoadState
+              error={queue.resource.error}
+              retry={queue.resource.reload}
+            />
+          ) : queue.count === undefined ? (
+            <p className="loading" role="status">
+              Загрузка количества…
+            </p>
+          ) : null}
+          <Link className="text-link" href={queue.href}>
+            {queue.action} <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function SimpleDashboard({
+  registry,
+  rows,
+}: {
+  registry: ReturnType<typeof useData<Page<Property>>>;
+  rows: Property[];
+}) {
+  return (
+    <div className="simple-home">
+      <section className="home-collection" aria-labelledby="home-objects">
+        <div className="collection-heading">
+          <div>
+            <p className="eyebrow">ОБЪЕКТЫ</p>
+            <h2 id="home-objects">Требуют внимания</h2>
+          </div>
+          <Link className="text-link" href="/properties">
+            Все объекты <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+        </div>
+        {registry.error || !registry.data ? (
+          <LoadState error={registry.error} retry={registry.reload} />
+        ) : (
+          <>
+            {rows.length ? (
+              <PropertyCards rows={rows.slice(0, 3)} />
+            ) : (
+              <p className="empty">Объектов пока нет.</p>
+            )}
+            <p className="collection-note">
+              Показано {Math.min(rows.length, 3)} из {registry.data.total}{" "}
+              объектов по приоритету проверки
+              {registry.data.total > registry.data.items.length
+                ? ` среди первых ${registry.data.items.length} записей`
+                : ""}
+              . Балл не является правовым заключением.
+            </p>
+          </>
+        )}
+      </section>
+    </div>
+  );
+}
+
+export function DashboardView() {
+  const { detailed } = useInterfaceMode();
+  const summary = useData<Dashboard>("/dashboard/summary");
+  const registry = useData<Page<Property>>("/properties?page_size=100");
+  const priorityRows = registry.data
+    ? [...registry.data.items]
+        .sort((a, b) => b.risk.score - a.risk.score)
+        .slice(0, 5)
+    : [];
+  if (!detailed)
+    return (
+      <>
+        <DashboardHeading />
+        <DashboardQueues summary={summary} />
+        <SimpleDashboard registry={registry} rows={priorityRows} />
+      </>
+    );
+  return (
+    <>
+      <DashboardHeading />
+      <DashboardQueues summary={summary} />
       <div className="context-line">
         <span className="live-dot" /> Сведения реестра <span>·</span>{" "}
         {summary.data
@@ -388,7 +744,7 @@ export function DashboardView() {
           [
             "Объектов в реестре",
             summary.data?.property_count,
-            "Полные DEMO-карточки",
+            "ЖК, очереди и корпуса",
             "neutral",
           ],
           [
@@ -417,67 +773,113 @@ export function DashboardView() {
           </div>
         ))}
       </div>
-      <nav className="workflow-links" aria-label="Основные рабочие сценарии">
-        <Link href="/advertisements">
-          01 · Собрать материалы<small>Оригиналы публикаций и источники</small>
-        </Link>
-        <Link href="/review">
-          02 · Проверить факты<small>Сверка гипотез и привязка к объекту</small>
-        </Link>
-        <Link href="/signals">
-          03 · Сигналы и PDF<small>История версий и решения аналитика</small>
-        </Link>
-      </nav>
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Объекты под наблюдением</h2>
-            <p>Балл отражает необходимость проверки, а не наличие нарушения.</p>
-          </div>
-          <Link className="text-link" href="/properties">
-            Весь реестр <ArrowRight size={15} />
-          </Link>
-        </div>
-        {registry.data ? (
-          <PropertyTable
-            rows={[...registry.data.items].sort(
-              (a, b) => b.risk.score - a.risk.score,
-            )}
-          />
-        ) : (
-          <LoadState error={registry.error} retry={registry.reload} />
-        )}
-      </section>
-      <div className="dashboard-bottom">
-        <section className="panel compact">
-          <FileText size={23} />
-          <div>
-            <h2>Новые материалы</h2>
-            <p>
-              {summary.data?.new_advertisements ?? "—"} публикаций сохранено.
-              Добавьте новый текст, чтобы начать проверку.
-            </p>
-            <Link className="text-link" href="/advertisements">
-              Открыть рекламу <ArrowRight size={14} />
+      <div className="dashboard-workspace">
+        <section className="panel priority-panel">
+          <div className="panel-heading">
+            <div>
+              <h2>С чего начать проверку</h2>
+              <p>
+                Балл отражает необходимость проверки, а не наличие нарушения.
+              </p>
+            </div>
+            <Link className="text-link" href="/properties">
+              Весь реестр <ArrowRight size={15} />
             </Link>
           </div>
+          {registry.data ? (
+            <>
+              <ol className="priority-list">
+                {priorityRows.map((row, index) => (
+                  <li key={row.id}>
+                    <span className="priority-order" aria-hidden="true">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <div className="priority-object">
+                      <Link
+                        href={`/properties/${row.id}`}
+                        className="object-name"
+                      >
+                        {row.name}
+                      </Link>
+                      <small>
+                        {row.city} · {row.address} <Demo value={row.is_demo} />
+                      </small>
+                      <p>
+                        {row.risk.confirmed_codes.length
+                          ? row.risk.confirmed_codes
+                              .map(
+                                (code) =>
+                                  `${code} · ${factorLabels[code] || code}`,
+                              )
+                              .join("; ")
+                          : "Подтверждённых факторов нет. Проверьте полноту материалов."}
+                      </p>
+                    </div>
+                    <div className="priority-action">
+                      <Zone risk={row.risk} />
+                      <Link
+                        className="text-link"
+                        href={`/properties/${row.id}`}
+                      >
+                        Открыть досье{" "}
+                        <ArrowRight size={14} aria-hidden="true" />
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              {!priorityRows.length && (
+                <p className="empty">В реестре пока нет объектов.</p>
+              )}
+              <p className="queue-scope">
+                Показано {priorityRows.length} из {registry.data.total}{" "}
+                объектов.{" "}
+                {registry.data.total > registry.data.items.length
+                  ? `По баллу среди первых ${registry.data.items.length} объектов реестра; это не глобальный рейтинг.`
+                  : "По убыванию серверного балла, без правовой оценки."}
+              </p>
+            </>
+          ) : (
+            <LoadState error={registry.error} retry={registry.reload} />
+          )}
         </section>
-        <section className="panel compact">
-          <ClipboardCheck size={23} />
-          <div>
-            <h2>Объекты на карте</h2>
-            <p>Расположение DEMO-объектов и приоритет проверки из реестра.</p>
-            <Link className="text-link" href="/properties?view=map">
-              Открыть карту <ArrowRight size={14} />
+        <aside className="dashboard-rail" aria-label="Продолжить работу">
+          <nav
+            className="workflow-links"
+            aria-label="Основные рабочие сценарии"
+          >
+            <Link href="/review">
+              <span>
+                01 · Проверить факты <ArrowRight size={15} aria-hidden="true" />
+              </span>
+              <small>Оригинал, гипотезы и точная очередь</small>
             </Link>
-          </div>
-        </section>
+            <Link href="/signals">
+              <span>
+                02 · Сигналы и PDF <ArrowRight size={15} aria-hidden="true" />
+              </span>
+              <small>Сохранённые версии и решения</small>
+            </Link>
+            <Link href="/properties?view=map" aria-label="Открыть карту">
+              <span>
+                03 · Открыть карту <MapPin size={15} aria-hidden="true" />
+              </span>
+              <small>Расположение объектов реестра</small>
+            </Link>
+          </nav>
+          <p className="rail-note">
+            <ShieldCheck size={18} aria-hidden="true" />
+            Гипотеза помогает найти факт. Окончательное решение принимает
+            аналитик.
+          </p>
+        </aside>
       </div>
     </>
   );
 }
 
 export function PropertiesView() {
+  const { detailed } = useInterfaceMode();
   const params = useSearchParams();
   const router = useRouter();
   const apiParams = new URLSearchParams(params);
@@ -508,7 +910,7 @@ export function PropertiesView() {
         title="Объекты"
         description="Каждая очередь и корпус проверяются по своим документам и датам."
       />
-      <section className="panel">
+      <section className={`panel ${detailed ? "" : "simple-catalog"}`}>
         <div className="filters">
           <div className="search">
             <Search size={17} />
@@ -525,7 +927,7 @@ export function PropertiesView() {
               onChange={(e) => filter("q", e.target.value)}
             />
           </div>
-          <label>
+          <label hidden={!detailed}>
             Зона
             <select
               aria-label="Фильтр по зоне"
@@ -538,7 +940,7 @@ export function PropertiesView() {
               <option value="GREEN">Зелёная</option>
             </select>
           </label>
-          <label>
+          <label hidden={!detailed}>
             Основание
             <select
               aria-label="Фильтр по основанию"
@@ -554,10 +956,16 @@ export function PropertiesView() {
             </select>
           </label>
         </div>
-        <div className="registry-views" role="group" aria-label="Вид реестра">
+        <div
+          className="registry-views"
+          role="group"
+          aria-label="Вид реестра"
+          hidden={!detailed && !hasFilters}
+        >
           <Button
             variant="outline"
             aria-pressed={!showMap}
+            hidden={!detailed}
             onClick={() => filter("view", "")}
           >
             Список
@@ -565,6 +973,7 @@ export function PropertiesView() {
           <Button
             variant="outline"
             aria-pressed={showMap}
+            hidden={!detailed}
             onClick={() => filter("view", "map")}
           >
             Карта и список
@@ -575,10 +984,31 @@ export function PropertiesView() {
             </Button>
           )}
         </div>
+        {hasFilters && (
+          <div className="active-filters" aria-label="Активные фильтры">
+            <ListFilter size={16} aria-hidden="true" />
+            {params.get("q") && <span>Поиск: {params.get("q")}</span>}
+            {params.get("zone") && (
+              <span>
+                Зона:{" "}
+                {zoneLabels[params.get("zone") as keyof typeof zoneLabels] ||
+                  params.get("zone")}
+              </span>
+            )}
+            {params.get("legal_status") && (
+              <span>
+                Основание:{" "}
+                {legalLabels[params.get("legal_status")!] ||
+                  params.get("legal_status")}
+              </span>
+            )}
+          </div>
+        )}
         {/* A changed filter must never display the previous request's markers. */}
         <PropertyResults
           key={query}
           query={query}
+          registryQuery={params.toString()}
           showMap={showMap}
           onPage={(page) => filter("page", String(page))}
         />
@@ -589,14 +1019,18 @@ export function PropertiesView() {
 
 function PropertyResults({
   query,
+  registryQuery,
   showMap,
   onPage,
 }: {
   query: string;
+  registryQuery: string;
   showMap: boolean;
   onPage: (page: number) => void;
 }) {
+  const { detailed } = useInterfaceMode();
   const registry = useData<Page<Property>>(`/properties?${query}`);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   if (!registry.data)
     return <LoadState error={registry.error} retry={registry.reload} />;
   const data = registry.data;
@@ -607,9 +1041,26 @@ function PropertyResults({
         Найдено объектов: {data.total}
         <span>На странице: {data.items.length}</span>
       </div>
-      {showMap && <PropertyMap rows={data.items} />}
+      {showMap && detailed && (
+        <PropertyMap
+          rows={data.items}
+          registryQuery={registryQuery}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
+      )}
       <div id="property-list" tabIndex={-1} aria-label="Список объектов">
-        <PropertyTable rows={data.items} />
+        {detailed ? (
+          <PropertyTable
+            rows={data.items}
+            registryQuery={registryQuery}
+            selectedId={selectedId}
+          />
+        ) : data.items.length ? (
+          <PropertyCards rows={data.items} registryQuery={registryQuery} />
+        ) : (
+          <p className="empty">Объекты по выбранным фильтрам не найдены.</p>
+        )}
       </div>
       {(pages > 1 || data.page > 1) && (
         <Pagination
@@ -691,8 +1142,99 @@ function EvidenceItem({ id }: { id: string }) {
   );
 }
 
+function DossierProgress({
+  detail,
+  writable,
+  openTools,
+}: {
+  detail: PropertyDetail;
+  writable: boolean;
+  openTools: () => void;
+}) {
+  const row = detail.property;
+  const pendingFactors = detail.factors.filter(
+    (factor) => factor.status === "PENDING",
+  );
+  const pendingDocuments = detail.legal_bases.filter(
+    (basis) => basis.verification_status === "PENDING",
+  );
+  const confirmedDocuments = detail.legal_bases.filter(
+    (basis) => basis.verification_status === "VERIFIED_VALID",
+  );
+  const hasMaterials = detail.advertisement_ids.length > 0;
+  const needsDecision =
+    pendingFactors.length > 0 || pendingDocuments.length > 0;
+  return (
+    <section className="panel padded" aria-labelledby="dossier-progress-title">
+      <h2 id="dossier-progress-title">Ход проверки</h2>
+      <dl className="dossier-progress">
+        <dt>Что найдено</dt>
+        <dd>
+          Связанные публикации: {detail.advertisement_ids.length}. Документы:{" "}
+          {detail.legal_bases.length}. Их наличие ещё не означает подтверждение.
+        </dd>
+        <dt>Что подтверждено</dt>
+        <dd>
+          Факторы:{" "}
+          {row.risk.confirmed_codes.length
+            ? row.risk.confirmed_codes.join(", ")
+            : "пока нет"}
+          . Проверенные документы: {confirmedDocuments.length}. Оценка на{" "}
+          {date(row.risk.as_of)}.
+        </dd>
+        <dt>Чего не хватает</dt>
+        <dd>
+          {!hasMaterials && "Нужна публикация для проверки. "}
+          {pendingDocuments.length > 0 &&
+            `Ожидают решения документы: ${pendingDocuments.length}. `}
+          {pendingFactors.length > 0 &&
+            `Ожидают решения факторы: ${pendingFactors.length}. `}
+          {row.risk.unknown_codes.length > 0
+            ? `Не установлены: ${row.risk.unknown_codes.join(", ")}. Неизвестность не подтверждает нарушение.`
+            : "Все факторы имеют сохранённое решение. Даты и область документов проверяются отдельно."}
+        </dd>
+        <dt>Что сделать дальше</dt>
+        <dd>
+          {!writable ? (
+            <Link className="text-link" href="#dossier-factors">
+              Изучите решения и доказательства
+            </Link>
+          ) : !hasMaterials ? (
+            <Link className="text-link" href="/advertisements/new">
+              Добавьте публикацию, затем подтвердите её связь с объектом
+            </Link>
+          ) : pendingDocuments.length > 0 ? (
+            <a className="text-link" href="#dossier-bases" onClick={openTools}>
+              Проверьте ожидающие решения документы
+            </a>
+          ) : needsDecision ? (
+            <Link
+              className="text-link"
+              href={`/advertisements?property_id=${row.id}`}
+            >
+              Откройте связанные публикации и проверьте гипотезы
+            </Link>
+          ) : (
+            <Link
+              className="text-link"
+              href={`/advertisements?property_id=${row.id}`}
+            >
+              Проверьте связанные публикации и даты источников
+            </Link>
+          )}
+        </dd>
+      </dl>
+    </section>
+  );
+}
+
 export function PropertyView({ id }: { id: string }) {
   const { user } = useContext(Auth);
+  const { detailed, setDetailed } = useInterfaceMode();
+  const params = useSearchParams();
+  const registryQuery = new URLSearchParams(
+    params.get("registry") || "",
+  ).toString();
   const detail = useData<PropertyDetail>(`/properties/${id}`);
   const [evidence, setEvidence] = useState<string | null>(null);
   if (!detail.data)
@@ -700,7 +1242,10 @@ export function PropertyView({ id }: { id: string }) {
   const row = detail.data.property;
   return (
     <>
-      <Link href="/properties" className="back">
+      <Link
+        href={registryQuery ? `/properties?${registryQuery}` : "/properties"}
+        className="back"
+      >
         <ArrowLeft size={15} /> К реестру
       </Link>
       <PageTitle
@@ -710,14 +1255,25 @@ export function PropertyView({ id }: { id: string }) {
         action={false}
       />
       <div className="object-summary">
-        <Zone risk={row.risk} />
         <Demo value={row.is_demo} />
-        <span>Версия правил: {row.risk.rules_version}</span>
+        <span>{row.developer.name}</span>
+        <span>{legalLabels[row.legal_verification_status]}</span>
       </div>
-      <nav className="dossier-nav" aria-label="Разделы карточки объекта">
+      <RiskSummary risk={row.risk} />
+      <DossierProgress
+        detail={detail.data}
+        writable={user?.role === "analyst"}
+        openTools={() => setDetailed(true)}
+      />
+      <nav
+        className="dossier-nav"
+        aria-label="Разделы карточки объекта"
+        hidden={!detailed}
+      >
         <a href="#dossier-summary">Сведения</a>
         <a href="#dossier-bases">Основания</a>
         <a href="#dossier-factors">Факторы и решения</a>
+        <a href="#dossier-history">История объекта</a>
         <a href="#dossier-materials">Материалы и проверки</a>
       </nav>
       {detail.data.unknown_information.map((value) => (
@@ -725,14 +1281,16 @@ export function PropertyView({ id }: { id: string }) {
           {value}
         </p>
       ))}
-      <div className="detail-grid">
+      <div className="detail-grid dossier-overview">
         <section className="panel padded" id="dossier-summary" tabIndex={-1}>
           <h2>Сведения об объекте</h2>
-          <CreateSignalButton property={row} onChange={detail.reload} />
+          <div hidden={!detailed}>
+            <CreateSignalButton property={row} onChange={detail.reload} />
+          </div>
           <dl>
             <dt>Застройщик</dt>
             <dd>
-              {row.developer.name} <Demo />
+              {row.developer.name} <Demo value={row.is_demo} />
             </dd>
             <dt>БИН</dt>
             <dd>{row.developer.bin || "Не указан · DEMO"}</dd>
@@ -770,7 +1328,8 @@ export function PropertyView({ id }: { id: string }) {
               <div className="document" key={basis.id}>
                 <Demo value={basis.is_demo} />
                 <h3>
-                  {basis.document_number} · {basis.document_date}
+                  {basis.document_number || "Номер не указан"} ·{" "}
+                  {basis.document_date || "Дата не установлена"}
                 </h3>
                 <p>{basis.issuer}</p>
                 <p>Охват: {basis.scope_description}</p>
@@ -779,6 +1338,7 @@ export function PropertyView({ id }: { id: string }) {
                   basis={basis}
                   onSaved={detail.reload}
                   writable={user?.role === "analyst"}
+                  showControls={detailed}
                 />
                 <a
                   className="text-link"
@@ -808,7 +1368,10 @@ export function PropertyView({ id }: { id: string }) {
         </div>
         {detail.data.factors.length ? (
           detail.data.factors.map((factor) => (
-            <div className="factor-row" key={factor.id}>
+            <div
+              className={`factor-row factor-${factor.status.toLowerCase()}`}
+              key={factor.id}
+            >
               <span className="factor-token">{factor.code}</span>
               <div>
                 <strong>{factorLabels[factor.code] || factor.code}</strong>
@@ -821,6 +1384,8 @@ export function PropertyView({ id }: { id: string }) {
               </span>
               <Button
                 variant="outline"
+                aria-expanded={evidence === factor.id}
+                aria-controls={`factor-evidence-${factor.id}`}
                 onClick={() =>
                   setEvidence(evidence === factor.id ? null : factor.id)
                 }
@@ -828,7 +1393,10 @@ export function PropertyView({ id }: { id: string }) {
                 Доказательства
               </Button>
               {evidence === factor.id && (
-                <div className="evidence-list">
+                <div
+                  className="evidence-list"
+                  id={`factor-evidence-${factor.id}`}
+                >
                   {factor.evidence_ids.map((value) => (
                     <EvidenceItem key={value} id={value} />
                   ))}
@@ -837,41 +1405,73 @@ export function PropertyView({ id }: { id: string }) {
             </div>
           ))
         ) : (
-          <div className="empty">Подтверждённых факторов пока нет.</div>
+          <div className="empty">
+            Факторы пока не зафиксированы. Добавьте и проверьте материалы.
+          </div>
         )}
       </section>
-      <div id="dossier-materials" tabIndex={-1}>
-        <h2>Материалы и проверки</h2>
-        <p className="muted">
-          Сохраните источник и область его применения. Подтверждение каждого
-          фактора выполняется отдельно.
-        </p>
+      {!detailed && (
+        <section className="expert-invitation">
+          <div>
+            <h2>Нужно дополнить проверку?</h2>
+            <p>
+              Документы, решения по факторам и история доступны в инструментах
+              аналитика.
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => setDetailed(true)}>
+            Открыть инструменты
+          </Button>
+        </section>
+      )}
+      <div hidden={!detailed}>
+        <div id="dossier-materials" tabIndex={-1}>
+          <h2>Материалы и проверки</h2>
+          <p className="muted">
+            Сохраните источник и область его применения. Подтверждение каждого
+            фактора выполняется отдельно.
+          </p>
+        </div>
+        {user?.role === "analyst" && (
+          <LegalAbsenceReview
+            key={row.id}
+            detail={detail.data}
+            onSaved={detail.reload}
+          />
+        )}
+        {user?.role === "analyst" && (
+          <AppealReview detail={detail.data} onSaved={detail.reload} />
+        )}
+        {user?.role === "analyst" && (
+          <ConstructionReview detail={detail.data} onSaved={detail.reload} />
+        )}
+        {user?.role === "analyst" && (
+          <LegalBasisCreate detail={detail.data} onSaved={detail.reload} />
+        )}
+        <PropertyHistory key={id} id={id} revision={row.risk.revision} />
       </div>
-      {user?.role === "analyst" && (
-        <LegalAbsenceReview
-          key={row.id}
-          detail={detail.data}
-          onSaved={detail.reload}
-        />
-      )}
-      {user?.role === "analyst" && (
-        <AppealReview detail={detail.data} onSaved={detail.reload} />
-      )}
-      {user?.role === "analyst" && (
-        <ConstructionReview detail={detail.data} onSaved={detail.reload} />
-      )}
-      {user?.role === "analyst" && (
-        <LegalBasisCreate detail={detail.data} onSaved={detail.reload} />
-      )}
     </>
   );
 }
 
 export function AdvertisementsView() {
   const params = useSearchParams();
-  const result = useData<Page<Advertisement>>(
-    `/advertisements?${params.toString()}`,
-  );
+  const router = useRouter();
+  const statusFilter = useRef<HTMLSelectElement>(null);
+  const query = params.toString();
+  const path = `/advertisements?${query}`;
+  const result = useData<Page<Advertisement>>(path);
+  const data =
+    result.resolvedPath === path && !result.error ? result.data : null;
+  const currentError = result.resolvedPath === path ? result.error : "";
+  const hasFilters = !!(params.get("status") || params.get("property_id"));
+  function filter(name: string, value: string) {
+    const next = new URLSearchParams(params);
+    if (value) next.set(name, value);
+    else next.delete(name);
+    if (name !== "page") next.delete("page");
+    router.replace(`/advertisements?${next}`, { scroll: false });
+  }
   return (
     <>
       <PageTitle
@@ -884,40 +1484,119 @@ export function AdvertisementsView() {
           <div>
             <h2>Публикации</h2>
             <p>
-              {result.data ? `${result.data.total} материалов` : "Загрузка…"} ·
-              Оригиналы, состояние обработки и ручная проверка
+              {data ? `${data.total} материалов` : "Загрузка…"} · Оригиналы,
+              состояние обработки и ручная проверка
             </p>
           </div>
+          <div className="publication-filters">
+            <label htmlFor="ad-status">Состояние обработки</label>
+            <select
+              id="ad-status"
+              ref={statusFilter}
+              value={params.get("status") || ""}
+              onChange={(event) => filter("status", event.target.value)}
+            >
+              <option value="">Все состояния</option>
+              {[
+                "NEW",
+                "ANALYZING",
+                "READY_FOR_REVIEW",
+                "REVIEWED",
+                "FAILED",
+              ].map((status) => (
+                <option value={status} key={status}>
+                  {statusLabel(status)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        {result.data ? (
-          result.data.items.map((ad) => (
+        {hasFilters && (
+          <div className="active-filters">
+            <ListFilter size={16} aria-hidden="true" />
+            {params.get("status") && (
+              <span>{statusLabel(params.get("status")!)}</span>
+            )}
+            {params.get("property_id") && (
+              <Link
+                className="text-link"
+                href={`/properties/${params.get("property_id")}`}
+              >
+                Материалы выбранного объекта
+              </Link>
+            )}
+            <Button
+              variant="ghost"
+              onClick={() => {
+                const next = new URLSearchParams(params);
+                for (const key of ["status", "property_id", "page"])
+                  next.delete(key);
+                router.replace(`/advertisements?${next}`, { scroll: false });
+                requestAnimationFrame(() => statusFilter.current?.focus());
+              }}
+            >
+              Сбросить фильтры
+            </Button>
+          </div>
+        )}
+        {data ? (
+          data.items.map((ad) => (
             <article className="ad-row" key={ad.id}>
               <div>
                 <div className="ad-meta">
                   <Demo value={ad.is_demo} />
-                  <span>{statusLabel(ad.status)}</span>
-                  <span>{date(ad.captured_at)}</span>
+                  <span
+                    className={`material-state state-${ad.status.toLowerCase()}`}
+                  >
+                    {statusLabel(ad.status)}
+                  </span>
                 </div>
-                <Link className="object-name" href={`/advertisements/${ad.id}`}>
+                <Link
+                  className="object-name"
+                  href={`/advertisements/${ad.id}${query ? `?${new URLSearchParams({ materials: query })}` : ""}`}
+                >
                   {ad.source_label}
                 </Link>
-                <p>{ad.original_text}</p>
+                <p>
+                  {ad.original_text ||
+                    "Изображение · оригинал доступен в карточке"}
+                </p>
+                <div className="ad-dates">
+                  <span>Опубликовано: {date(ad.published_at)}</span>
+                  <span>Зафиксировано: {date(ad.captured_at)}</span>
+                </div>
               </div>
-              <Link
-                aria-label="Открыть публикацию"
-                href={`/advertisements/${ad.id}`}
-              >
-                <ArrowRight size={18} />
-              </Link>
+              <div className="ad-actions">
+                <Link
+                  className="text-link"
+                  href={`/review?advertisement_id=${ad.id}`}
+                >
+                  Проверить публикацию{" "}
+                  <ArrowRight size={15} aria-hidden="true" />
+                </Link>
+              </div>
             </article>
           ))
         ) : (
-          <LoadState error={result.error} retry={result.reload} />
+          <LoadState error={currentError} retry={result.reload} />
         )}
-        {result.data?.total === 0 && (
+        {data?.total === 0 && (
           <div className="empty">
-            Публикаций пока нет. Добавьте новый текст.
+            {hasFilters
+              ? "Нет публикаций по выбранным фильтрам. Измените состояние или сбросьте фильтры."
+              : "Публикаций пока нет. Добавьте текст или исходный файл."}
           </div>
+        )}
+        {data && (data.total > data.page_size || data.page > 1) && (
+          <Pagination
+            label="Страницы публикаций"
+            page={data.page}
+            pageSize={data.page_size}
+            total={data.total}
+            previousLabel="Предыдущая"
+            nextLabel="Следующая"
+            onPageChange={(page) => filter("page", String(page))}
+          />
         )}
       </section>
     </>
@@ -925,19 +1604,32 @@ export function AdvertisementsView() {
 }
 
 export function AdvertisementView({ id }: { id: string }) {
+  const { detailed } = useInterfaceMode();
+  const params = useSearchParams();
+  const materials = new URLSearchParams(
+    params.get("materials") || "",
+  ).toString();
   const result = useData<Advertisement>(`/advertisements/${id}`);
   if (!result.data)
     return <LoadState error={result.error} retry={result.reload} />;
   const ad = result.data;
+  const importedHtml = ad.assets.some((asset) => asset.kind === "HTML");
   return (
     <>
-      <Link href="/advertisements" className="back">
+      <Link
+        href={materials ? `/advertisements?${materials}` : "/advertisements"}
+        className="back"
+      >
         <ArrowLeft size={15} /> К публикациям
       </Link>
       <PageTitle
         eyebrow="СОХРАНЁННЫЙ МАТЕРИАЛ"
         title={ad.source_label}
-        description="Оригинал сохранён без изменений. Анализ не запускается автоматически."
+        description={
+          importedHtml
+            ? "HTML-оригинал сохранён отдельно. Ниже — извлечённый текст; анализ запускается отдельно."
+            : "Оригинал сохранён без изменений. Анализ не запускается автоматически."
+        }
         action={false}
       />
       <div className="object-summary">
@@ -948,9 +1640,35 @@ export function AdvertisementView({ id }: { id: string }) {
             : statusLabel(ad.status)}
         </span>
       </div>
-      <section className="panel padded">
+      <section className="panel padded publication-original">
         <h2>Оригинал публикации</h2>
-        <p className="original-text">{ad.original_text}</p>
+        {importedHtml && (
+          <p className="notice">
+            Источник: Primeminister.kz ·{" "}
+            <a
+              href="https://creativecommons.org/licenses/by/4.0/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              CC BY 4.0
+            </a>
+            . Из статьи извлечён текст, оформление удалено. Публикация не
+            означает одобрения SAQ QURYLYS издателем.
+          </p>
+        )}
+        <p hidden={!detailed}>
+          <Link href={`/monitoring?advertisement_id=${ad.id}`}>
+            Сверить объект с реестром
+          </Link>
+        </p>
+        {ad.original_text ? (
+          <p className="original-text">{ad.original_text}</p>
+        ) : (
+          <p className="muted">
+            Исходный материал — изображение. Откройте анализ, чтобы сопоставить
+            оригинал и OCR.
+          </p>
+        )}
         <dl>
           <dt>Дата публикации</dt>
           <dd>{date(ad.published_at)}</dd>
@@ -972,7 +1690,7 @@ export function AdvertisementView({ id }: { id: string }) {
             <a className="text-link" href={`/api/v1/assets/${asset.id}`}>
               Скачать материал <ArrowRight size={14} />
             </a>
-            <small>SHA-256: {asset.sha256}</small>
+            <small hidden={!detailed}>SHA-256: {asset.sha256}</small>
           </div>
         ))}
       </section>
@@ -990,6 +1708,7 @@ export function AdvertisementView({ id }: { id: string }) {
 }
 
 export function NewAdvertisementView() {
+  const { detailed } = useInterfaceMode();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState<Advertisement | null>(null);
@@ -1098,8 +1817,10 @@ export function NewAdvertisementView() {
       <section className="panel form-panel">
         <div className="form-tabs">
           <strong>Текст</strong>
-          <span>URL-импорт · следующий этап</span>
           <Link href="/advertisements/upload">Файл · PNG / JPEG / TXT</Link>
+          <Link href="/advertisements/import-url">
+            Открытая публикация по ссылке
+          </Link>
         </div>
         <form onSubmit={submit}>
           <div className="form-section-heading">
@@ -1139,48 +1860,53 @@ export function NewAdvertisementView() {
           <p id="ad-text-count" className="field-help text-count">
             {draft.text.length.toLocaleString("ru-RU")} / 100 000 символов
           </p>
-          <div className="form-section-heading">
-            <span className="section-index" aria-hidden="true">
-              02
-            </span>
-            <div>
-              <h2>Контекст публикации</h2>
-              <p>Необязательные сведения. Неизвестную дату оставьте пустой.</p>
+          <details className="optional-context" open={detailed || undefined}>
+            <summary>Ссылка и дата публикации · необязательно</summary>
+            <div className="form-section-heading">
+              <span className="section-index" aria-hidden="true">
+                02
+              </span>
+              <div>
+                <h2>Контекст публикации</h2>
+                <p>
+                  Необязательные сведения. Неизвестную дату оставьте пустой.
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="form-columns">
-            <div>
-              <label htmlFor="url">
-                Ссылка на источник <small>необязательно</small>
-              </label>
-              <input
-                id="url"
-                type="url"
-                maxLength={2048}
-                value={draft.source_url}
-                onChange={(e) => update("source_url", e.target.value)}
-                placeholder="https://…"
-              />
-              <p className="field-help">
-                Ссылка сохраняется; автоматическая загрузка страницы пока не
-                выполняется.
-              </p>
+            <div className="form-columns">
+              <div>
+                <label htmlFor="url">
+                  Ссылка на источник <small>необязательно</small>
+                </label>
+                <input
+                  id="url"
+                  type="url"
+                  maxLength={2048}
+                  value={draft.source_url}
+                  onChange={(e) => update("source_url", e.target.value)}
+                  placeholder="https://…"
+                />
+                <p className="field-help">
+                  Ссылка сохраняется; автоматическая загрузка страницы пока не
+                  выполняется.
+                </p>
+              </div>
+              <div>
+                <label htmlFor="published">
+                  Дата публикации <small>+05:00</small>
+                </label>
+                <input
+                  id="published"
+                  type="datetime-local"
+                  value={draft.published_at}
+                  onChange={(e) => update("published_at", e.target.value)}
+                />
+                <p className="field-help">
+                  Время фиксации сервер запишет отдельно.
+                </p>
+              </div>
             </div>
-            <div>
-              <label htmlFor="published">
-                Дата публикации <small>+05:00</small>
-              </label>
-              <input
-                id="published"
-                type="datetime-local"
-                value={draft.published_at}
-                onChange={(e) => update("published_at", e.target.value)}
-              />
-              <p className="field-help">
-                Время фиксации сервер запишет отдельно.
-              </p>
-            </div>
-          </div>
+          </details>
           <label className="checkbox">
             <input
               type="checkbox"

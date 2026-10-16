@@ -86,7 +86,7 @@ export function LegalBasisCreate({
     }
   }
   return (
-    <section className="panel padded">
+    <section className="panel padded legal-review">
       <h2>Добавить правовое основание</h2>
       <p>
         Документ относится только к этому объекту/очереди. Пустой список
@@ -203,10 +203,12 @@ export function LegalBasisDecision({
   basis,
   onSaved,
   writable,
+  showControls = true,
 }: {
   basis: Basis;
   onSaved: () => void;
   writable: boolean;
+  showControls?: boolean;
 }) {
   const [reason, setReason] = useState(""),
     [asOf, setAsOf] = useState(localNow),
@@ -263,7 +265,7 @@ export function LegalBasisDecision({
         </a>
       ))}
       {writable && basis.evidence_ids.length > 0 && (
-        <div className="review-form">
+        <div className="review-form" hidden={!showControls}>
           <label htmlFor={`basis-review-date-${basis.id}`}>
             Дата проверки применимости · +05:00
           </label>

@@ -13,6 +13,22 @@ test("anonymous visitor is redirected to login", async ({ page }) => {
 
 test("dashboard and evidence come from authenticated API", async ({ page }) => {
   await login(page);
+  const summary = await (
+    await page.request.get("/api/v1/dashboard/summary")
+  ).json();
+  const newMaterials = await (
+    await page.request.get("/api/v1/advertisements?status=NEW&page_size=1")
+  ).json();
+  expect(summary.new_advertisements).toBe(newMaterials.total);
+  const newQueue = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "Новые публикации", exact: true }),
+  });
+  await expect(newQueue.locator(".rail-number")).toHaveText(
+    String(summary.new_advertisements),
+  );
+  await expect(
+    newQueue.getByRole("link", { name: "Открыть новые материалы" }),
+  ).toHaveAttribute("href", "/advertisements?status=NEW");
   await expect(
     page.getByRole("link", { name: "DEMO Бәйтерек · очередь 2", exact: true }),
   ).toBeVisible();

@@ -58,12 +58,35 @@ class BackupIntegrityTests(unittest.TestCase):
         self.assertEqual(backup.check_asset(self.storage, self.asset), self.original)
         self.assertEqual(backup.load_backup(self.root), self.manifest)
 
+    def test_imported_html_original_is_included_and_hash_checked(self):
+        content = '<html><p>Оригинал публикации. Қазақша.</p></html>'.encode()
+        sha = hashlib.sha256(content).hexdigest()
+        asset = self.asset | {
+            'storage_key': f'{sha[:2]}/{sha}.html',
+            'sha256': sha,
+            'byte_size': len(content),
+            'kind': 'HTML',
+        }
+        original = self.storage / asset['storage_key']
+        original.parent.mkdir(parents=True, exist_ok=True)
+        original.write_bytes(content)
+        self.manifest['assets'] = [asset]
+        self.save_manifest()
+
+        self.assertEqual(backup.check_asset(self.storage, asset), original)
+        self.assertEqual(backup.load_backup(self.root)['assets'], [asset])
+        original.write_bytes(b'x' * len(content))
+        with self.assertRaisesRegex(ValueError, 'modified'):
+            backup.load_backup(self.root)
+
     def test_traversal_absolute_path_and_digest_prefix_are_rejected(self):
         for key in (
             '../outside.txt',
             '/outside.txt',
             r'C:\outside.txt',
             '00/' + 'a' * 64 + '.txt',
+            self.asset['storage_key'].removesuffix('.txt') + '.exe',
+            self.asset['storage_key'].removesuffix('.txt') + '.html.exe',
         ):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 backup.asset_path(self.storage, self.asset | {'storage_key': key})

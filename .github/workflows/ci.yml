@@ -41,8 +41,8 @@ jobs:
         run: |
           python .agents/skills/ui-ux-pro-max/scripts/search.py "filter chips wrap" --domain ux --json > /tmp/saq-ui-guidance.json
           python -c "import json; data=json.load(open('/tmp/saq-ui-guidance.json')); assert data['domain']=='ux' and data['count'] > 0; print('Repository UI skill search passed')"
-      - run: python -m ruff check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py
-      - run: python -m ruff format --check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py
+      - run: python -m ruff check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py scripts/evaluate_publications.py scripts/check_readiness.py scripts/test_check_readiness.py
+      - run: python -m ruff format --check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py scripts/evaluate_publications.py scripts/check_readiness.py scripts/test_check_readiness.py
       - name: Evaluate synthetic RU/KZ corpus (quality targets reported separately)
         run: python scripts/evaluate_ocr.py --output output/evaluation/ci
       - name: Preserve synthetic evaluation evidence

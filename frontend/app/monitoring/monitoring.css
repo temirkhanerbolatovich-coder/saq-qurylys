@@ -1,0 +1,136 @@
+.monitoring-workspace {
+  min-width: 0;
+}
+.monitoring-workspace .monitoring-boundary {
+  border-left: 4px solid var(--color-info);
+  background: var(--color-info-bg);
+  padding: var(--space-4) var(--space-6);
+  margin-bottom: var(--space-6);
+}
+.monitoring-boundary p:last-child {
+  margin-bottom: 0;
+}
+.monitoring-local-nav,
+.monitoring-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+.monitoring-local-nav {
+  margin-bottom: var(--space-6);
+}
+.monitoring-local-nav a {
+  padding: var(--space-2) 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.monitoring-workspace .monitoring-form {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 900px;
+}
+.monitoring-fields,
+.monitoring-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.monitoring-filters {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: end;
+}
+.monitoring-field {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.monitoring-workspace .monitoring-field input,
+.monitoring-workspace .monitoring-field select,
+.monitoring-workspace .monitoring-field textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.monitoring-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.monitoring-workspace .monitoring-check input {
+  width: 20px;
+  min-height: 20px;
+  margin-top: 2px;
+}
+.monitoring-workspace fieldset {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+}
+.monitoring-workspace legend {
+  font-weight: 600;
+  padding: 0 var(--space-2);
+}
+.monitoring-workspace details > summary {
+  cursor: pointer;
+  padding: var(--space-4) 0;
+  font-weight: 600;
+}
+.monitoring-workspace .monitoring-entry + .monitoring-entry,
+.monitoring-workspace .monitoring-record + .monitoring-record {
+  margin-top: var(--space-4);
+}
+.monitoring-workspace .monitoring-record {
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+.monitoring-workspace .monitoring-record h3 {
+  margin-bottom: var(--space-2);
+}
+.monitoring-workspace .monitoring-meta {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+}
+.monitoring-workspace .monitoring-result {
+  border-left: 4px solid var(--color-info);
+  padding-left: var(--space-4);
+}
+.monitoring-workspace tr[aria-selected="true"] td {
+  background: var(--color-brand-soft);
+}
+.monitoring-workspace td:first-child {
+  white-space: normal;
+  min-width: 190px;
+  overflow-wrap: anywhere;
+}
+.monitoring-workspace .monitoring-preview {
+  padding: var(--space-4);
+  background: var(--color-surface-subtle);
+  overflow-wrap: anywhere;
+}
+.monitoring-workspace .monitoring-dates {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.monitoring-workspace section[id]:focus,
+.monitoring-workspace .monitoring-success:focus {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+@media (max-width: 767px) {
+  .monitoring-fields,
+  .monitoring-filters,
+  .monitoring-workspace .monitoring-dates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .monitoring-workspace .panel-heading,
+  .monitoring-actions {
+    align-items: stretch;
+  }
+  .monitoring-workspace .monitoring-boundary {
+    padding: var(--space-4);
+  }
+}

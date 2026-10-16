@@ -32,7 +32,7 @@ PDF не принимается в рекламную загрузку и не �
 
 Поддерживаемый runtime — Linux Docker. Native Windows API возвращает 503 для PDF: в нём отсутствуют используемые POSIX resource limits; TXT/PNG/JPEG продолжают работать. Установка Python-пакета на host сама по себе эту границу не снимает.
 
-Миграции и новые endpoints не требуются. `POST /api/v1/assets/upload` расширяет форматы; `GET /api/v1/assets/{id}` сохраняет авторизацию и правила скачивания. Контракт 0.8.0-mvp: 36 операций, 34 implemented + 1 partial + 1 planned. Оставшийся partial у отдельного LegalBasis review намеренный: отсутствие всех механизмов подтверждается составным R1.
+Миграции и новые endpoints не требуются. `POST /api/v1/assets/upload` расширяет форматы; `GET /api/v1/assets/{id}` сохраняет авторизацию и правила скачивания. Исторический контракт этого среза — 0.8.0-mvp (36 операций). Актуальный контракт 0.11.0-mvp содержит 49 операций, 48 implemented и 1 partial; коммерческий C-01 остаётся отдельным открытым требованием. Оставшийся partial у отдельного LegalBasis review намеренный: отсутствие всех механизмов подтверждается составным R1.
 
 Тесты: `backend/tests/test_pdf_validation.py`, `backend/tests/test_supporting_pdf.py`, `frontend/tests/supporting-pdf.spec.ts`. Linux-прогон проверяет настоящий subprocess; host-результаты со skip не заменяют его. Фактические результаты: полный Linux backend **279 passed (110.26s)**, browser **17 passed (52.2s)**, включая настоящее скачивание PDF и сохранение решения. Результаты и история отказавшего первого тестового прогона записаны в [PROJECT_STATUS](../PROJECT_STATUS.md).
 

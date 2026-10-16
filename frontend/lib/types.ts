@@ -57,6 +57,20 @@ export type Page<T> = {
   page_size: number;
   total: number;
 };
+export type AuditEvent = {
+  id: string;
+  actor_id: string;
+  actor_display_name: string | null;
+  risk_code: string | null;
+  occurred_at: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  old_revision: number | null;
+  new_revision: number | null;
+  reason: string | null;
+  details: Record<string, unknown>;
+};
 export type PropertyDetail = {
   property: Property;
   factors: {
@@ -139,6 +153,8 @@ export type Dashboard = {
   property_count: number;
   zones: Record<"GREEN" | "YELLOW" | "RED", number>;
   new_advertisements: number;
+  pending_hypotheses: number;
+  pending_signals: number;
   unknown_legal_bases: number;
   calculated_at: string;
 };

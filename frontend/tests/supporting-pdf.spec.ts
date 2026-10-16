@@ -85,7 +85,9 @@ test("supporting PDF preserves original bytes and stays pending until human revi
       exact: true,
     })
     .click();
-  await expect(page.getByRole("status")).toContainText("Основание сохранено");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Основание сохранено" }),
+  ).toContainText("Основание сохранено");
   const card = page
     .locator(".document")
     .filter({ has: page.getByRole("heading", { name: new RegExp(number) }) });

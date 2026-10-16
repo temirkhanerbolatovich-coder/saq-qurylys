@@ -17,7 +17,7 @@
 - GET `/api/v1/properties/{id}/legal-bases`: список документов с evidence_ids и verification_as_of. Те же данные включены в detail объекта.
 - POST `/api/v1/legal-bases/{id}/review`: expected_revision, status, as_of, evidence_ids и reason. Поддержаны VERIFIED_VALID/REJECTED. VERIFIED_ABSENT возвращает 422: отклонение документа не заменяет отдельную проверку всех применимых механизмов.
 
-Используются существующие LegalBasis.details и Asset.source_details JSON; исходный блок оснований не требовал новой миграции или зависимости. Поле revision у LegalBasis читается из JSON, а audit записывает old/new revision и before/after snapshot. Документы/решения входят в property audit. Контракт расширен явно: purpose у AssetUpload, signatory_count условно обязателен, LegalBasis.evidence_ids и verification_as_of. Текущий контракт 0.8.0-mvp содержит 36 операций: 34 реализованы полностью, 1 частично, 1 PLANNED (collector). Review отдельного основания остаётся partial: VERIFIED_ABSENT всё ещё запрещён в этой команде.
+Используются существующие LegalBasis.details и Asset.source_details JSON; исходный блок оснований не требовал новой миграции или зависимости. Поле revision у LegalBasis читается из JSON, а audit записывает old/new revision и before/after snapshot. Документы/решения входят в property audit. Контракт расширен явно: purpose у AssetUpload, signatory_count условно обязателен, LegalBasis.evidence_ids и verification_as_of. Исторический контракт этого среза — 0.8.0-mvp (36 операций). Актуальный контракт 0.11.0-mvp содержит 49 операций: 48 реализованы полностью и 1 частично; коммерческий C-01 остаётся отдельным открытым требованием. Review отдельного основания остаётся partial: VERIFIED_ABSENT всё ещё запрещён в этой команде.
 
 ## Проверки и отказ
 

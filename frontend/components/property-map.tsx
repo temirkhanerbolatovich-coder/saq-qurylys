@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Property } from "@/lib/types";
 import { mapConfig } from "@/lib/map-config";
 import { Button } from "@/components/ui/button";
+import { propertyDossierUrl } from "@/lib/presentation";
 import "leaflet/dist/leaflet.css";
 
 const zones = { GREEN: "Зелёная", YELLOW: "Жёлтая", RED: "Красная" };
@@ -20,10 +21,19 @@ function hasCoordinates(row: Property) {
   );
 }
 
-export function PropertyMap({ rows }: { rows: Property[] }) {
+export function PropertyMap({
+  rows,
+  registryQuery = "",
+  selectedId,
+  onSelect,
+}: {
+  rows: Property[];
+  registryQuery?: string;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
   const container = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const config = mapConfig();
@@ -92,7 +102,7 @@ export function PropertyMap({ rows }: { rows: Property[] }) {
             keyboard: true,
           }).addTo(map);
           const select = () => {
-            setSelectedId(row.id);
+            onSelect(row.id);
             card.current?.focus();
           };
           marker.on("click", select);
@@ -122,7 +132,7 @@ export function PropertyMap({ rows }: { rows: Property[] }) {
       observer?.disconnect();
       map?.remove();
     };
-  }, [rows, attempt]);
+  }, [rows, attempt, onSelect]);
 
   useEffect(() => {
     if (selectedId) card.current?.focus();
@@ -220,7 +230,7 @@ export function PropertyMap({ rows }: { rows: Property[] }) {
                   </p>
                   <Link
                     className="text-link"
-                    href={`/properties/${selected.id}`}
+                    href={propertyDossierUrl(selected.id, registryQuery)}
                   >
                     Открыть карточку
                   </Link>

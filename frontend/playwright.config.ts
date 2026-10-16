@@ -8,7 +8,7 @@ export default defineConfig({
   retries: 0,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: process.env.SAQ_E2E_BASE_URL || "http://localhost:3000",
     trace: "off",
     screenshot: "only-on-failure",
   },

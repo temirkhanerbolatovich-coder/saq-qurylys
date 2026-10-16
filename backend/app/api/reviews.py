@@ -40,8 +40,10 @@ from app.models import (
     Property,
     PropertyMatch,
     RiskFactor,
+    User,
     utcnow,
 )
+from app.notifications import enqueue_risk_notification
 from app.pdf_validation import validate_pdf
 from app.storage import save_bytes
 from app.uploads import validate_image, validate_text
@@ -583,9 +585,11 @@ def review_factor(id: UUID, body: dto.RiskFactorReview, request: Request, actor:
     )
     db.flush()
     factors = factor_views(db, prop.id)
-    result = dto.RiskReviewOut(
+    reviewed = dto.RiskReviewOut(
         factor=next(f for f in factors if f.id == row.id), risk=property_view(prop, factors).risk
-    ).model_dump(mode='json')
+    )
+    enqueue_risk_notification(db, request.app.state.settings, prop, row, reviewed.risk, before['status'])
+    result = reviewed.model_dump(mode='json')
     finish_command(db, actor.id, operation, idempotency_key, digest, result)
     return result
 
@@ -615,8 +619,22 @@ def property_audit(
     from sqlalchemy import func
 
     total = db.scalar(select(func.count()).select_from(query.subquery()))
+    events = list(db.scalars(query.offset((page - 1) * page_size).limit(page_size)))
+    actor_names = dict(
+        db.execute(select(User.id, User.display_name).where(User.id.in_({e.actor_id for e in events}))).all()
+    )
+    factor_ids = {e.entity_id for e in events if e.entity_type == 'risk_factors'}
+    factor_codes = dict(db.execute(select(RiskFactor.id, RiskFactor.code).where(RiskFactor.id.in_(factor_ids))).all())
     return {
-        'items': list(db.scalars(query.offset((page - 1) * page_size).limit(page_size))),
+        'items': [
+            dto.AuditEventOut.model_validate(event).model_copy(
+                update={
+                    'actor_display_name': actor_names.get(event.actor_id),
+                    'risk_code': factor_codes.get(event.entity_id) if event.entity_type == 'risk_factors' else None,
+                }
+            )
+            for event in events
+        ],
         'total': total,
         'page': page,
         'page_size': page_size,

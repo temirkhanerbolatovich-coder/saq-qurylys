@@ -27,7 +27,7 @@ COMPOSE = [
     str(ROOT / 'docker-compose.dev.yml'),
 ]
 SHA = re.compile(r'[0-9a-f]{64}')
-KEY = re.compile(r'([0-9a-f]{2})/([0-9a-f]{64})\.(txt|png|jpg|pdf)')
+KEY = re.compile(r'([0-9a-f]{2})/([0-9a-f]{64})\.(txt|png|jpg|pdf|html)')
 PSQL = 'exec psql -X -q -A -t -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 INSPECT = (
     '{"id":{{json .Id}},"image":{{json .Image}},"running":{{json .State.Running}},'

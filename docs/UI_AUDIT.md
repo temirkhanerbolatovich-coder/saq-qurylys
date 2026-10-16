@@ -1,5 +1,217 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Приёмка утверждённого S0–S2 · 17.10.2026
+
+**IMPLEMENTED / INTERNAL CHECKS PASS.** Пользователь утвердил первый пакет после аудита, затем попросил завершить и сохранить локальный commit из-за лимита. Записи фаз 0–1 ниже сохранены как исторический baseline. Использован установленный UI/UX skill и проектный master; новые dependencies/API не вводились.
+
+| Проблема baseline | Фактический результат | Подтверждение / оставшаяся граница |
+|---|---|---|
+| Переход A→B→A терял причины | Scoped review drafts, reload/Back recovery, отдельные версии OCR; успешная команда очищает сохранённые поля, 409 сохраняет ввод | Новые review E2E: реальные DEMO материалы, match/hypothesis/correction/OCR/R2, retry key, logout, corrupt storage/quota. При запрещённом storage только память приложения с предупреждением; это не серверное autosave |
+| Режим скрывал этапы и вводный блок занимал обзор | Пять постоянных зон, green sidebar, компактный обзор и четыре реальные рабочие очереди | Navigation E2E оба вида/viewer; серверные totals и независимая ошибка/retry. Simple/detailed остаётся предпочтением представления |
+| Selector первых100 заменял очередь | status/page/page_size (10/20/50), total, URL state, явный выбор; selected ID независим от текущего фильтра и ошибок списка | 121 presentation fixture проверяет вторую страницу и материал вне фильтра; real DEMO используется для команд. Picker привязки объекта всё ещё first100 и явно подписан |
+| Provenance было далеко от review | Источник, оригинальный URL, published/captured timestamps рядом с оригиналом | Responsive captures + E2E. Неизвестные даты не выдумываются |
+| Сверка и досье перегружены | Сверка вложена в «Проверку», добавлены breadcrumbs; маршруты сохранены | Внутренняя перегруппировка monitoring и S3 досье не выполнены; нет заявления об устранении всей сложности |
+
+**Окончательные проверки:** frontend typecheck/lint/format/build PASS; backend Ruff check/format PASS; pytest **711 passed,18 skipped** (277.41s, платформенные skips); tooling **37 tests OK,1 skipped**; production E2E **73 passed (2.3m)**. Первый production прогон 71/73 выявил два неоднозначных test locator (`alert` вместе с Next announcer); исправлены только тесты, затем весь suite прошёл. Предварительный dev-run не считается acceptance.
+
+**Визуальная проверка:** 112 автоматических наблюдений (8 маршрутов × краткий/подробный × 360/375/390/768/1024/1440/1920), overflow0/pageerror0. Лично просмотрены `saq-dashboard-simple-1440.png`, `saq-review-detailed-1440.png`, `saq-review-detailed-390.png`, `saq-dossier-detailed-390.png`; остальные captures не объявляются вручную просмотренными. Семантические native controls, focus/keyboard/reduced-motion и viewer проверены E2E. Настоящий 200% browser zoom, screenreader, touch и внешние аналитики остаются OPEN.
+
+**Сквозная сохранность:** отдельный новый DEMO UI-проход до CONFIRMED signal v7/PDF41238bytes прошёл; новый original asset/R2 вошёл в snapshot, CONFIRMED R1 отсутствует. RU/KZ synthetic OCR worker smoke прошёл отдельно. Это внутренняя регрессия, не внешняя юридическая/OCR приёмка.
+
+Свидетельства: ignored `.local/ux-implementation-2026-10-17/` и `output/ux-s0-s2-2026-10-17/`. Стенд изолирован от рабочей БД/storage: local frontend3107 + отдельные API/worker/DB, внешние collectors/Telegram выключены. Публичный runtime не обновлялся. Утверждённый local checkpoint включает также сохранённый ранее dirty MVP source; текущий UX-пакет не меняет backend/OpenAPI/риск/роли. S3/S4 и внешняя приёмка остаются следующей работой после просмотра пользователем.
+
+## Фазы 0–1 · Kompra-inspired audit · 17.10.2026
+
+**Статус: аудит выполнен, целевая IA и изменения ниже ПРЕДЛОЖЕНЫ, реализация не утверждена.** Основание — приложенное ТЗ «SAQ QURYLYS — Kompra-inspired UX Redesign», версия 17.10.2026. Фаза 2 не начата. Этот раздел описывает свежий baseline; записи ниже являются историей отдельных этапов.
+
+### Объём и доказательства baseline
+
+- Ветка `main`, HEAD `e993dc855da00fd5d65c980caeb53ba139d4ce92`. До работы: 58 изменённых tracked-файлов и 61 untracked entry (entry может быть каталогом). 317 файлов зафиксированы SHA-256; status и tracked binary diff сохранены в ignored `.local/ux-audit-2026-10-17/`. Это инвентаризация текущего dirty состояния, а не воспроизводимая версия одного HEAD.
+- Изучены приложенное ТЗ, AGENTS, README, PROJECT_STATUS, первичный PDF кейса (6 страниц, текст), CODEX_TZ, исследовательский DOCX (текст/раздел UX), REQUIREMENTS, ARCHITECTURE, DESIGN_SYSTEM, UX_GUIDELINES, UX_UI_SPEC, UI_COMPONENTS, прежний аудит/план, DATA_SOURCES, релевантные FEATURE/ADR (включая006,008–011), текущие routes/components/tests и OpenAPI 0.11.0-mvp. Запрошенные исходные документы найдены. Первичный кейс и исследовательские рекомендации различаются: коммерческий C-01 — дополнительный профиль CODEX_TZ, его нельзя объявить закрытым новостным импортом.
+- Ownership: root — проверки, снимки и пять существующих audit/design/status документов; два независимых помощника — только чтение frontend и backend/контракта. Ни один помощник не редактировал приложение. Занятость файлов внешним разработчиком нельзя доказать Git-статусом; сохранность проверяется сравнением хешей. Перед фазой 2 требуется заново согласовать её конкретные пути, не присваивать существующий dirty diff себе.
+- Для E2E использованы отдельные API/worker, PostgreSQL в tmpfs, отдельный storage и локальный production frontend `http://localhost:3107`. Telegram/Threads отключены только в этом тестовом окружении. Рабочие четыре контейнера, их БД/storage и tunnel-настройки не менялись. Установки зависимостей, миграции рабочей БД, commit/push/deploy не выполнялись.
+- Фактические логи: `.local/ux-audit-2026-10-17/{typecheck,lint,format,build,backend,e2e,ocr-smoke,capture,critical-path}.log`. Снимки/наблюдения: ignored `output/ux-audit-2026-10-17/`; локальные свидетельства не попадут в Git автоматически.
+
+| Проверка | Свежий результат | Граница вывода |
+|---|---|---|
+| `npm run typecheck`, `npm run lint`, `npm run format:check` из frontend | PASS | Текущие исходники, не прежний CI |
+| `npm run build` | PASS, Next.js production | Сборка отдельно от рабочего frontend |
+| `../.venv/Scripts/python.exe -X utf8 -m pytest -q -rs` из backend | 711 passed, 18 skipped, 290.28 s | Случайная test-schema; Windows skips: Linux resource limits / Pango |
+| `SAQ_E2E_BASE_URL=http://localhost:3107 npm run test:e2e` | 64 passed, 2.0 min | Настоящий proxy/API/worker + явно помеченные в tests presentation mocks; не 64 live-интеграции |
+| `APP_ORIGIN=http://localhost:3107 .venv/Scripts/python.exe -X utf8 scripts/verify_ocr.py` | PASS, два новых RU/KZ synthetic изображения, исходные байты совпали | Не внешняя оценка качества; текущий CER RU 5.41%, KZ 10.26% на двух smoke-образцах |
+| 8 маршрутов × simple/detailed × 360/390/768/1024/1440/1920 px | 96 наблюдений, page overflow 0, pageerror 0 | Финальная съёмка после загрузки данных; настоящие страницы на DEMO-данных изолированного стенда |
+| Проверка несохранённого текста при смене публикации | **FAIL поведения, воспроизведён** | `match-reason`: A → B → A, текст исчезает; POST сохранения не выполнялся |
+| Отдельный непрерывный `critical-path.cjs` на новом тексте | PASS, CONFIRMED signal v4, настоящий PDF39456bytes | UI: добавить→анализ→fragment→hypothesis→match→evidence→R2→досье/охват/период→signal→решение→PDF. OCR изображений проверен отдельно, не в этом текстовом проходе |
+| Keyboard/reduced-motion | Существующие сценарии входят в 64 PASS | Не полная ручная клавиатурная или WCAG-приёмка |
+| Реальный browser zoom 200%, screen reader, touch device, 3–5 аналитиков, второй ПК | Не выполнены в этом блоке | Responsive viewport/320 CSS px в E2E не объявляется настоящим browser zoom |
+
+Первая служебная съёмка прервалась из-за ошибочного ожидаемого заголовка «Кандидаты для сверки» вместо настоящего «Кандидаты объектов»; вторая проверка черновика выбрала ещё не анализированный материал. Локальный capture script уточнён, затем выполнен полный финальный сбор после завершения загрузки. Это ошибки audit harness, не скрытые отказы продукта. Первичный контрольный smoke также ошибочно ожидал «Не проверено» внутри основания, где после regression suite законно отображался отклонённый DEMO-документ; критерий исправлен на видимость охвата и периода. Продуктовый код не менялся.
+
+### AS-IS: что действительно имеется
+
+| Маршрут | Задачи и функции | Ограничения/иерархия |
+|---|---|---|
+| `/dashboard` | Default: добавить публикацию, NEW, объекты; detailed: реальные сводки и переходы | Крупный вводный блок перед рабочей очередью; приоритет score внутри ограниченной выборки |
+| `/properties` | Поиск имени/адреса, zone/legal filters, server pagination; карточки/таблица/карта | `city` поддержан API; q по застройщику/БИН/документам отсутствует. Карта показывает текущую страницу |
+| `/properties/[id]` | Данные, серверный риск, ход проверки, основания, evidence, R1–R6, история, создание сигнала | Часть операций скрыта mode; формы идут длинной последовательностью, anchors сохраняют mounted state |
+| `/advertisements` | Серверные status/property/date/page, оригиналы, переход к проверке | Нет q/global sort/is_demo-filter; список не заменять поиском первых100 |
+| `/advertisements/new`, `/upload`, `/import-url` | Текст/TXT/PNG/JPEG; source/date/DEMO; лицензированный URL job/recovery | Primeminister.kz — информационные REAL публикации, не коммерческий collector; отдельный анализ |
+| `/advertisements/[id]` | Оригинал, asset/SHA, источник, published/captured dates; review/сверка | Provenance полнее, чем непосредственно на review |
+| `/review` | Две панели, OCR/версии/фрагменты, отдельные hypotheses/match/evidence/R2, история | Selector последних100; нет полной очереди решений; причины локальны |
+| `/signals` | Серверные filters/page, snapshot/версии, CONFIRM/RETURN, stale/409, PDF | Список и документ; URL восстанавливает выбор. Глобальный поиск отсутствует |
+| `/monitoring` | КЖК PDF; Threads preview; кандидаты; сверка; DEMO snapshots; incidents | Шесть разных задач одним полотном; REAL/DEMO строго разделены, incident не равен Signal |
+| `/login`, `/` | Вход, analyst/viewer; redirect к обзору | Simple/detailed — вид, а не полномочие |
+
+Общие Button/Pagination/TableRegion/Notice/LoadState/RiskSummary/Demo/Zone, семантические tokens, RU/KZ font stack, отдельные решения и история — **сохранить**. Review уже двухпанельный; это не новая функция плана. Публичный сайт доступен отдельно от тестового стенда; новый production deploy этим аудитом не проводился.
+
+### Что проверено в Kompra
+
+Дата всех просмотров: **17.10.2026, Asia/Qyzylorda**. OBSERVED означает лично просмотренный live публичный экран или явно названное опубликованное изображение; DOCUMENTED — текст официального материала; INFERRED — предлагаемая адаптация. Коммерческий кабинет, настоящая работа с платной карточкой, настройками мониторинга и скачиванием отчёта не проверялись. Аккаунт не создавался, покупок/контактов не было.
+
+| Источник | Уровень и результат | Полезный паттерн / граница |
+|---|---|---|
+| [Kompra.kz](https://kompra.kz/ru) | OBSERVED, публичный live экран | Один поиск и отдельный расширенный; mobile нижняя навигация, desktop rail. Виден баннер проблемы источника «Суды»; это пример честного unavailable-state, не оценка доступности остальных сервисов |
+| [Расширенный поиск](https://kompra.kz/ru/search-extended) | OBSERVED, live форма 1440 px | Breadcrumb, основной запрос, отдельная область структурированных filters, явный Apply, полезное начальное состояние. Результаты реального запроса не проверялись |
+| [Все сервисы](https://kompra.kz/ru/services) | OBSERVED, live каталог | Много функций распределены по предметным группам: проверки, аналитика, комплаенс, физлица, закупки. Не все услуги превращены в одинаковые главные пункты |
+| [Мониторинг](https://kompra.kz/ru/company-monitoring/description) | OBSERVED — экран описания и вход; DOCUMENTED — возможности | Описаны выбранные параметры, лента и уведомления. Закрытый рабочий мониторинг не открывался; автоматизацию SAQ из этого не выводим |
+| [Карточка/отчёт, инструкция 25.06.2024](https://blog.kompra.kz/kak-proverit-yuridicheskoe-litso-i-individualnogo-predprinimatelya-kazahstana/) | DOCUMENTED, историческая инструкция | Сводка, локальное меню секций, источники показателей, полный/краткий PDF. Это подтверждает описанный паттерн, не сегодняшний точный layout кабинета |
+| [Профиль благонадёжности, 04.06.2025](https://blog.kompra.kz/novyj-razdel-v-kartochke-kontragenta-profil-blagonadezhnosti/) | OBSERVED — опубликованный screenshot; DOCUMENTED — описание | В изображении краткий профиль с раскрытием групп и деталями поверх карточки. Не live кабинет. Заимствуем сводка → основание; категории и автоматические оценки Kompra не переносим на R1–R6. Упомянутый будущий PDF не считаем подтверждением актуального релиза |
+| [О сервисе](https://about.kompra.kz/) | DOCUMENTED, публичный текст | Источник и дата обновления по разделу; рекламные цифры/тарифы не использованы для проектных решений |
+| [Путеводитель](https://blog.kompra.kz/putevoditel-dlya-polzovatelej-sajta/), [monitoring guide](https://blog.kompra.kz/guide_monitoring/) | DOCUMENTED, исторические материалы | Разные рабочие задачи имеют свои инструменты, история и отчёт. Даты старых материалов не превращаем в гарантию current behavior |
+| [Kompra Group](https://www.kompra.group/) | Недоступно для содержательного аудита | Browser показал пустое полотно/AX, web extraction — без текста. Паттерны Group не реконструировались |
+
+Снимки: `output/ux-audit-2026-10-17/kompra-{search-1440,services-1440,monitoring-description,profile-public-article}.jpg`. Web extraction SPA иногда возвращал главную вместо services/description; для OBSERVED использован настоящий browser, не этот fallback HTML. Decider отдельно не исследовался: для выбранного среза достаточно первичного Kompra.
+
+### Сравнительный аудит и пять главных проблем
+
+Оценки ценности/часов ниже — инженерные предположения, не измерение производительности аналитиков. Проблема адаптивности page overflow не обнаружена; длина и переключения — отдельные UX-вопросы.
+
+| № / подтверждение SAQ | Kompra-ориентир | Адаптация SAQ (INFERRED) | Пути / API / риск |
+|---|---|---|---|
+| 1. Главный workflow скрыт глобальным видом. Три default против шести detailed пунктов; проверка/сигналы появляются по переключателю. На 1440 первый экран обзора преимущественно вводный. `workspace.tsx:90–97,175,193–197`; снимок `saq-dashboard-simple-1440.png` | OBSERVED: самостоятельные поиск/сервисы, предметная группировка | Пять постоянных зон; компактный рабочий обзор; раскрывать детали внутри задачи. Существующий простой режим можно оставить как плотность, а не доступность workflow | `workspace.tsx`, design-system.css; API нет; medium. Меняется согласованный16.10 UX — требуется утверждение |
+| 2. «Сверка» = шесть задач, PDF/disabled Threads выше кандидатов. `monitoring-workspace.tsx:211–221`; `saq-monitoring-detailed-1440.png` | OBSERVED: каталог сервисов распределяет задачи по группам | Сохранить `/monitoring` вложенным инструментом Проверки; сделать кандидатов первым рабочим содержимым. Источники/справочный PDF и DEMO управление раскрывать по контексту | monitoring-workspace/open-registry/threads-search; API нет при локальном раскрытии; medium. Перенос живых форм опасен потерей state |
+| 3. Review — selector100 вместо очереди; loading/error смешаны с empty. `analysis-workspace.tsx:168–215`; свежие64 tests не покрывают полноту queue | OBSERVED: отдельная форма поиска/filters; DOCUMENTED: секции карточки | Встроенная server-paged очередь по уже доступным status/page; загрузка, отказ и пустой результат отдельно. Показывать источник/обе даты рядом с оригиналом | analysis-workspace + tests; существующий list API достаточен; medium. Глобальные totals READY/FAILED не обещать без отдельных server запросов/контракта |
+| 4. **Воспроизведена потеря draft**: ввести причину, A→B→A — пусто. `analysis-workspace.tsx:213,239–248`; `observations.json`, `saq-review-draft-loss.png` | INFERRED: сохранность контекста — требование SAQ; Kompra эту гарантию не проверяли | Явная защита перехода/сохранённый draft по материалу, без автоматического решения. Первым срезом до массового перемещения панелей | analysis-workspace + focused regression; API нет; low/medium. Не хранить файлы/секреты в localStorage и не терять idempotency/reason при409 |
+| 5. Досье — длинная цепочка чтения и четырёх форм, часть действий скрыта mode. После suite высота detailed1440 ≈7579px (зависит от данных). `workspace.tsx:1215–1223,1373–1397`; `saq-dossier-detailed-full.png` | DOCUMENTED: локальные секции и сводка; OBSERVED screenshot: summary→detail | Шапка + следующий шаг + семь секций. Для начала anchors/раскрытия с mounted формами, не новый router/tab framework; сигналы через действующий filtered URL | workspace/history/signals + scoped CSS; API нет для группировки; medium/high из-за форм/дат/версий |
+
+Дополнительные находки: source URL/published_at видны в оригинале (`workspace.tsx:1620–1630`), на review toolbar только captured_at/ссылка (`analysis-workspace.tsx:394–401`). Приоритет Dashboard выбирается по score внутри первых100 (`workspace.tsx:643–647`), а не по требуемому действию. NEW-counter уже исправлен (`backend/app/api/properties.py:87–145`, `backend/tests/test_dashboard.py:102,124`), повторный багфикс не требуется. Legacy CSS и большой workspace.tsx — долг, но не повод переписывать весь компонент до защиты.
+
+Документный drift: `FEATURE_SIGNALS.md:58` ещё говорит, что supporting PDF upload не реализован; `FEATURE_SUPPORTING_PDF.md:35` и `FEATURE_LEGAL_BASIS.md:20` описывают старый контракт0.8/36операций. Актуальный OpenAPI0.11 и код имеют49операций, включая bounded PDF/открытые источники. Эти исторические строки не использованы как доказательство отсутствия функции. Их синхронизация — небольшой отдельный documentation task, не реализация нового API.
+
+### Keep / Refactor / Defer
+
+| Keep — действующее | Refactor — только после approval | Defer — после защиты / отдельно |
+|---|---|---|
+| URLs/deep links/query state; backend risk/roles/CSRF/revisions; OCR/RapidFuzz; ручные решения; все исходники/даты/SHA | Стабильная навигация, рабочий обзор, queue/status/load states, provenance на review, защита draft | Граф/сравнение, новый auth/roles/backend architecture, новые service dependencies |
+| Зелёные semantic tokens, системный RU/KZ sans, доступные primitives, focus/reduced-motion | Плотность/иерархия, локальные секции досье, вложенные инструменты сверки | Полный auto monitoring, новые госинтеграции/массовый импорт, global search/sort, KPI без API |
+| Immutable signals/PDF, UNKNOWN, DEMO, история; работающие manual monitoring/open PDF/URL import | Улучшить доступность и понятность уже имеющихся функций, ничего не удалять | Новые виды отчётов, полная KZ-локализация. Существующие monitoring/history остаются доступны |
+
+Коммерческий C-01, независимые positive OCR RU/KZ, реальный утверждённый реестр, второй ПК и UX с людьми остаются открытыми функциональными/приёмочными направлениями. Их нельзя замещать редизайном. Разрешённый источник и внешние доступы не возникают из UX-плана.
+
+### Целевая IA, композиции и контрольная точка A
+
+Подробная карта, ownership, часы, acceptance и план17–21.10 — [UI_IMPLEMENTATION_PLAN](UI_IMPLEMENTATION_PLAN.md). В DESIGN_SYSTEM/UX_GUIDELINES добавлены явно неутверждённые предложения; действующий master1.2 не заменён. Изменение routes/API/models не требуется для первого рекомендуемого пакета; любые выявленные расширения — отдельное решение.
+
+До approval не меняются компоненты/CSS/маршруты/API. Следующее действие: утвердить состав минимального среза и направление «постоянные пять зон + локальное раскрытие», затем исправить draft safety/queue и только после этого выполнять согласованную компоновку.
+
+Финальная проверка документации: независимый read-only review сверил ограничения API/план/сохранение функций; исправлены page_size,375px и полная оценка11–17ч. UTF-8 всех пяти затронутых документов,48локальныхссылок и scoped `git diff --check` — PASS. Сравнение317начальныххешей показало только ожидаемые пять Markdown-изменений. Первая страница baseline PDF визуально просмотрена после Poppler render (11страниц целиком визуально не проверялись). Тестовые контейнеры/hostfrontend остановлены; рабочийruntime сохранён. Это audit checkpoint, не принятый редизайн.
+
+Дополнение17.10: URL-importqueryjob восстанавливается послеreload/Back; ошибки/повторноечтение/новоеявноедействие, invalidID/kind и устаревшиеответы разделены. Использованы существующиеNotice/Button/nativecontrols и UIUXProMax error-recovery/focus рекомендации. Typecheck/scopedESLint/Prettier/productionbuild passed. Browserrecoverytests добавлены; финальныйрезультат — PROJECT_STATUS. Новаяручнаяresponsive/visual/screenreader/UXприёмка вограниченномбюджете не объявляетсявыполненной.
+
+## Открытые источники и ход проверки · 17.10.2026
+
+Новые URL-import/OpenRegistry/DossierProgress используют существующие tokens/components/native controls. Новых зависимостей нет. Простой основной режим сохранён; импорт доступен из добавления, реестр — в «Сверке». Понятные ошибки/состояния/источник/лицензия/дата/предел поиска остаются видимыми.
+
+- Фокусный `SAQ_E2E_BASE_URL=<публичный HTTPS origin> npx playwright test tests/open-sources.spec.ts`: **5 passed (20.9s)**. Четыре presentation-сценария отдельно проверяют success/poll/new key, failure/retry/сохранение URL, viewer/page search/no-match/XSS text, четыре вопроса/следующее действие; это контролируемые API mocks. Пятый тест проходит настоящий proxy/auth/API с malformed600KB PDF:415 вместо прежнего proxy413.
+- На import/dossier и panel поиска выполнены12 наблюдений375/768/1024/1440 без page overflow; `output/open-sources/`. Визуально просмотрены import1440, registry375, dossier375. После просмотра mobile dl переведён на одну колонку; финальная перепроверка записывается в PROJECT_STATUS. Общая метка уточнена для смеси REAL/DEMO.
+- Первый browser smoke:2pass/2fail. Один502 пришёл от Cloudflare при обновлении контейнера, второй — неоднозначный role=alert из-за Next route announcer; тест уточнён до error Notice. Это не скрыто rerun. Затем все5 прошли на доступном runtime.
+- Настоящий HTTPS API подтвердил2реальные RU/KZ загрузки/HTML SHA/дедуп/отдельный анализ и PDF12стр/page6/дедуп, risk unchanged. Отдельная новая вкладка in-app browser показала реальную версию02.10.2026 и результат ASYLYM/page6 с ограничениями; пользовательская вкладка с черновиком не перезагружалась.
+- Полный browser по HTTPS:59passed/1failed(9.1m), единственный отказ прежнего Threads fixture — release вызывался до завершения CSRF GET. Добавлено ожидание handler через expect.poll; production Threads не менялся. На итоговой косметической сборке новый UI+Threads повторены:9passed(38.8s). Полного60/60после косметики не заявляем; все60сценариев прошли в совокупности этих проверок.
+- Финальные12responsive наблюдений без page overflow повторены. Просмотрены итоговые dossier375 с одноколоночным dl и import375 с новой меткой прототипа. Новый screen-reader/200% zoom/user testing не проводились, полное WCAG-соответствие не заявляется.
+
+## Простой интерфейс / Awwwards · 16.10.2026
+
+По запросу пользователя реализован простой режим по умолчанию: 6→3 пункта навигации, верхняя панель вместо боковой, карточки вместо начальной таблицы, один главный CTA, необязательные URL/дата по раскрытию. Убраны из основного экрана KPI, карта/дополнительные фильтры, создание сигнала, документальные формы и история; подробный режим сохраняет доступ. Данные, API и предметные решения не удалены. Референсы и решения — DESIGN_SYSTEM 1.2.
+
+- Production frontend build и локальный recreate прошли. **Итоговый полный browser rerun — 55 passed (2.7m)**; typecheck/lint/format:check и git diff --check прошли. Команды и границы — верхний блок PROJECT_STATUS.
+- Первоначальный полный прогон: 53 passed / 2 failed; оба отказа в новых тестах (Tab до готовности UI, неоднозначный alert из-за Next route announcer). Исправлено ожиданием карточек и точным alert locator; focused `npx playwright test tests/simple-interface.spec.ts` — 6 passed, 17.9s.
+- Новые тесты: 3 пункта/реальные серверные баллы; поиск/возврат/reload/доказательства; текстовый draft/необязательная дата/сохранение режима; создание DEMO материала без автоматического анализа; keyboard skip/черновик R1/выбранный файл; viewer/error/retry (последние роль и ошибка — presentation mocks, не доказательство backend auth).
+- Обзор, каталог, досье и загрузка: 16 автоматических наблюдений на 375/768/1024/1440 px без page overflow. Ввод и названия RU/KZ присутствуют. Скриншоты `output/simple-interface/{home,catalog,dossier,upload}-{width}.png`; визуально просмотрены home 1440/375, dossier/upload 375, каталог в живом браузере. Визуальная проверка выявила бледное имя пользователя на белом header: исправлен цвет, добавлена проверка фактического контраста ≥4.5.
+- Проверен живой переход обзор→каталог через in-app browser. Таблицы подробного режима, keyboard/focus, tokens contrast, reduced-motion и прежние предметные сценарии покрывает общий набор. Новый ручной screen-reader аудит, zoom 200% и UX-проверка людьми не проводились; прежние результаты не переносить на новую версию.
+
+Следующий шаг: дать 3–5 пользователям задачи «добавить публикацию» и «найти объект/понять причины», наблюдать затруднения. До этого удобство подтверждено техническими проверками, а не пользовательским исследованием.
+
+## Веб-предпросмотр Threads · 16.10.2026
+
+Завершено продолжение ранее написанной панели `/monitoring`. Переиспользованы Button/Notice/LoadState/native controls и monitoring CSS. Визуальная проверка выявила отсутствующие в системе panel-head/panel-body; заменены существующими panel-heading/padded. Гонка фокуса после Enter исправлена effect после React commit; новый CSS/framework не добавлялся.
+
+- Полный `npm run test:e2e` — **49 passed (1.6m)** после исправления фокуса. После последующей замены двух классов — focused `npx playwright test tests/threads-search.spec.ts`: **4 passed (9.7s)**; typecheck/lint/format и production Docker build passed.
+- Реальный API подтвердил DISABLED, поиск не отправлялся. Presentation mocks отдельно проверили успешный текст/неизвестную дату/следующую страницу, пустой ответ, pending/ошибку/удаление старого success, восстановление TOKEN_MISSING/TOKEN_INVALID без потери фразы. Текст `<script>` остаётся текстом. Live Threads не проверялся.
+- Для DISABLED и результатов на 375/768/1024/1440: scrollWidth ≤ viewport. Screenshots `output/threads-preview/disabled-{375,1440}.png` и `results-{375,1440}.png`; итоговые results 375/1440 визуально просмотрены, мобильный disabled просмотрен до поправки отступов. RU/KZ строки/правовые оговорки видимы, поля/кнопки переносятся.
+- Отправка Enter и фокус на результате проверены; ошибка — role=alert, busy блокирует повторный запуск, фраза сохраняется. Zoom 200%, новый reduced-motion тест, screen reader и внешняя UX-приёмка для панели не проводились. Полное WCAG-соответствие не заявляется.
+
+## Сверка рекламы · 16.10.2026
+
+[Первый ручной/DEMO-срез](FEATURE_MONITORING_CASES.md): новый `/monitoring` использует существующие semantic tokens, Button/Pagination/TableRegion/Notice/LoadState/native forms. Шестой пункт «Сверка» в общей навигации, mobile grid три колонки; явные DEMO/недоступность источников/реестра сохранены.
+
+- Полный `npm run test:e2e`: **45 passed (1.4m)**, в том числе два новых сценария. Настоящий API/БД: недоступность → DEMO-нет совпадения → case → повтор без дубля → новая версия с документом → ручное закрытие/история, риск не меняется. Presentation mocks отдельно проверяют retry/ключ команды, задержки/ошибки/старую выдачу/инертный текст.
+- `node .local/monitoring-visual.mjs`: 375/768/1024/1440, scrollWidth=viewport на каждой, pageerror=0, шесть пунктов навигации. Enter на локальном anchor переносит focus в раздел; native details управляется клавиатурой, несохранённое обоснование соседней формы остаётся. Reduced-motion 0.00001s. Скриншоты `output/monitoring/overview-{width}.png`, `candidate-{width}.png`; 375/1440 визуально просмотрены.
+- typecheck/lint/format/production build passed. Первоначальный timeout оказался точным implicit-label селектором с вложенными option; заменены только три тестовых селектора на accessible combobox. Повторный focused — 2 passed (6.5s), затем полный — 45/45.
+- Новый zoom 200%, screen reader, внешняя UX/предметная приёмка не проводились. Полное соответствие WCAG не заявляется. Live-сбор рекламы и реальный реестр не проверялись, они ещё не подключены.
+
+## История объекта · 16.10.2026
+
+Связанный блок — [FEATURE_PROPERTY_HISTORY](FEATURE_PROPERTY_HISTORY.md), исходный HEAD `e993dc8` плюс сохранённый локальный redesign/URL diff. В досье и review используется единая лента, общий Pagination, семантические tokens. Две nullable read-model добавки в audit API раскрыты в контракте; роли/решения/риск/исходники/снимки сохранены.
+
+- Полный финальный browser: **43 passed (1.3m)**. Новые проверки — реальный audit API/автор/неизменность риска; presentation fixtures для задержки/503/retry/empty/неизвестного события/инертной HTML-строки. Старые R1–R6, OCR, сигналы и PDF входят в прогон.
+- `node .local/history-visual.mjs`: 375/768/1024/1440, scrollWidth=viewport width на каждой; pageerror=0. Пагинация фокусирует заголовок и сохраняет несохранённое поле соседней формы. Reduced-motion: 0.00001s. Итоговые 375/1440 скриншоты визуально просмотрены; `output/history/dossier-{width}.png`. Исправлен обнаруженный недостаток отступов панели.
+- `node .local/history-zoom.mjs`: настоящий вход через форму, отдельный временный Chromium profile, zoom=2 через chrome.tabs API, width=scrollWidth=720, DPR=2; Enter на anchor истории фокусирует раздел, ошибок JS нет. `output/history/zoom200.png`. CDP page-scale из отдельного capture не подменяет эту проверку.
+- typecheck/lint/format и production build passed. Новые dependencies отсутствуют. Внешняя UX/предметная/screen-reader приёмка не проводилась; полное соответствие WCAG не заявляется.
+
+Промежуточный полный прогон выявил широкие status locators и последующие зависимые ошибки DEMO-состояния; селекторы уточнены, тестовые решения завершены через API, финальные 43/43 проверены после последней сборки без перезапуска во время тестов. Подробности и точные команды — PROJECT_STATUS.
+
+## Редизайн рабочего пространства · 16.10.2026
+
+Исходная ревизия `e993dc8`, дерево перед работой чистое. Исследованы текущие маршруты/компоненты/тесты, README/статус/требования/CODEX_TZ, архитектура/UX/feature/ADR и DTO/OpenAPI/API. Направление — **Construction Intelligence / рабочее досье аналитика**, существующие зелёная навигация, светлые поверхности, системный sans-serif. Серверный код/контракты/права/риск не менялись.
+
+| Экран → задача | Проблема до | Изменение | Риск регрессии / проверка |
+|---|---|---|---|
+| Обзор → выбрать случай | Полная таблица дублирует реестр | Пять объектов, охват выборки, реальные KPI, рабочая колонка | Первые 100 не глобальный рейтинг; score/total по API |
+| Реестр → найти очередь | Фильтры только в controls; ссылка возврата теряет контекст | Active filters, город/застройщик, query-context досье | Поиск/страница/вид при reload и возврате |
+| Карта → выбрать объект | Нет связи с выделением строки | Общий выбор с таблицей, текст/граница, сохранение при list/map | Keyboard/focus/fallback, reset при смене выборки |
+| Досье → понять риск | Балл теряется в метаданных; одинаковая высота панелей | RiskSummary, anchors, различение фактов/форм/решений | Score/zone из API, формы mounted, UNKNOWN/DEMO/даты |
+| Реклама → найти материал | Нет controls существующего status API и следующих страниц | Status/filter/page, разные даты, прямой review, возврат | Прежние строки скрыты при новом запросе/ошибке |
+| Проверка → сопоставить источник | Выбор публикации в local state; области похожи | URL/Back/reload, selector, оригинал/гипотезы, статусы | Выбор не вызывает analyze; OCR/match/R2 отдельно |
+| Правовые формы → источник/решение | Inputs и сведения визуально смешаны | Legal-review, fieldset/legend, поверхность решения, подписи | Labels/names/payload/revisions/обязательные проверки |
+| Сигналы → решение/PDF/история | Длинный снимок без быстрых переходов | Anchors, RiskSummary, выделение версии, расшифровки | Снимок не заменяется текущими фактами; reason сохранён |
+| Ввод/login/оболочка | Разные defaults headings; нет motion vocabulary | Sans-serif, 30/20 px desktop, controls 14 px, motion 150/200 ms | Reduced motion; 320–1920 px, RU/KZ |
+
+Референсы просмотрены 16.10.2026, только публичные страницы. Применение ниже — дизайнерская интерпретация, без копирования закрытых экранов:
+
+| Источник | Приём → проблема → применение |
+|---|---|
+| [Linear](https://linear.app/features) | Последовательность задач → обзор не ведёт к работе → очередь/переходы |
+| [Vercel Geist](https://vercel.com/geist/introduction) | Foundations/components → разнобой состояний → tokens/headings/controls |
+| [Stripe Dashboard](https://docs.stripe.com/dashboard/basics) | Навигация/списки/карточки → потеря контекста → возвраты/filters/pagination |
+| [Palantir Workshop](https://www.palantir.com/docs/foundry/workshop/overview) | Связанные объекты/данные → разрозненные материалы → досье и две области review |
+| [Radix accessibility](https://www.radix-ui.com/primitives/docs/overview/accessibility) | Native semantics/focus → недоступные controls → select/details/anchors; dialog без сценария не добавлен |
+
+Awwwards dashboard/web-app страницы не загрузились, не заявляются изученными. UI UX Pro Max выполнен локально: `legal analytics dashboard --design-system`, `keyboard focus navigation --domain ux`. Приняты hierarchy/keyboard/focus; marketing Gateway/sales CTA/синяя палитра/внешние Fira fonts отвергнуты. Единственный master — DESIGN_SYSTEM, без persist/force. Новых dependencies/фреймворков/платных сервисов нет.
+
+Скриншоты до: `output/redesign/before/` — 22 наблюдения, 375/1440. После — `output/redesign/after/`. Это реальные страницы/API; только тайлы в responsive-скрипте заменены локальным SVG. Исторические сведения аудита ниже относятся к прежним ревизиям.
+
+Финальная проверка 16.10.2026:
+
+- `npm run test:e2e` — **41 passed (1.3m)** на production frontend с действующими API/worker. Включает оригиналы TXT/PNG/PDF, настоящий OCR/bbox, отдельные решения R1–R6, пересчёт/отклонение, stale revisions, immutable signal versions/CONFIRM/RETURN и скачивание PDF. Шесть новых regressions: query-return досье, фактические scores/охват обзора, pagination/status/return рекламы, loading/error без старой очереди, 320–1920/reduced motion/aria-expanded, review URL/Back/reload без автоанализа. Map regression дополнен возвратом query и общим map/table selection. Pagination/отказы/некоторые viewer/длинные RU/KZ — явно обозначенные presentation mocks, не серверная приёмка этих свойств.
+- `node .local/redesign-capture.mjs after` — **66 observations**, 10 authenticated routes + login на **320/375/768/1024/1440/1920**; page overflow=0, pageerror=0. Desktop/mobile screenshots основных экранов визуально просмотрены; это выборочный ручной просмотр, не просмотр каждого из 66 кадров. Регион таблицы прокручивается отдельно. В ходе первого прохода исправлен ошибочно расширенный CSS selector, который уменьшал подписи и давал overflow на 320; финальный повтор без этого дефекта.
+- `node .local/redesign-zoom.mjs` — настоящий **вход через форму**, затем `chrome.tabs.setZoom(2)` в отдельном временном Chromium-профиле: dashboard/map/property/review/new/signals, **zoom=2, DPR=2, viewport/scrollWidth=720/720**, pageerror=0. Enter на метке перемещает focus к карточке; anchors досье/решения сигнала — к соответствующему заголовку. Тестовое расширение не устанавливается в пользовательский браузер.
+- `npm run typecheck`, `npm run lint`, `npm run format:check` — passed; `npm audit --audit-level=high` — **0 vulnerabilities**; production `docker compose -f docker-compose.yml -f docker-compose.dev.yml build frontend` — passed. Обновлён только frontend через `up -d --no-deps frontend`; БД/storage/API/worker и посторонние проекты сохранены. Backend pytest не повторялся, серверный код не менялся.
+- Первый focused run: 13/15; исправлены доступное имя ссылки карты и неоднозначный тестовый locator alert (Next route announcer), без ослабления предметных проверок. Финальные 41/41 включают эти исправления. Только семантические token contrast pairs проверены автоматически; полного нового rendered contrast audit нет.
+
+Финальная самопроверка: **23 UTF-8 файла / 79 локальных Markdown-ссылок**, известных локальных secrets/credential patterns и отсутствующих ссылок не найдено; `git diff --check` passed. Минимальный измеренный текст responsive-набора — **12 px**. Ограниченный scan не является полным security audit.
+
+Evidence (ignored): `.local/redesign-{before,after,zoom}.json`, `.local/redesign-{focused,browser-final,build-final}.log`, `.local/redesign-final-scan.json`, `output/redesign/{before,after}/`. Состояние проекта/границы — PROJECT_STATUS. Новые fonts/runtime deps не добавлены, отдельного сравнения bundle bytes/CLS/нагрузки не выполнялось; число API-запросов для декоративной статистики не увеличено. Внешние UX с 3–5 людьми, Windows screen reader и реальные touch devices остаются открытыми. Общая привязка серверных ошибок к каждому полю не добавлена; существующие native validation/inline alerts/draft protection сохранены. Полное соответствие WCAG 2.2 AA не заявляется.
+
 Дата 15.10.2026. Исходная ревизия `59e870a`, аудит кода и локального UI. Визуальное направление и план показаны пользователю до реализации; ниже записаны наблюдавшиеся проверки текущего UI. API, данные, роли и правила риска сохраняются.
 
 ## Аудит до изменений

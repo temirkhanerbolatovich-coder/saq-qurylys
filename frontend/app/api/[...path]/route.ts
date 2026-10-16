@@ -27,7 +27,12 @@ async function proxy(
     if (value) headers.set(name, value);
   }
   try {
-    const limit = path.at(-1) === "upload" ? 10_485_760 + 65_536 : 500_000;
+    const limit =
+      path.join("/") === "v1/monitoring/open-registry"
+        ? 5_242_880 + 65_536
+        : path.at(-1) === "upload"
+          ? 10_485_760 + 65_536
+          : 500_000;
     const chunks: Uint8Array[] = [];
     let total = 0;
     const reader = request.body?.getReader();

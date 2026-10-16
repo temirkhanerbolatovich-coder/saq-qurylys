@@ -10,7 +10,7 @@ def save_text(root: Path, text: str) -> tuple[str, str, int]:
 
 
 def save_bytes(root: Path, content: bytes, extension: str) -> tuple[str, str, int]:
-    if extension not in {'txt', 'png', 'jpg', 'pdf'}:
+    if extension not in {'txt', 'png', 'jpg', 'pdf', 'html'}:
         raise ValueError('Unsupported storage extension')
     digest = hashlib.sha256(content).hexdigest()
     key = f'{digest[:2]}/{digest}.{extension}'

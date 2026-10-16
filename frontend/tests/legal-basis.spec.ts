@@ -53,7 +53,9 @@ test("legal document stays pending until a dated human review, rejection never c
       exact: true,
     })
     .click();
-  await expect(page.getByRole("status")).toContainText("Основание сохранено");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Основание сохранено" }),
+  ).toContainText("Основание сохранено");
   const card = page
     .locator(".document")
     .filter({ has: page.getByRole("heading", { name: new RegExp(number) }) });

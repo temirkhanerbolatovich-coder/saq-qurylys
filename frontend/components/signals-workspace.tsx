@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ApiError, api, command, date } from "@/lib/api";
 import { statusLabel } from "@/lib/status-labels";
+import { factorLabels } from "@/lib/presentation";
 import type {
   Job,
   Page,
@@ -15,12 +16,14 @@ import type {
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
+import { mechanismLabels } from "@/components/legal-basis-review";
 import {
   Auth,
   Demo,
   LoadState,
   Notice,
   PageTitle,
+  RiskSummary,
   useData,
   Zone,
 } from "@/components/workspace";
@@ -117,7 +120,12 @@ export function CreateSignalButton({
   }
   return (
     <div>
-      <Button onClick={create} disabled={busy} variant="outline">
+      <Button
+        onClick={create}
+        disabled={busy}
+        aria-busy={busy}
+        variant="outline"
+      >
         {busy ? "Создание снимка…" : "Создать черновик сигнала"}
       </Button>
       {error && <Notice error={error} />}
@@ -256,7 +264,7 @@ export function SignalsView() {
                 <div className="candidate-list" aria-label="Очередь сигналов">
                   {queueData.items.map((signal) => (
                     <article
-                      className="candidate signal-queue-item"
+                      className={`candidate signal-queue-item${id === signal.id ? " is-selected" : ""}`}
                       key={signal.id}
                     >
                       <Demo value={signal.is_demo} />
@@ -444,8 +452,17 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
       <div className="review-toolbar">
         <h2>Сигнал · версия {row.version}</h2>
         <Demo value={row.is_demo} />
-        <Zone risk={row.risk_snapshot} />
       </div>
+      <RiskSummary risk={row.risk_snapshot} />
+      <nav
+        className="dossier-nav signal-nav"
+        aria-label="Разделы сохранённого сигнала"
+      >
+        <a href={`#signal-facts-${id}`}>Факты и источники</a>
+        <a href={`#signal-decision-${id}`}>Решение аналитика</a>
+        <a href={`#signal-pdf-${id}`}>PDF версии {row.version}</a>
+        <a href={`#signal-history-${id}`}>История версий</a>
+      </nav>
       <p className="notice">{snapshot.disclaimer}</p>
       {row.is_demo && (
         <p className="notice">
@@ -497,7 +514,9 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
       <Button variant="outline" onClick={reload}>
         Обновить состояние сигнала
       </Button>
-      <h3>Неизвестная информация в снимке</h3>
+      <h3 id={`signal-facts-${id}`} tabIndex={-1}>
+        Неизвестная информация в снимке
+      </h3>
       {snapshot.unknown_information.length ? (
         <ul>
           {snapshot.unknown_information.map((value) => (
@@ -514,9 +533,13 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
       </p>
       <h3>Факторы в снимке</h3>
       {snapshot.factors.map((factor) => (
-        <article className="hypothesis" key={factor.id}>
+        <article
+          className={`hypothesis snapshot-factor factor-${factor.status.toLowerCase()}`}
+          key={factor.id}
+        >
           <strong>
-            {factor.code} · {statusLabel(factor.status)} ·{" "}
+            {factor.code} · {factorLabels[factor.code] || factor.code} ·{" "}
+            {statusLabel(factor.status)} ·{" "}
             {factor.status === "CONFIRMED" ? `+${factor.weight}` : "0"}
           </strong>
           <p>
@@ -575,7 +598,8 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
             )}
             {evidence.legal_checks?.map((check) => (
               <p key={check.mechanism}>
-                {check.mechanism} · {check.result}: {check.reason}
+                {mechanismLabels[check.mechanism] || check.mechanism} ·{" "}
+                {statusLabel(check.result)}: {check.reason}
               </p>
             ))}
             {asset && (
@@ -613,7 +637,9 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
         );
       })}
       {!snapshot.evidence.length && <p>Доказательства в снимке отсутствуют.</p>}
-      <h3>Решение аналитика</h3>
+      <h3 id={`signal-decision-${id}`} tabIndex={-1}>
+        Решение аналитика
+      </h3>
       {decisions.map((decision) => (
         <article className="hypothesis" key={decision.id}>
           <strong>
@@ -669,7 +695,9 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
           Создать новую версию из текущих фактов
         </Button>
       )}
-      <h3>PDF этой версии</h3>
+      <h3 id={`signal-pdf-${id}`} tabIndex={-1}>
+        PDF этой версии
+      </h3>
       <p role={row.pdf_state === "QUEUED" ? "status" : undefined}>
         {pdfLabels[row.pdf_state]}
       </p>
@@ -692,7 +720,9 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
         PDF содержит сохранённый снимок и решение этой версии. Изменения объекта
         не переписывают его прошлое содержимое.
       </p>
-      <h3>История версий объекта</h3>
+      <h3 id={`signal-history-${id}`} tabIndex={-1}>
+        История версий объекта
+      </h3>
       {row.previous_signal_id && (
         <Link
           className="text-link"
@@ -703,7 +733,10 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
       )}
       {history.data?.items.map((version) => (
         <p key={version.id}>
-          <Link href={signalVersionUrl(params.toString(), version.id)}>
+          <Link
+            aria-current={version.id === id ? "page" : undefined}
+            href={signalVersionUrl(params.toString(), version.id)}
+          >
             Версия {version.version}
           </Link>{" "}
           · {stateLabels[version.state]}

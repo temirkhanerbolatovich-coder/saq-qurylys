@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, pool
 
 from alembic import context
+from app import open_registry  # noqa: F401 - register the additive model in Base.metadata
 from app.config import Settings
 from app.models import Base
 

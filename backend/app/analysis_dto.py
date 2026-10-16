@@ -209,6 +209,8 @@ class RiskReviewOut(DTO):
 class AuditEventOut(DTO):
     id: UUID
     actor_id: UUID
+    actor_display_name: str | None = None
+    risk_code: RiskCode | None = None
     occurred_at: datetime
     action: str
     entity_type: str

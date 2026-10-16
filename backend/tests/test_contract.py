@@ -22,6 +22,10 @@ def test_live_responses_match_approved_contract(signed):
         ('/properties/' + str(demo_id('samal')) + '/risk', 'RiskDetail'),
         ('/advertisements', 'AdvertisementPage'),
         ('/dashboard/summary', 'DashboardSummary'),
+        ('/monitoring/candidates', 'Page_CandidateOut_'),
+        ('/monitoring/registry-snapshots', 'Page_RegistrySnapshotOut_'),
+        ('/monitoring/incidents', 'Page_IncidentOut_'),
+        ('/monitoring/threads/status', 'ThreadsConnectionStatus'),
         ('/auth/me', 'User'),
     ]
     for path, schema in samples:

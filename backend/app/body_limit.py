@@ -14,7 +14,9 @@ class BodyLimitMiddleware:
         if scope['type'] != 'http' or scope['method'] not in {'POST', 'PUT', 'PATCH'}:
             return await self.app(scope, receive, send)
         limit = (
-            self.upload_limit + 65_536
+            min(self.upload_limit, 5_242_880) + 65_536
+            if scope['path'] == '/api/v1/monitoring/open-registry'
+            else self.upload_limit + 65_536
             if scope['path'] in {'/api/v1/advertisements/upload', '/api/v1/assets/upload'}
             else 500_000
         )

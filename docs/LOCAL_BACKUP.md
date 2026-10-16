@@ -54,6 +54,12 @@ python scripts/backup_local.py verify ".local/backups/ИМЯ_КОПИИ"
 
 ## Фактическая проверка 15.10.2026
 
+### Дополнение17.10.2026 — HTML-оригиналы и свежий restore
+
+Исправлена совместимость с URL-импортом: whitelist storage key теперь включает `.html`, с прежними ограничениями пути/размера/SHA. Regression сначала воспроизвёл отказ на HTML, затем проверил корректную копию и отказ при изменении байтов. Первая незавершённая попытка `.local/backups/20261016T221215Z-46af400d9f4d4d7a917cf925de65d959` сохранена, не считается готовой копией; API/worker возобновлены.
+
+Успешная новая копия: `.local/backups/20261016T221337Z-63f53e7a6c914a1795fdaca07d3a7bcf`. `create` и `verify` exit0; изолированно сверены24таблицы/1936audit events, скачаны553Assets, проверены66сигналов/42срешениями,44исторических PDF assets и44READY PDF. Отчёт `.local/restore-checks/20261016T221414Z-6b32eb0c52ce4ff39514d250db350def/result.json`: verified=true/stage=complete. Рабочая БД/storage не восстанавливались и не подменялись. Это текущий ПК, а не приёмка второго компьютера/внешнего хранения. Backup tests16/1Windows symlink skip; полный tooling suite37/1skip. Все копии/отчёты private ignored.
+
 ### Свежая копия после rules-1.2
 
 Снимок ревизии `deb4d235429a423142da28867605f88027250cb3`: `.local/backups/20261015T182805Z-2e8c2ae35f004ff4bc7eeb93264f33fc`. Команды `python scripts/backup_local.py create` и `python scripts/backup_local.py verify ".local/backups/20261015T182805Z-2e8c2ae35f004ff4bc7eeb93264f33fc"` завершились exit 0.

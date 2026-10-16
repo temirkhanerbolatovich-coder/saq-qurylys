@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./support";
+import { login, testOrigin } from "./support";
 
 test("appeal document requires a separate R4 decision", async ({ page }) => {
   await login(page);
@@ -29,9 +29,11 @@ test("appeal document requires a separate R4 decision", async ({ page }) => {
   await page
     .getByRole("button", { name: "Сохранить документ обращения", exact: true })
     .click();
-  await expect(page.getByRole("status")).toContainText(
-    "Документ и доказательство сохранены",
-  );
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Документ и доказательство сохранены" }),
+  ).toContainText("Документ и доказательство сохранены");
   const risk = async () =>
     (await (await page.request.get(`/api/v1/properties/${id}/risk`)).json())
       .summary.score;
@@ -39,9 +41,9 @@ test("appeal document requires a separate R4 decision", async ({ page }) => {
   await page
     .getByRole("button", { name: "Подтвердить R4 · +15", exact: true })
     .click();
-  await expect(page.getByRole("status")).toHaveText(
-    "R4 подтверждён: +15 баллов.",
-  );
+  await expect(
+    page.getByRole("status").filter({ hasText: "R4 подтверждён" }),
+  ).toHaveText("R4 подтверждён: +15 баллов.");
   expect(await risk()).toBe(15);
   await page
     .locator(".factor-row")
@@ -50,7 +52,9 @@ test("appeal document requires a separate R4 decision", async ({ page }) => {
     .click();
   await expect(page.getByText("Заявителей: 2", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "Отклонить R4", exact: true }).click();
-  await expect(page.getByRole("status")).toHaveText("R4 отклонён: 0 баллов.");
+  await expect(
+    page.getByRole("status").filter({ hasText: "R4 отклонён" }),
+  ).toHaveText("R4 отклонён: 0 баллов.");
   expect(await risk()).toBe(0);
 });
 
@@ -121,12 +125,12 @@ test("human decisions turn a payment hypothesis into R2 and can remove the score
     .csrf_token;
   const saved = await page.request.post("/api/v1/advertisements", {
     headers: {
-      Origin: "http://localhost:3000",
+      Origin: testOrigin,
       "X-CSRF-Token": csrf,
       "Idempotency-Key": crypto.randomUUID(),
     },
     data: {
-      text: "ЖК «Ертіс», очередь 1.\nПервоначальный взнос 20%. Строящийся дом.",
+      text: "ЖК «Ертіс», очередь 1.\nПеречислите 500 000 тенге для закрепления квартиры за вами. Строящийся дом.",
       source_label: `DEMO review browser ${Date.now()}`,
       is_demo: true,
     },
@@ -150,7 +154,9 @@ test("human decisions turn a payment hypothesis into R2 and can remove the score
   await expect(payment).toBeVisible({ timeout: 30000 });
   await expect(payment.locator(".status")).toHaveText("На проверке");
   await payment.getByRole("button", { name: /показать в оригинале/ }).click();
-  await expect(page.locator("mark")).toContainText("Первоначальный взнос 20%");
+  await expect(page.locator("mark")).toContainText(
+    "Перечислите 500 000 тенге для закрепления квартиры за вами",
+  );
   await payment
     .getByLabel("Обоснование проверки")
     .fill("Сверено с оригинальным текстом");
@@ -175,13 +181,13 @@ test("human decisions turn a payment hypothesis into R2 and can remove the score
     .selectOption({ index: 1 });
   await page
     .getByLabel("Обоснование решения по R2")
-    .fill("Прямое предложение первоначального взноса, сверено с оригиналом");
+    .fill("Прямое предложение перевода денег, сверено с оригиналом");
   await page
     .getByRole("button", { name: "Сохранить доказательство R2", exact: true })
     .click();
-  await expect(page.getByRole("status")).toContainText(
-    "Доказательство сохранено",
-  );
+  await expect(
+    page.getByRole("status").filter({ hasText: "Доказательство сохранено" }),
+  ).toContainText("Доказательство сохранено");
   const riskPanel = page.locator("section").filter({
     has: page.getByRole("heading", {
       name: "R2 · прямое предложение платежа",
@@ -200,7 +206,9 @@ test("human decisions turn a payment hypothesis into R2 and can remove the score
   await expect(riskPanel.locator(".zone strong")).toHaveText("0");
   await page.getByText("Журнал решений по объекту", { exact: true }).click();
   await expect(
-    page.getByText("RISK_FACTOR_REVIEWED", { exact: true }).first(),
+    page
+      .getByRole("heading", { name: "Проверен фактор риска", exact: true })
+      .first(),
   ).toBeVisible();
   await page.screenshot({ path: "../output/qa/review-r2.png", fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -277,7 +285,7 @@ test("payment evidence waits for the current property factor before saving", asy
     .csrf_token;
   const saved = await page.request.post("/api/v1/advertisements", {
     headers: {
-      Origin: "http://localhost:3000",
+      Origin: testOrigin,
       "X-CSRF-Token": csrf,
       "Idempotency-Key": crypto.randomUUID(),
     },

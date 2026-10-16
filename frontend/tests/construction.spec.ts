@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./support";
+import { login, testOrigin } from "./support";
 
 test("R5 keeps partial uploads and compares fractional percentage points exactly", async ({
   page,
@@ -227,7 +227,7 @@ test("R3 joins a dated publication and an independent construction document befo
   const label = `DEMO R3 publication ${Date.now()}`;
   const response = await page.request.post("/api/v1/advertisements", {
     headers: {
-      Origin: "http://localhost:3000",
+      Origin: testOrigin,
       "X-CSRF-Token": csrf,
       "Idempotency-Key": crypto.randomUUID(),
     },

@@ -1,13 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
-import { login } from "./support";
+import { login, testOrigin } from "./support";
 
 async function post(page: Page, path: string, data: unknown) {
   const csrf = await (await page.request.get("/api/v1/auth/csrf")).json();
   return page.request.post(`/api/v1${path}`, {
     headers: {
-      Origin: "http://localhost:3000",
+      Origin: testOrigin,
       "X-CSRF-Token": csrf.csrf_token,
       "Idempotency-Key": randomUUID(),
     },
