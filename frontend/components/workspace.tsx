@@ -768,6 +768,111 @@ function SimpleDashboard({
   );
 }
 
+function DashboardPublicationOverview() {
+  const publications = useData<Page<Advertisement>>(
+    "/advertisements?page_size=100",
+  );
+  const data = publications.error ? null : publications.data;
+  const rows = data?.items || [];
+  const statusRows = [
+    { status: "NEW", tone: "neutral" },
+    { status: "ANALYZING", tone: "blue" },
+    { status: "READY_FOR_REVIEW", tone: "yellow" },
+    { status: "REVIEWED", tone: "green" },
+    { status: "FAILED", tone: "red" },
+  ].map(({ status, tone }) => ({
+    label: statusLabel(status),
+    value: rows.filter((ad) => ad.status === status).length,
+    tone,
+  }));
+  const sources = { image: 0, site: 0, text: 0, demo: 0 };
+  for (const ad of rows) {
+    if (ad.is_demo) sources.demo += 1;
+    else if (ad.assets.some((asset) => asset.kind === "IMAGE"))
+      sources.image += 1;
+    else if (ad.source_url || ad.assets.some((asset) => asset.kind === "HTML"))
+      sources.site += 1;
+    else sources.text += 1;
+  }
+  const sourceRows = [
+    { label: "Сайты и ссылки", value: sources.site, tone: "blue" },
+    { label: "Текстовые материалы", value: sources.text, tone: "green" },
+    { label: "Изображения", value: sources.image, tone: "yellow" },
+    { label: "DEMO-материалы", value: sources.demo, tone: "neutral" },
+  ];
+  return (
+    <div className="dashboard-publication-overview">
+      {[
+        {
+          title: "Статус публикаций",
+          eyebrow: "СОСТОЯНИЕ ОБРАБОТКИ",
+          className: "publication-status-card",
+          items: statusRows,
+          help: "Готовность обработки не означает завершения решений аналитика. Точные оставшиеся действия — в очереди проверки.",
+        },
+        {
+          title: "Материалы по источникам",
+          eyebrow: "ИСТОЧНИКИ",
+          className: "source-distribution-card",
+          items: sourceRows,
+          help: "Каждый материал учтён один раз: DEMO, затем изображение, сайт или текст. Тип источника не подтверждает его достоверность.",
+        },
+      ].map((section) => (
+        <section
+          key={section.title}
+          className={`panel analytics-card ${section.className}`}
+          aria-label={section.title}
+        >
+          <div className="analytics-heading">
+            <div>
+              <p className="eyebrow">{section.eyebrow}</p>
+              <h2>{section.title}</h2>
+            </div>
+            <Link className="text-link" href="/advertisements">
+              Открыть <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </div>
+          {data ? (
+            <>
+              <p className="analytics-caption">
+                Показано {rows.length} из {data.total} публикаций.
+                {data.total > rows.length
+                  ? " Распределение только по первым 100 материалам, не по всему реестру."
+                  : " Распределение по сохранённым материалам."}
+              </p>
+              {rows.length ? (
+                <div className="analytics-bars">
+                  {section.items.map((row) => (
+                    <div className="analytics-bar-row" key={row.label}>
+                      <div>
+                        <span>{row.label}</span>
+                        <strong>{row.value}</strong>
+                      </div>
+                      <div className="analytics-bar-track" aria-hidden="true">
+                        <span
+                          className={row.tone}
+                          style={{
+                            width: `${(row.value / rows.length) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="empty">Сохранённых публикаций пока нет.</p>
+              )}
+              <p className="field-help">{section.help}</p>
+            </>
+          ) : (
+            <LoadState error={publications.error} retry={publications.reload} />
+          )}
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export function DashboardView() {
   const { detailed } = useInterfaceMode();
   const summary = useData<Dashboard>("/dashboard/summary");
@@ -803,6 +908,7 @@ export function DashboardView() {
         <DashboardHeading />
         <DashboardQueues summary={summary} />
         <SimpleDashboard registry={registry} rows={priorityRows} />
+        <DashboardPublicationOverview />
       </>
     );
   return (
@@ -823,31 +929,38 @@ export function DashboardView() {
             summary.data?.property_count,
             "ЖК, очереди и корпуса",
             "neutral",
+            "/properties",
           ],
           [
             "Приоритетная проверка",
             summary.data?.zones.RED,
             "Красная зона · подтверждены R1 + R2",
             "red",
+            "/properties?zone=RED",
           ],
           [
             "Сигналов",
             signals.error ? undefined : signals.data?.total,
             "Сохранённые версии и решения",
             "green",
+            "/signals",
           ],
           [
             "Основание не проверено",
             summary.data?.unknown_legal_bases,
             "Неизвестность не даёт R1",
             "neutral",
+            "/properties",
           ],
-        ].map(([label, count, note, style]) => (
-          <div className={`metric ${style}`} key={label}>
+        ].map(([label, count, note, style, href]) => (
+          <Link className={`metric ${style}`} href={String(href)} key={label}>
             <p>{label}</p>
             <strong>{count ?? "—"}</strong>
             <small>{note}</small>
-          </div>
+            <span className="metric-action" aria-hidden="true">
+              Открыть <ArrowRight size={14} />
+            </span>
+          </Link>
         ))}
       </section>
       <div className="dashboard-analytics">
@@ -950,6 +1063,7 @@ export function DashboardView() {
           </div>
         </section>
       </div>
+      <DashboardPublicationOverview />
       <div className="dashboard-workspace">
         <section className="panel priority-panel">
           <div className="panel-heading">
@@ -1691,6 +1805,12 @@ export function PropertyView({ id }: { id: string }) {
   );
 }
 
+function advertisementExcerpt(value: string) {
+  const text = value.replace(/\s+/g, " ").trim();
+  if (!text) return "Исходный файл · оригинал доступен в карточке";
+  return text.length > 220 ? `${text.slice(0, 220).trimEnd()}…` : text;
+}
+
 export function AdvertisementsView() {
   const params = useSearchParams();
   const router = useRouter();
@@ -1716,7 +1836,22 @@ export function AdvertisementsView() {
         title="Реклама"
         description="Сохранённый оригинал, происхождение и время фиксации каждой публикации."
       />
-      <section className="panel">
+      <section
+        className="registry-list-guide advertisements-start-guide"
+        aria-labelledby="advertisements-start-guide-title"
+      >
+        <div>
+          <p className="eyebrow">С ЧЕГО НАЧАТЬ</p>
+          <h2 id="advertisements-start-guide-title">
+            Добавьте материал для проверки
+          </h2>
+        </div>
+        <p>
+          Добавьте текст или загрузите PNG, JPEG либо TXT. Сохраните оригинал,
+          затем перейдите к анализу и отдельной ручной проверке.
+        </p>
+      </section>
+      <section className="panel advertisements-panel">
         <div className="panel-heading">
           <div>
             <h2>Публикации</h2>
@@ -1778,31 +1913,41 @@ export function AdvertisementsView() {
         )}
         {data ? (
           data.items.map((ad) => (
-            <article className="ad-row" key={ad.id}>
-              <div>
-                <div className="ad-meta">
-                  <Demo value={ad.is_demo} />
-                  <span
-                    className={`material-state state-${ad.status.toLowerCase()}`}
-                  >
-                    {statusLabel(ad.status)}
-                  </span>
+            <article className="ad-row advertisements-list" key={ad.id}>
+              <Link
+                className="ad-row-link"
+                href={`/advertisements/${ad.id}${query ? `?${new URLSearchParams({ materials: query })}` : ""}`}
+                aria-label={ad.source_label}
+              >
+                <div className="ad-row-content">
+                  <div className="ad-meta">
+                    <Demo value={ad.is_demo} />
+                    <span
+                      className={`material-state state-${ad.status.toLowerCase()} ad-status ad-status-${ad.status.toLowerCase()}`}
+                    >
+                      {statusLabel(ad.status)}
+                    </span>
+                  </div>
+                  <span className="object-name">{ad.source_label}</span>
+                  {ad.confirmed_property_id && (
+                    <span className="ad-property">
+                      Связанный объект: {ad.confirmed_property_id.slice(0, 8)}…
+                    </span>
+                  )}
+                  <p>{advertisementExcerpt(ad.original_text)}</p>
+                  <div className="ad-dates">
+                    <span className="ad-date">
+                      Опубликовано: {date(ad.published_at)}
+                    </span>
+                    <span className="ad-date">
+                      Зафиксировано: {date(ad.captured_at)}
+                    </span>
+                  </div>
                 </div>
-                <Link
-                  className="object-name"
-                  href={`/advertisements/${ad.id}${query ? `?${new URLSearchParams({ materials: query })}` : ""}`}
-                >
-                  {ad.source_label}
-                </Link>
-                <p>
-                  {ad.original_text ||
-                    "Изображение · оригинал доступен в карточке"}
-                </p>
-                <div className="ad-dates">
-                  <span>Опубликовано: {date(ad.published_at)}</span>
-                  <span>Зафиксировано: {date(ad.captured_at)}</span>
-                </div>
-              </div>
+                <span className="ad-row-arrow" aria-hidden="true">
+                  <ArrowRight size={18} />
+                </span>
+              </Link>
               <div className="ad-actions">
                 <Link
                   className="text-link"
@@ -1869,16 +2014,30 @@ export function AdvertisementView({ id }: { id: string }) {
         }
         action={false}
       />
-      <div className="object-summary">
-        <Demo value={ad.is_demo} />
-        <span>
-          {ad.status === "NEW"
-            ? "Новый · ожидает анализа"
-            : statusLabel(ad.status)}
+      <div className="advertisement-statusbar">
+        <div className="object-summary">
+          <Demo value={ad.is_demo} />
+          <span>
+            {ad.status === "NEW"
+              ? "Новый · ожидает анализа"
+              : statusLabel(ad.status)}
+          </span>
+          <span className="advertisement-revision">Версия {ad.revision}</span>
+        </div>
+        <span className="advertisement-status-hint">
+          Оригинал сохранён без изменений
         </span>
       </div>
-      <section className="panel padded publication-original">
-        <h2>Оригинал публикации</h2>
+      <section className="panel padded publication-original advertisement-detail-panel">
+        <div className="advertisement-detail-heading">
+          <div>
+            <p className="eyebrow">ИСТОЧНИК МАТЕРИАЛА</p>
+            <h2>Оригинал публикации</h2>
+          </div>
+          <span className="advertisement-captured">
+            Зафиксировано: {date(ad.captured_at)}
+          </span>
+        </div>
         {importedHtml && (
           <p className="notice">
             Источник: Primeminister.kz ·{" "}
@@ -1906,7 +2065,7 @@ export function AdvertisementView({ id }: { id: string }) {
             оригинал и OCR.
           </p>
         )}
-        <dl>
+        <dl className="advertisement-metadata">
           <dt>Дата публикации</dt>
           <dd>{date(ad.published_at)}</dd>
           <dt>Зафиксировано</dt>
@@ -1922,24 +2081,31 @@ export function AdvertisementView({ id }: { id: string }) {
             )}
           </dd>
         </dl>
-        {ad.assets.map((asset) => (
-          <div className="asset" key={asset.id}>
-            <a className="text-link" href={`/api/v1/assets/${asset.id}`}>
-              Скачать материал <ArrowRight size={14} />
-            </a>
-            <small hidden={!detailed}>SHA-256: {asset.sha256}</small>
+        {ad.assets.length > 0 && (
+          <div className="advertisement-assets">
+            <h3>Сохранённые материалы</h3>
+            {ad.assets.map((asset) => (
+              <div className="asset" key={asset.id}>
+                <a className="text-link" href={`/api/v1/assets/${asset.id}`}>
+                  Скачать материал <ArrowRight size={14} />
+                </a>
+                <small>SHA-256: {asset.sha256}</small>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </section>
-      <Button asChild>
-        <Link href={`/review?advertisement_id=${id}`}>
-          Открыть анализ и проверку
-        </Link>
-      </Button>
-      <p className="notice">
-        Анализ и ручная проверка доступны в рабочем месте. Гипотезы не влияют на
-        балл риска без отдельного решения аналитика.
-      </p>
+      <div className="advertisement-detail-actions">
+        <Button asChild>
+          <Link href={`/review?advertisement_id=${id}`}>
+            Открыть анализ и проверку
+          </Link>
+        </Button>
+        <p className="notice">
+          Анализ и ручная проверка доступны в рабочем месте. Гипотезы не влияют
+          на балл риска без отдельного решения аналитика.
+        </p>
+      </div>
     </>
   );
 }
@@ -2051,7 +2217,7 @@ export function NewAdvertisementView() {
         description="Укажите происхождение материала. Неизвестную дату публикации можно оставить пустой."
         action={false}
       />
-      <section className="panel form-panel">
+      <section className="panel form-panel intake-advertisement-panel new-advertisement-panel">
         <div className="form-tabs">
           <strong>Текст</strong>
           <Link href="/advertisements/upload">Файл · PNG / JPEG / TXT</Link>
@@ -2059,7 +2225,10 @@ export function NewAdvertisementView() {
             Открытая публикация по ссылке
           </Link>
         </div>
-        <form onSubmit={submit}>
+        <form
+          className="intake-advertisement-form new-advertisement-form"
+          onSubmit={submit}
+        >
           <div className="form-section-heading">
             <span className="section-index" aria-hidden="true">
               01
@@ -2069,35 +2238,40 @@ export function NewAdvertisementView() {
               <p>Два обязательных поля. Сохраните формулировки оригинала.</p>
             </div>
           </div>
-          <label htmlFor="source">Источник / описание происхождения</label>
-          <input
-            id="source"
-            aria-describedby="source-help"
-            required
-            maxLength={300}
-            value={draft.source_label}
-            onChange={(e) => update("source_label", e.target.value)}
-            placeholder="Например: собственный DEMO-баннер"
-          />
-          <p id="source-help" className="field-help">
-            Где и кем получен материал: собственный баннер, публичная страница
-            или предоставленный документ.
-          </p>
-          <label htmlFor="ad-text">Оригинальный текст</label>
-          <textarea
-            id="ad-text"
-            aria-describedby="ad-text-count"
-            required
-            maxLength={100000}
-            rows={8}
-            value={draft.text}
-            onChange={(e) => update("text", e.target.value)}
-            placeholder="Вставьте текст публикации без изменений…"
-          />
-          <p id="ad-text-count" className="field-help text-count">
-            {draft.text.length.toLocaleString("ru-RU")} / 100 000 символов
-          </p>
-          <details className="optional-context" open={detailed || undefined}>
+          <div className="form-primary-fields">
+            <label htmlFor="source">Источник / описание происхождения</label>
+            <input
+              id="source"
+              aria-describedby="source-help"
+              required
+              maxLength={300}
+              value={draft.source_label}
+              onChange={(e) => update("source_label", e.target.value)}
+              placeholder="Например: собственный DEMO-баннер"
+            />
+            <p id="source-help" className="field-help">
+              Где и кем получен материал: собственный баннер, публичная страница
+              или предоставленный документ.
+            </p>
+            <label htmlFor="ad-text">Оригинальный текст</label>
+            <textarea
+              id="ad-text"
+              aria-describedby="ad-text-count"
+              required
+              maxLength={100000}
+              rows={8}
+              value={draft.text}
+              onChange={(e) => update("text", e.target.value)}
+              placeholder="Вставьте текст публикации без изменений…"
+            />
+            <p id="ad-text-count" className="field-help text-count">
+              {draft.text.length.toLocaleString("ru-RU")} / 100 000 символов
+            </p>
+          </div>
+          <details
+            className="optional-context form-context-panel"
+            open={detailed || undefined}
+          >
             <summary>Ссылка и дата публикации · необязательно</summary>
             <div className="form-section-heading">
               <span className="section-index" aria-hidden="true">

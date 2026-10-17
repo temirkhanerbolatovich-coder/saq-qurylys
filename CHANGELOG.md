@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-17 · Selective integration of frontend updates
+
+- Integrated publication cards/details, intake forms, material review heading and signal guidance while retaining drafts, server pagination, URL context, history, controlled map selection and review/comparison workflows.
+- Added publication-status and source charts with explicit first-100 coverage and mutually exclusive categories; retained exact backend review totals and processing-status semantics.
+- Reused semantic tokens, readable text/touch sizes and responsive controls; no backend, API, migration or dependency changes.
+
 ## 2026-10-17 · Review actions, publication comparison and extraction fixes
 
 - Connected exact unresolved material actions to the review UI and dashboard, with independent processing filters and a historical R2 decision form preserving target, evidence, revisions and retry keys.

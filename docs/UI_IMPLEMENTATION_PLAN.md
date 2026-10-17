@@ -1,5 +1,9 @@
 # SAQ QURYLYS — внедрение и поддержка UI/UX
 
+## Интеграция codex/ui-updates · 17.10.2026
+
+Выполнен выборочный перенос форм/публикаций, review heading, инструкции сигналов и ограниченных диаграмм. Сохранены queue/comparison, drafts, URL/pagination, история и controlled map. Новый master не генерируется. Проверки и точная ревизия публикации — UI_AUDIT/PROJECT_STATUS.
+
 ## Подключение готовых API · 17.10.2026
 
 Реализованы action queue и comparison UI без изменения master 1.4, API/ролей,

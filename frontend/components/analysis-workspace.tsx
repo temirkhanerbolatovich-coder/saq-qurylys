@@ -76,12 +76,13 @@ export function FileUploadView() {
         description="PNG/JPEG до 10 МБ и 25 млн пикселей или UTF-8 TXT до 100000 символов. Оригинал сохраняется без изменений."
         action={false}
       />
-      <section className="panel form-panel">
+      <section className="panel form-panel intake-advertisement-panel upload-advertisement-panel">
         <div className="form-tabs">
           <Link href="/advertisements/new">Текст</Link>
           <strong>PNG / JPEG / TXT</strong>
         </div>
         <form
+          className="intake-advertisement-form upload-advertisement-form"
           onSubmit={submit}
           onChange={() => {
             key.current = crypto.randomUUID();
@@ -96,38 +97,48 @@ export function FileUploadView() {
               <p>Укажите источник и выберите один исходный файл.</p>
             </div>
           </div>
-          <label htmlFor="image-source">Источник / происхождение</label>
-          <input
-            id="image-source"
-            name="source_label"
-            required
-            maxLength={300}
-          />
-          <label htmlFor="image-file">Оригинальный PNG / JPEG / TXT</label>
-          <input
-            id="image-file"
-            aria-describedby="image-file-help image-file-selection"
-            aria-invalid={
-              selectedFile ? selectedFile.size > 10_485_760 : undefined
-            }
-            type="file"
-            name="file"
-            accept="image/png,image/jpeg,text/plain,.txt"
-            onChange={(event) =>
-              setSelectedFile(event.currentTarget.files?.[0] || null)
-            }
-            required
-          />
-          <p id="image-file-help" className="field-help">
-            PNG, JPEG или UTF-8 TXT, не больше 10 МБ. PDF для рекламного OCR не
-            поддерживается.
-          </p>
-          <p id="image-file-selection" className="field-help file-selection">
-            {selectedFile
-              ? `${selectedFile.name} · ${(selectedFile.size / 1024).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} КБ${selectedFile.size > 10_485_760 ? " · превышен лимит 10 МБ" : ""}`
-              : "Файл пока не выбран."}
-          </p>
-          <details className="optional-context" open={detailed || undefined}>
+          <div className="upload-primary-fields">
+            <label htmlFor="image-source">Источник / происхождение</label>
+            <input
+              id="image-source"
+              name="source_label"
+              required
+              maxLength={300}
+            />
+            <label htmlFor="image-file">Оригинальный PNG / JPEG / TXT</label>
+            <div className="upload-file-control">
+              <input
+                id="image-file"
+                aria-describedby="image-file-help image-file-selection"
+                aria-invalid={
+                  selectedFile ? selectedFile.size > 10_485_760 : undefined
+                }
+                type="file"
+                name="file"
+                accept="image/png,image/jpeg,text/plain,.txt"
+                onChange={(event) =>
+                  setSelectedFile(event.currentTarget.files?.[0] || null)
+                }
+                required
+              />
+              <p id="image-file-help" className="field-help">
+                PNG, JPEG или UTF-8 TXT, не больше 10 МБ. PDF для рекламного OCR
+                не поддерживается.
+              </p>
+              <p
+                id="image-file-selection"
+                className="field-help file-selection"
+              >
+                {selectedFile
+                  ? `${selectedFile.name} · ${(selectedFile.size / 1024).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} КБ${selectedFile.size > 10_485_760 ? " · превышен лимит 10 МБ" : ""}`
+                  : "Файл пока не выбран."}
+              </p>
+            </div>
+          </div>
+          <details
+            className="optional-context upload-context-panel"
+            open={detailed || undefined}
+          >
             <summary>Ссылка и дата публикации · необязательно</summary>
             <div className="form-section-heading">
               <span className="section-index" aria-hidden="true">
@@ -140,28 +151,41 @@ export function FileUploadView() {
                 </p>
               </div>
             </div>
-            <label htmlFor="image-url">
-              Ссылка на источник · необязательно
-            </label>
-            <input
-              id="image-url"
-              name="source_url"
-              type="url"
-              maxLength={2048}
-            />
-            <label htmlFor="image-date">
-              Дата публикации · +05:00 · необязательно
-            </label>
-            <input id="image-date" name="published_at" type="datetime-local" />
+            <div className="form-columns">
+              <div>
+                <label htmlFor="image-url">
+                  Ссылка на источник · необязательно
+                </label>
+                <input
+                  id="image-url"
+                  name="source_url"
+                  type="url"
+                  maxLength={2048}
+                />
+              </div>
+              <div>
+                <label htmlFor="image-date">
+                  Дата публикации · +05:00 · необязательно
+                </label>
+                <input
+                  id="image-date"
+                  name="published_at"
+                  type="datetime-local"
+                />
+              </div>
+            </div>
           </details>
           <label className="checkbox">
             <input type="checkbox" name="is_demo" defaultChecked />
             Демонстрационный материал (DEMO)
           </label>
           {error && <Notice error={error} />}
-          <Button disabled={busy} aria-busy={busy}>
-            {busy ? "Сохранение…" : "Сохранить файл"}
-          </Button>
+          <div className="form-actions">
+            <Button disabled={busy} aria-busy={busy}>
+              {busy ? "Сохранение…" : "Сохранить файл"}
+            </Button>
+            <span>После сохранения откроется ручная проверка материала.</span>
+          </div>
         </form>
       </section>
     </>
@@ -645,33 +669,47 @@ function ReviewMaterial({
           ))}
         </ol>
       </nav>
-      <div className="review-toolbar">
-        <Demo value={ad.is_demo} />
-        <span>{date(ad.captured_at)}</span>
-        <Link className="text-link" href={`/advertisements/${id}`}>
-          Карточка и SHA-256
-        </Link>
-        {writable && (
-          <Button
-            aria-busy={busy || active}
-            disabled={busy || active}
-            onClick={async () => {
-              const value = await mutate<Job>(`/advertisements/${id}/analyze`, {
-                expected_advertisement_revision: ad.revision,
-              });
-              if (value) {
-                setVersion("");
-                setJob(value);
-              }
-            }}
-          >
-            {active
-              ? "Обработка…"
-              : extraction
-                ? "Повторить анализ"
-                : "Запустить анализ"}
-          </Button>
-        )}
+      <div className="review-material-top">
+        <div className="review-material-heading">
+          <p className="eyebrow">ТЕКУЩИЙ МАТЕРИАЛ</p>
+          <h2>{ad.source_label}</h2>
+          <p>
+            <span className="review-material-status">
+              {statusLabel(ad.status)}
+            </span>
+            {" · "}зафиксирован {date(ad.captured_at)}
+          </p>
+        </div>
+        <div className="review-toolbar">
+          <Demo value={ad.is_demo} />
+          <Link className="text-link" href={`/advertisements/${id}`}>
+            Карточка и SHA-256
+          </Link>
+          {writable && (
+            <Button
+              aria-busy={busy || active}
+              disabled={busy || active}
+              onClick={async () => {
+                const value = await mutate<Job>(
+                  `/advertisements/${id}/analyze`,
+                  {
+                    expected_advertisement_revision: ad.revision,
+                  },
+                );
+                if (value) {
+                  setVersion("");
+                  setJob(value);
+                }
+              }}
+            >
+              {active
+                ? "Обработка…"
+                : extraction
+                  ? "Повторить анализ"
+                  : "Запустить анализ"}
+            </Button>
+          )}
+        </div>
       </div>
       {error && <Notice error={error} />}
       {error && (

@@ -266,6 +266,36 @@ export function SignalsView() {
         action={false}
       />
 
+      <section className="signals-guide" aria-labelledby="signals-guide-title">
+        <div className="signals-guide-heading">
+          <p className="eyebrow">КАК ПОЛЬЗОВАТЬСЯ</p>
+          <h2 id="signals-guide-title">Три шага до понятного результата</h2>
+        </div>
+        <ol>
+          <li>
+            <span>1</span>
+            <div>
+              <strong>Выберите сигнал</strong>
+              <small>Нужный объект и версия находятся в списке.</small>
+            </div>
+          </li>
+          <li>
+            <span>2</span>
+            <div>
+              <strong>Проверьте факты</strong>
+              <small>Факторы, документы и исходники сохранены в снимке.</small>
+            </div>
+          </li>
+          <li>
+            <span>3</span>
+            <div>
+              <strong>Откройте решение</strong>
+              <small>Аналитик обосновывает решение, затем доступен PDF.</small>
+            </div>
+          </li>
+        </ol>
+      </section>
+
       <section className="signals-summary" aria-label="Сводка сигналов">
         <article className="signals-summary-card">
           <span className="signals-summary-card__label">Всего сигналов</span>
