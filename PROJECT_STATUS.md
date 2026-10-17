@@ -1,5 +1,45 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Раскрытые доступы: локальная подготовка очистки · 17.10.2026
+
+**LOCAL CANDIDATE VERIFIED / NOT PUBLISHED / CREDENTIAL REVOCATION OPEN.**
+После согласия пользователя заняться раскрытым ZIP исполнитель Codex подготовил
+изолированный remote mirror и приватный verified bundle в ignored
+`.local/history-cleanup-20261017/`. Проверены обе версии ZIP: один набор четырёх
+секретов; `.local/credentials.txt` содержит тот же пароль аналитика. Все четыре
+отличаются от текущего локального `.env`. Целевая машина старой копии пока
+не установлена; рабочая конфигурация/БД/службы не менялись. Запрошено уточнение
+владельца runtime; отзыв не заявляется выполненным.
+
+git-filter-repo 2.47.0 удалил только архивный путь в candidate: сохранены все
+38 commits, изменены 8 SHA. Исходный main `97d2bff842cabbd0e36417fc897a876d33e21bff`,
+candidate `6059064572b64571f4e910d4483af167ef99bbdc`. Текущие деревья полностью
+равны `e4fa6ca83e83173d839b7891d9281e6ffc6f770d`; все исторические деревья
+равны за исключением ZIP. Metadata/messages/parent topology сохранены;
+у 4 затронутых исходных коммитов подписи gpgsig не сохраняются при rewrite.
+`git fsck --full --strict` PASS; exact-secret scan всех 1057 достижимых объектов
+candidate — 0 совпадений, обе ZIP blob отсутствуют; положительные контроли по обоим
+оригинальным архивам PASS. На отдельном локальном bare remote проверены успешное
+обновление main с точным lease и отказ при устаревшем lease. Это репетиция,
+GitHub main/PR refs не менялись. Build/E2E неизменённого приложения не повторялись.
+
+Read-only независимый аудит: remote содержит main и read-only `refs/pull/1/head`,
+0 forks по API, других branches/tags нет. Замена main не удалит PR/cache refs;
+сведения для GitHub Support собраны локально, не отправлялись. Generic push
+candidate отключён. Документы текущего блока: README, этот PROJECT_STATUS,
+[SECRET_CLEANUP](docs/SECRET_CLEANUP.md). Решение о перезаписи общей истории ещё
+не принято; действующее согласование команды — ADR-014.
+Документация: UTF-8 PASS, проверены 102 относительные ссылки/0 missing,
+известные текущие/раскрытые секреты в трёх Markdown отсутствуют; repository
+hygiene и `git diff --check` PASS. Изменены только три документа.
+
+**Следующий шаг:** определить runtime раскрытых доступов и выполнить там
+согласованную ротацию роли БД, существующего password_hash, всех server sessions
+и private env. Перед force-with-lease публикацией очищенной истории требуется
+подтвердить готовность команды перейти на новые SHA и повторно проверить remote.
+Сейчас только локальная ветка `codex/prepare-secret-cleanup`; никаких deploy,
+удалений пользовательских артефактов или переписывания GitHub не выполнено.
+
 ## GitHub: согласованная интеграция frontend и публикация · 17.10.2026
 
 **POST-MERGE VERIFIED.** Повторный [CI main39043777565](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39043777565) на mergebdab80a завершился **success по всем3jobs**:803backend/116.32s,77browser/1.9m,73tooltests,frontend checks/build иmigrationcheck. Следующий main0ac49cc менял только README/UI_AUDIT/PROJECT_STATUS; исходники совпадают с проверенным приложением. Локальный/удалённыйmain синхронизированы, дерево чистое,55rootartifacts отсутствуют, hygienePASS. Собственная mergedfeaturebranch удалена локально/удалённо после проверки ancestry вmain; исходная история/PR1 сохранены. Этот заключительный update также только документация, runtime/данные не меняет.
