@@ -1,7 +1,9 @@
 import { expect, type Page } from "@playwright/test";
 
 export const testOrigin = new URL(
-  process.env.SAQ_E2E_BASE_URL || "http://localhost:3000",
+  process.env.SAQ_E2E_BASE_URL ||
+    process.env.PLAYWRIGHT_BASE_URL ||
+    "http://localhost:3000",
 ).origin;
 // The existing regression suite covers specialist workflows. New simple-view
 // scenarios opt out and exercise the actual default interface separately.

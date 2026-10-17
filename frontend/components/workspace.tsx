@@ -36,6 +36,7 @@ import type {
   Page,
   Property,
   PropertyDetail,
+  Signal,
   User,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,43 @@ const nav = [
   { href: "/review", label: "Проверка", icon: ClipboardCheck },
   { href: "/signals", label: "Сигналы", icon: Siren },
 ];
+
+function GlobalSearch() {
+  const router = useRouter();
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const query = String(data.get("q") || "").trim();
+    if (!query) return;
+    router.push(`/properties?q=${encodeURIComponent(query)}`);
+  }
+
+  return (
+    <form
+      className="topbar-search"
+      role="search"
+      aria-label="Поиск объекта"
+      onSubmit={submit}
+    >
+      <Search size={16} aria-hidden="true" />
+      <label className="sr-only" htmlFor="global-property-search">
+        Найти объект или адрес
+      </label>
+      <input
+        id="global-property-search"
+        name="q"
+        type="search"
+        placeholder="Найти объект или адрес"
+        autoComplete="off"
+        maxLength={300}
+      />
+      <button type="submit" aria-label="Найти объект">
+        <ArrowRight size={16} aria-hidden="true" />
+      </button>
+    </form>
+  );
+}
 
 function WorkspaceContext({ pathname }: { pathname: string }) {
   let parent: { href: string; label: string } | null = null;
@@ -259,10 +297,15 @@ export function Providers({ children }: { children: ReactNode }) {
           </aside>
           <div className="main-column">
             <header className="topbar">
-              <WorkspaceContext pathname={pathname} />
-              <span className="demo-label">
-                Прототип · DEMO отмечено отдельно
-              </span>
+              <div className="topbar-context">
+                <WorkspaceContext pathname={pathname} />
+              </div>
+              <GlobalSearch />
+              <div className="topbar-meta">
+                <span className="demo-label">
+                  Прототип · DEMO отмечено отдельно
+                </span>
+              </div>
             </header>
             {checking && (
               <nav className="checking-nav" aria-label="Проверки">
@@ -616,10 +659,10 @@ function DashboardQueues({
       action: "Открыть новые материалы",
     },
     {
-      title: "Ожидают проверки",
+      title: "Обработанные материалы",
       count: ready.data?.total,
       resource: ready,
-      note: "Материалы после обработки. Проверьте гипотезы, объект и доказательства.",
+      note: "Материалы с завершённой обработкой. Решения по гипотезам и основаниям принимаются отдельно.",
       href: "/review?status=READY_FOR_REVIEW",
       action: "Проверить готовые материалы",
     },
@@ -715,6 +758,26 @@ export function DashboardView() {
   const { detailed } = useInterfaceMode();
   const summary = useData<Dashboard>("/dashboard/summary");
   const registry = useData<Page<Property>>("/properties?page_size=100");
+  const signals = useData<Page<Signal>>("/signals?page_size=1");
+  const riskTotal = summary.data?.property_count || 0;
+  const reviewedLegal = summary.data
+    ? Math.max(0, riskTotal - summary.data.unknown_legal_bases)
+    : 0;
+  const riskRows = summary.data
+    ? [
+        { label: "Красная зона", value: summary.data.zones.RED, tone: "red" },
+        {
+          label: "Жёлтая зона",
+          value: summary.data.zones.YELLOW,
+          tone: "yellow",
+        },
+        {
+          label: "Зелёная зона",
+          value: summary.data.zones.GREEN,
+          tone: "green",
+        },
+      ]
+    : [];
   const priorityRows = registry.data
     ? [...registry.data.items]
         .sort((a, b) => b.risk.score - a.risk.score)
@@ -739,7 +802,7 @@ export function DashboardView() {
           : "Подключение…"}
       </div>
       {summary.error && <Notice error={summary.error} />}
-      <div className="metrics">
+      <section className="metrics" aria-label="Ключевые показатели">
         {[
           [
             "Объектов в реестре",
@@ -754,10 +817,10 @@ export function DashboardView() {
             "red",
           ],
           [
-            "Углублённая проверка",
-            summary.data?.zones.YELLOW,
-            "Жёлтая зона",
-            "yellow",
+            "Сигналов",
+            signals.error ? undefined : signals.data?.total,
+            "Сохранённые версии и решения",
+            "green",
           ],
           [
             "Основание не проверено",
@@ -772,6 +835,106 @@ export function DashboardView() {
             <small>{note}</small>
           </div>
         ))}
+      </section>
+      <div className="dashboard-analytics">
+        <section className="panel analytics-card risk-distribution">
+          <div className="analytics-heading">
+            <div>
+              <p className="eyebrow">СТРУКТУРА РЕЕСТРА</p>
+              <h2>Распределение по приоритету</h2>
+            </div>
+            <Link className="text-link" href="/properties">
+              Реестр <ArrowRight size={14} />
+            </Link>
+          </div>
+          {summary.data ? (
+            <div className="risk-bars">
+              {riskRows.map((row) => (
+                <div className="risk-bar-row" key={row.label}>
+                  <div>
+                    <span>{row.label}</span>
+                    <strong>{row.value}</strong>
+                  </div>
+                  <div className="risk-bar-track" aria-hidden="true">
+                    <span
+                      className={row.tone}
+                      style={{
+                        width: `${riskTotal ? (row.value / riskTotal) * 100 : 0}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <LoadState error={summary.error} retry={summary.reload} />
+          )}
+        </section>
+        <section className="panel analytics-card verification-card">
+          <div className="analytics-heading">
+            <div>
+              <p className="eyebrow">СТАТУСЫ ОСНОВАНИЯ</p>
+              <h2>Решения по основаниям</h2>
+            </div>
+          </div>
+          {summary.data ? (
+            <div className="verification-summary">
+              <div
+                className="verification-ring"
+                style={{
+                  background: `conic-gradient(var(--color-accent) ${
+                    riskTotal ? (reviewedLegal / riskTotal) * 100 : 0
+                  }%, var(--color-surface-subtle) 0)`,
+                }}
+                aria-hidden="true"
+              >
+                <span>
+                  <strong>{reviewedLegal}</strong>
+                  <small>из {riskTotal}</small>
+                </span>
+              </div>
+              <dl className="verification-legend">
+                <div>
+                  <dt>Решение зафиксировано</dt>
+                  <dd>{reviewedLegal}</dd>
+                </div>
+                <div>
+                  <dt>Не проверено или на проверке</dt>
+                  <dd>{summary.data.unknown_legal_bases}</dd>
+                </div>
+              </dl>
+            </div>
+          ) : (
+            <LoadState error={summary.error} retry={summary.reload} />
+          )}
+          <p className="field-help">
+            Решение включает подтверждение, установленное отсутствие или
+            отклонение. Это не число действующих правовых оснований.
+          </p>
+        </section>
+        <section className="panel analytics-card history-card">
+          <div className="analytics-heading">
+            <div>
+              <p className="eyebrow">ДИНАМИКА</p>
+              <h2>Сигналы во времени</h2>
+            </div>
+          </div>
+          <div className="insufficient-data">
+            <Siren size={24} aria-hidden="true" />
+            <strong>Недостаточно данных</strong>
+            <p>
+              Для сопоставимого временного ряда пока недостаточно данных.
+              Сохранённые версии и решения доступны в разделе «Сигналы».
+            </p>
+            {signals.error ? (
+              <LoadState error={signals.error} retry={signals.reload} />
+            ) : signals.data ? (
+              <span>Всего сигналов: {signals.data.total}</span>
+            ) : (
+              <p role="status">Загрузка количества сигналов…</p>
+            )}
+          </div>
+        </section>
       </div>
       <div className="dashboard-workspace">
         <section className="panel priority-panel">
@@ -907,13 +1070,61 @@ export function PropertiesView() {
     <>
       <PageTitle
         eyebrow="РЕЕСТР СТРОИТЕЛЬСТВА"
-        title="Объекты"
-        description="Каждая очередь и корпус проверяются по своим документам и датам."
+        title={showMap && detailed ? "Карта объектов" : "Объекты"}
+        description={
+          showMap && detailed
+            ? "Найдите объект, сравните приоритет проверки и откройте его досье."
+            : "Каждая очередь и корпус проверяются по своим документам и датам."
+        }
+        action={!showMap || !detailed}
       />
-      <section className={`panel ${detailed ? "" : "simple-catalog"}`}>
+      {showMap && detailed && (
+        <section
+          className="registry-map-guide"
+          aria-labelledby="registry-map-guide-title"
+        >
+          <div>
+            <p className="eyebrow">КАК ПОЛЬЗОВАТЬСЯ</p>
+            <h2 id="registry-map-guide-title">От карты к досье объекта</h2>
+          </div>
+          <ol>
+            <li>
+              <span>1</span>
+              <div>
+                <strong>Найдите объект</strong>
+                <small>Используйте название, адрес, зону или основание.</small>
+              </div>
+            </li>
+            <li>
+              <span>2</span>
+              <div>
+                <strong>Выберите метку</strong>
+                <small>Число показывает серверный балл проверки.</small>
+              </div>
+            </li>
+            <li>
+              <span>3</span>
+              <div>
+                <strong>Откройте досье</strong>
+                <small>Проверьте документы, факторы и историю решений.</small>
+              </div>
+            </li>
+          </ol>
+        </section>
+      )}
+      <section
+        className={`panel registry-panel ${detailed ? "" : "simple-catalog"}`}
+      >
+        <header className="registry-toolbar-heading" hidden={!detailed}>
+          <div>
+            <p className="eyebrow">ПОИСК И ФИЛЬТРЫ</p>
+            <h2>Найдите нужный объект</h2>
+            <p>Поиск и фильтры применяются одновременно к карте и списку.</p>
+          </div>
+        </header>
         <div className="filters">
           <div className="search">
-            <Search size={17} />
+            <Search size={17} aria-hidden="true" />
             <label className="sr-only" htmlFor="search">
               Поиск ЖК или адреса
             </label>
@@ -1037,7 +1248,7 @@ function PropertyResults({
   const pages = Math.max(1, Math.ceil(data.total / data.page_size));
   return (
     <>
-      <div className="list-caption">
+      <div className="list-caption" role="status" aria-live="polite">
         Найдено объектов: {data.total}
         <span>На странице: {data.items.length}</span>
       </div>
@@ -1048,6 +1259,18 @@ function PropertyResults({
           selectedId={selectedId}
           onSelect={setSelectedId}
         />
+      )}
+      {showMap && detailed && (
+        <div className="registry-list-heading">
+          <div>
+            <p className="eyebrow">СПИСОК</p>
+            <h2>Все объекты текущей страницы</h2>
+          </div>
+          <p>
+            Объекты без координат остаются здесь. Таблица содержит статусы,
+            подтверждённые факторы и дату проверки.
+          </p>
+        </div>
       )}
       <div id="property-list" tabIndex={-1} aria-label="Список объектов">
         {detailed ? (
