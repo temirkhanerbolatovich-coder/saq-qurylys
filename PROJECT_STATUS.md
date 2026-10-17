@@ -1,5 +1,54 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## История main очищена и опубликована · 17.10.2026
+
+**MAIN HISTORY PUBLISHED / FRESH CLONE VERIFIED / CI SUCCESS.** По разрешению
+пользователя «продолжай» выполнен main-only force-with-lease:
+`97d2bff842cabbd0e36417fc897a876d33e21bff` → `6059064572b64571f4e910d4483af167ef99bbdc`.
+Сразу перед действием проверен точный remote SHA; новых веток/tags/open PR/forks
+нет. Все 38 коммитов сохранены, изменены 8 SHA; текущий код полностью совпадает
+с прежним. Другие удалённые refs не менялись; read-only `refs/pull/1/head` остался прежним.
+
+**Наблюдавшаяся проверка:** новый remote clone `--bare --single-branch --branch main --no-tags`
+содержит 38 commits и tree `e4fa6ca83e83173d839b7891d9281e6ffc6f770d`, совпадающий
+с деревом до очистки; `rev-list --objects main` не содержит архивных путей,
+`cat-file -e` не находит обе ZIP blob, `git fsck --full --strict` PASS. Приватные
+результаты: `.local/history-cleanup-20261017/publication.json`,
+`fresh-main-verification.json`. Полный [CI39045481388](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39045481388)
+на 6059064 завершился success во всех трёх jobs: 803 backend/143.83s,
+77 browser E2E/1.9m, 73 tool tests, 2 Node checks; frontend audit 0 vulnerabilities,
+lint/typecheck/format/build, hygiene, OCR и migration upgrade/check PASS.
+
+Локальная рабочая копия переведена на очищенный main без reset/clean; прежние
+main/подготовительная ветка сохранены в verified private bundle. Перенесены только
+два документальных коммита cherry-pick без старых родителей. Обновлены README,
+CONTRIBUTING, SECRET_CLEANUP, GITHUB_SYNC_AUDIT, ADR-014 и этот статус; принято
+новое решение ADR-015. Документы публикуются обычным fast-forward после проверок;
+backend/frontend/контракт/данные/.env/службы не изменялись.
+
+По просьбе пользователя добавлена отдельная инструкция ROTATE_FRONTEND_WORKSTATION
+с последовательностью backup → пароль существующей роли БД → новая private env →
+одноразовая транзакция password_hash/sessions/audit → проверка старых/новых доступов.
+Пример транзакции проверен с текущими ORM/security в изолированном SQLite:
+успех отзывает две сессии/сохраняет другой аккаунт и контрольный документ;
+неизменённый пароль/нет пользователя/ошибка audit оставляют исходные hash/сессии.
+Все четыре сценария PASS, синтаксис Python и пяти PowerShell блоков PASS;
+0 подключений к рабочим БД. Восемь Markdown проверены: UTF-8 PASS,
+113 относительных ссылок/0 missing; известных текущих/раскрытых secret literals
+нет. Repository hygiene и `git diff --check` PASS. После очистки main удаляются
+только две собственные временные локальные ветки после проверки сохранённого
+bundle; незавершённые пользовательские файлы и приватные backups не удаляются.
+Это не проверка PostgreSQL/Docker или машины разработчика. Отчёт:
+`.local/history-cleanup-20261017/rotation-example-verification.json`.
+
+**Открыто:** пользователь подтвердил запуск старой копии на компьютере
+frontend-разработчика и отсутствие доступа к нему. По просьбе пользователя
+подготовлена [инструкция владельцу](docs/ROTATE_FRONTEND_WORKSTATION.md),
+ротация удалённо не выполнена; PR/cache refs требуют отдельной обработки владельцем/GitHub
+Support. Никаких обращений/сообщений не отправлялось. Команде перейти на очищенные
+клоны по CONTRIBUTING, не объединять старую историю. Точный следующий шаг —
+завершить публикацию документации, затем владельцу выполнить ротацию на своей машине.
+
 ## Очистка истории: разрешение на применение · 17.10.2026
 
 После конкретного отчёта о сохранности исходников, изменении восьми SHA и
