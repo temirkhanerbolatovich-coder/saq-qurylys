@@ -2,6 +2,11 @@
 
 ## Очередь решений и сравнение · 17.10.2026
 
+Проверенная версия опубликована через [PR №2](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/2),
+main `d95c95d`; [Linux CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39052856375)
+полностью зелёный. Последующие изменения отдельной `codex/ui-updates` сюда не входят:
+перед интеграцией нужны сохранение workflow и её собственная проверка.
+
 Реальная отдельная Linux Compose установка на loopback3199 с новой БД/storage:
 все 77 прежних сценариев прошли в полном прогоне. Из новых проверок сначала
 91passed/2failed: неоднозначный locator двух live-status в presentation тесте
@@ -20,6 +25,8 @@ viewer/keyboard и отсутствие page overflow. Просмотрены sc
 
 Публичный HTTPS smoke на рабочем приложении: 12 наблюдений трёх страниц на четырёх
 ширинах, overflow0/pageerrors0, API writes после login0; старые материалы не менялись.
+Существующий исходный файл скачан и сверен по SHA-256. Тестовый стенд остановлен,
+рабочее приложение и туннель оставлены включёнными.
 Артефакты остаются ignored `output/qa/{review-queue,publication-comparison,working-site}`.
 Typecheck/ESLint/Prettier/production build PASS. Внешняя UX/предметная приёмка,
 человеческий KZ holdout и рольовая production-аутентификация остаются отдельно.

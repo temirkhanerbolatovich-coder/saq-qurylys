@@ -1,10 +1,16 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-## Сайт восстановлен; rules-1.6 и рабочие review/comparison UI · 17.10.2026
+## Сайт обновлён; rules-1.6 и review/comparison опубликованы · 17.10.2026
 
-**IMPLEMENTED / LOCAL RUNTIME VERIFIED / PUBLICATION NEXT.** Пользователь
-согласовал восстановление сайта и следующие backend/UI блоки. Ветка
-`codex/restore-site-ai-review-tools` от main f1ee219; Codex root отвечает за
+**PUBLISHED / CI SUCCESS / WORKING SITE VERIFIED.** Пользователь
+согласовал восстановление сайта и следующие backend/UI блоки. Проверенный
+коммит `6c2b8cda394e91d3c3f160c782049ee88527a2a9` из ветки
+`codex/restore-site-ai-review-tools` объединён через [PR №2](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/2)
+в main `d95c95daae6ec74404925ac8502f93c2612a0183` обычным merge, без переписывания истории.
+Оба CI на исходном коммите зелёные: [PR](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39052856375)
+и [push](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39052786775),
+во всех трёх jobs frontend/backend/browser-e2e. После fetch и fast-forward
+дерево main полностью совпало с проверенным коммитом. Codex root отвечает за
 runtime/интеграцию, помощники — независимые extraction/queue/comparison области.
 Сохранены frontend master1.4, API0.13/51operations, роли/риск/исторические решения;
 новых dependencies/миграций нет. Next dev создал локальные frontend/AGENTS.md;
@@ -26,6 +32,9 @@ bounded diff/исходники/даты/SHA; после выбора тольк
 URL https://casey-medicine-feed-bowl.trycloudflare.com, HTTPS origin/Secure cookie
 сохранены. Chromium smoke:12наблюдений dashboard/queue/comparison375/768/1024/1440,
 overflow0/pageerror0, anonymous401/login200/logout204, business mutations0.
+Скачанный существующий исходный Asset дополнительно сверен по SHA-256.
+После публикации `/comparison` по HTTPS вновь ответил200; рабочие сервисы
+оставлены включёнными. Адрес зависит от компьютера, Docker, интернета и туннеля.
 
 **Проверки:** полный backend из backend/ —809passed/18WindowsLinuxPDFskips/377.33s;
 первая команда из корня дала808pass/18skip/1fail из-за child module cwd, отдельный
@@ -35,7 +44,8 @@ system Python без зависимостей ранее дал import errors и
 Frontend typecheck/lint/format, production Docker build/start,2Nodechecks PASS.
 На отдельной acceptance БД все77старых сценариев прошли; после исправления двух
 тестовых ошибок все16новых presentation/live сценариев PASS. Финальная проверка
-metadata/navigation layout —8passed/19.5s; удалённый CI ещё не выполнялся.
+metadata/navigation layout —8passed/19.5s. Удалённый Linux CI после этих исправлений
+завершился success во всех трёх jobs; точные локальные результаты приведены выше.
 
 **ИИ качество:**172целевыхpytest/44evaluatorunittest PASS; frozen labels unchanged.
 Offline Linux OCR v1/v2 безnetwork/DB: payment16/0/0/16 и8/0/0/4, top3 24/24 и10/10;
@@ -50,14 +60,27 @@ bind не публиковали Windowsports/исказили path; замен�
 После замены storage создана новая согласованная testDB/storage pair: старый seed
 указывал на прежние файлы (75pass/2fail), рабочая система не затрагивалась.
 Все private logs/config/results лежат ignored `.local/site-refresh-20261017`;
-старые тестовые тома/backup не удалялись. Перед завершением стенд штатно остановить.
+старые тестовые тома/backup не удалялись. Стенд штатно остановлен;
+работают только четыре сервиса рабочей SAQ установки.
 
 **Документация:** README/CHANGELOG, architecture, AI/OCR audit, обе feature docs,
 design/UX/components/plan/audit, deployment/checklist и этот статус синхронизируются.
 CI включает write-smoke flag только одноразовому browser job; тесты требуютloopback.
 Значимых новых архитектурных решений нет: используются ADR012/013 и прежний runtime.
-Следующий шаг — финальный review/secret/link/hygiene checks, commit/push/PR и зелёный
-LinuxCI перед main; затем остановить только свой acceptance и проверить рабочий URL.
+Перед push проверены351trackedфайл и восемь известных sensitive literals:
+совпадений0;16изменённых Markdown/217относительных ссылок/UTF-8/diff/hygiene PASS.
+Frozen data и API contract не изменялись. Перед merge ещё раз проверены точные
+SHA исходной ветки и main; чужая frontend-ветка не изменялась.
+
+**Новая frontend-ветка:** при заключительном fetch обнаружена
+`origin/codex/ui-updates` (`9691bf0489ba1e5d5ecd207306e803e368e6bb8a`, от f1ee219).
+Её [CI39051315128](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39051315128)
+имеет failures format:check и browser-e2e. Read-only merge preview с новым main
+показал три конфликта: design-system.css, analysis-workspace.tsx, workspace.tsx.
+Diff также удаляет useReviewDraft и серверную пагинацию прежней очереди.
+Эта отдельная ветка сохранена и не объявляется установленной на сайте.
+Следующий блок — интеграция её представления с сохранением действующих сценариев,
+разбор её CI и повторная проверка; затем независимая RU/KZ приёмка качества.
 C01/realRU-KZ/KZquotes/внешняяприёмка остаются OPEN. Пароли другойкопии/PRcache
 из предыдущего инцидента владелец обрабатывает отдельно; они не объявляются закрытыми.
 

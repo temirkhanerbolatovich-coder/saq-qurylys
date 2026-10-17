@@ -1,5 +1,34 @@
 # GitHub: совместимость публикации с frontend · 17.10.2026
 
+## Текущее состояние после PR №2
+
+Наш проверенный `6c2b8cd` объединён через [PR №2](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/2)
+в main `d95c95daae6ec74404925ac8502f93c2612a0183`. Перед merge main оставался
+`f1ee219`; [PR CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39052856375)
+и [push CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39052786775)
+успешны во всех трёх jobs. После fast-forward дерево main совпало с проверенным.
+Frontend master1.4, прежние сценарии, API и данные сохранены; рабочий сайт обновлён.
+
+При финальном fetch обнаружена новая независимая ветка `codex/ui-updates`,
+`9691bf0489ba1e5d5ecd207306e803e368e6bb8a`, общая база `f1ee219`.
+Она меняет только пять frontend-файлов, но заменяет части действующих workflow:
+diff удаляет `useReviewDraft`, серверную пагинацию processing-очереди и
+подключение `PropertyHistory` из analysis-workspace. Это требует интеграции
+представления с сохранением существующего поведения.
+
+Её [CI39051315128](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39051315128):
+backend success, frontend failure на `npm run format:check`, browser-e2e failure
+на полном браузерном прогоне. Причины отдельных E2E failures ещё не диагностированы.
+`git merge-tree --write-tree HEAD origin/codex/ui-updates` exit1 показал три
+конфликта: `frontend/app/design-system.css`, `frontend/components/analysis-workspace.tsx`,
+`frontend/components/workspace.tsx`. Preview не менял checkout/index/ветки.
+Ветка не изменена и не включена в рабочий сайт. Следующая интеграция должна
+сохранить точную очередь, comparison, drafts/idempotency/history/pagination и
+пройти CI/визуальную проверку; автоматическое разрешение конфликтов целым файлом
+потеряет одну из сторон и не подходит.
+
+## Предыдущая интеграция и очистка
+
 **Продолжение:** после этого аудита пользователь разрешил интеграцию и push.
 В `codex/integrate-frontend-backend` объединены frontend версии, исправлен Next root,
 корневые uploads/ZIP исключены из нового дерева, добавлены CI hygiene/config tests.

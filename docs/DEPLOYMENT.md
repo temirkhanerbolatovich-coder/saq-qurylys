@@ -14,7 +14,11 @@ PostgreSQL volume/рабочая `.env`/storage сохранены. До обн�
 login200/Secure cookie, anonymous registry401, logout204; 12 наблюдений
 dashboard/queue/comparison на375/768/1024/1440, overflow0/pageerrors0.
 После входа браузер выполнял только GET; бизнес-записей smoke не создавал.
+Существующий исходный Asset дополнительно скачан и проверен по SHA-256.
 Новые backend/UI блоки сначала проверены на отдельной БД/storage и loopback портах.
+Этот стенд остановлен; четыре рабочих SAQ сервиса и туннель оставлены включёнными.
+Код опубликован через [PR №2](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/2),
+main `d95c95d`; новая отдельная `codex/ui-updates` пока не включена.
 
 Поднятые сервисы используют новые rules-1.6 и UI; Origin/Secure cookies сохранены
 через прежний tunnel override. Это временная публикация с компьютера, не VPS.
