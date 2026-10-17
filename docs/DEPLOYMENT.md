@@ -1,5 +1,18 @@
 # Публичное размещение SAQ QURYLYS
 
+## Frontend-only обновление PR №3 · 17.10.2026
+
+Установлен проверенный frontend из main4552d44 после зелёного PR/push CI.
+API/worker/DB container IDs/start times, env hash и URL сохранены. Кандидат прошёл
+95browser tests на отдельных DB/storage; прежний image сохранён private rollback
+tag, кандидат назначен также стандартному `saq-qurylys-frontend:latest`.
+Обновлён только frontend прежними compose/dev/tunnel файлами с
+`--no-build --no-deps --wait`; новых миграций/конфигурации нет. HTTPS smoke9страниц
+на4ширинах:36наблюдений без overflow/pageerrors/businesswrites; login/Secure cookie/
+queue/comparison/скачанный Asset SHA/logout PASS. Собственный acceptance остановлен,
+рабочая установка включена. Открытая вкладка получает новую версию при обновлении;
+текущий временный URL остаётся ниже. Старые блоки ниже относятся к прежним срезам.
+
 ## Восстановление и обновление сайта · 17.10.2026
 
 Docker Desktop вновь запущен; восстановлены только существующие SAQ сервисы.

@@ -1,5 +1,37 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## PR №3 опубликован; новый frontend установлен · 17.10.2026
+
+**PUBLISHED / CI SUCCESS / PUBLIC HTTPS VERIFIED.** Проверенный merge
+`dccc281bd281306c670b131708d9e7adaf4fe259` опубликован через
+[PR №3](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/3)
+в main `4552d44d67ba96c4b8a13e9b41e000e83bdbf117`; деревья совпали.
+Входящий9691bf0 — ancestor main, история обеих сторон сохранена.
+[PR CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39055627392)
+и [push CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39055621564)
+success во всех3jobs. Своя объединённая ветка удалена после ancestry check,
+исходная `codex/ui-updates` сохранена; дальнейшую работу начинать от свежего main.
+Повторный [CI на main4552d44](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39056051978)
+также success во всех3jobs. Заключительный update меняет только документацию.
+
+Оба полных локальных browser прогона95passed/2.6m; после визуальных исправлений
+повторный28наблюдений PASS. Перед push352trackedфайла/8известных sensitive literals/
+0совпадений,9Markdown/143ссылки/UTF-8/hygiene/diff-check PASS. Backend/API/данные/
+миграции/dependencies не менялись. Подробности реализации и проверок — ниже.
+
+Обновлён только frontend, прежний image сохранён для отката; кандидат назначен
+также стандартному `saq-qurylys-frontend:latest`. API/worker/DB container IDs и
+start times, env hash и URL остались прежними. HTTPS smoke9страниц×4ширины:
+36наблюдений/0overflow/0pageerrors/0businesswrites; anonymous401/login200/
+Secure cookie/logout204, очередь/comparison и скачанный Asset SHA-256 PASS.
+Адрес прежний: https://casey-medicine-feed-bowl.trycloudflare.com.
+Открытую вкладку с досье не перезагружали; новая версия доступна при обновлении.
+Собственный acceptance остановлен, private volumes сохранены; работают только
+4рабочихSAQсервиса. Evidence/rollback config ignored `.local/ui-integration-20261017`;
+screenshots `output/qa/{ui-updates,working-site-ui-updates}`. README/UX/deployment/
+GitHub audit обновлены. Следующий блок — независимая RU/KZ приёмка и KZ quotes;
+рекламный C01 требует разрешённого источника. Ниже — ход работы до публикации.
+
 ## Интеграция новой frontend-ветки · 17.10.2026
 
 **IMPLEMENTED / LOCAL VERIFIED / PUBLICATION NEXT.** Пользователь «гоу» согласовал безопасную интеграцию и обновление сайта. Codex root; база main `33173a0363bb454b5be48a75d730e1a5d8399930`, вход `9691bf0489ba1e5d5ecd207306e803e368e6bb8a`, ветка `codex/integrate-ui-updates`. Три конфликта разрешены выборочным переносом представления; история обоих родителей сохраняется, чужая ветка не переписывается.

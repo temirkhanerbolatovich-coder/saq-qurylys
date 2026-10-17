@@ -1,5 +1,14 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Опубликованная версия PR №3
+
+Main4552d44 совпал с проверенным dccc281; PR/push CI полностью зелёные.
+После визуальных исправлений полный95browser repeat PASS. На обновлённом
+рабочем HTTPS origin проверены9страниц×4ширины:36наблюдений, overflow0/
+pageerrors0/businesswrites0, вход/Secure cookie/очередь/comparison/Asset SHA/logout
+PASS. Обновлён только frontend; внешний UX/предметный и независимый RU/KZ
+контроль этим не закрываются. Ход проверки и границы доказательств — ниже.
+
 ## Выборочная интеграция новой frontend-ветки · 17.10.2026
 
 Вход9691bf0 объединён с main33173a0 в отдельной ветке; сохранены drafts/history/pagination/map/queue/comparison. Typecheck/ESLint/Prettier/2Nodechecks и Windows/Docker production builds PASS. Первый targeted run19pass/1fail: новый тест ожидал URL синхронно после Link.click; исправлено ожидание. Полный прогон95passed/2.6m на отдельной Linux DB/storage. Новые presentation cases проверяют100/total205, image+URL без дубля, processing states, error/retry без старых значений, card→detail→list с query, полный оригинал/SHA. Это дополнение к настоящим API/worker/UI сценариям.
