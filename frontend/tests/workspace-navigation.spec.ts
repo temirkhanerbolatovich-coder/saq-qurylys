@@ -40,18 +40,31 @@ test("five work zones stay accessible in both views and monitoring belongs to ch
       .getByRole("link", { name: "Сверка", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await expect(page).toHaveURL(/state=OPEN/);
+  await page
+    .getByRole("navigation", { name: "Проверки", exact: true })
+    .getByRole("link", { name: "Сравнение публикаций", exact: true })
+    .click();
+  await expect(mainNav.getByRole("link")).toHaveCount(5);
+  await expect(
+    mainNav.getByRole("link", { name: "Проверка", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    page
+      .getByRole("navigation", { name: "Проверки", exact: true })
+      .getByRole("link", { name: "Сравнение публикаций", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
 });
 
 test("work queues use server totals and processing failure keeps the other actions available", async ({
   page,
 }) => {
   await login(page, { detailed: false });
-  const [summary, ready, failed] = await Promise.all([
+  const [summary, unresolved, failed] = await Promise.all([
     page.request
       .get("/api/v1/dashboard/summary")
       .then((response) => response.json()),
     page.request
-      .get("/api/v1/advertisements?status=READY_FOR_REVIEW&page_size=1")
+      .get("/api/v1/advertisements/review-queue?page_size=1")
       .then((response) => response.json()),
     page.request
       .get("/api/v1/advertisements?status=FAILED&page_size=1")
@@ -63,7 +76,11 @@ test("work queues use server totals and processing failure keeps the other actio
       summary.new_advertisements,
       "/advertisements?status=NEW",
     ],
-    ["Обработанные материалы", ready.total, "/review?status=READY_FOR_REVIEW"],
+    [
+      "Материалы с нерешёнными действиями",
+      unresolved.total,
+      "/review?queue=actions",
+    ],
     ["Ошибки обработки", failed.total, "/review?status=FAILED"],
     ["Сигналы без решения", summary.pending_signals, "/signals?state=DRAFT"],
   ] as const;
@@ -91,7 +108,7 @@ test("work queues use server totals and processing failure keeps the other actio
   ).toBeVisible();
   await expect(
     page.getByRole("link", {
-      name: "Проверить готовые материалы",
+      name: "Открыть очередь решений",
       exact: true,
     }),
   ).toBeVisible();

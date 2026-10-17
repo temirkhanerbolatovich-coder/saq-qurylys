@@ -31,6 +31,7 @@ import {
 import { api, command, date, ApiError } from "@/lib/api";
 import type {
   Advertisement,
+  AdvertisementReviewPage,
   Dashboard,
   Evidence,
   Page,
@@ -153,6 +154,9 @@ function WorkspaceContext({ pathname }: { pathname: string }) {
   } else if (pathname.startsWith("/monitoring")) {
     parent = { href: "/review", label: "Проверка" };
     title = "Сверка находок";
+  } else if (pathname.startsWith("/comparison")) {
+    parent = { href: "/review?queue=actions", label: "Проверка" };
+    title = "Сравнение публикаций";
   }
   return parent ? (
     <nav className="breadcrumbs" aria-label="Путь к странице">
@@ -189,7 +193,9 @@ export function Providers({ children }: { children: ReactNode }) {
   }
   const pathname = usePathname();
   const checking =
-    pathname.startsWith("/review") || pathname.startsWith("/monitoring");
+    pathname.startsWith("/review") ||
+    pathname.startsWith("/monitoring") ||
+    pathname.startsWith("/comparison");
   const router = useRouter();
   async function refresh() {
     try {
@@ -250,7 +256,7 @@ export function Providers({ children }: { children: ReactNode }) {
                 return (
                   <Link
                     key={href}
-                    href={href}
+                    href={href === "/review" ? "/review?queue=actions" : href}
                     className={active ? "active" : ""}
                     aria-current={active ? "page" : undefined}
                   >
@@ -310,10 +316,18 @@ export function Providers({ children }: { children: ReactNode }) {
             {checking && (
               <nav className="checking-nav" aria-label="Проверки">
                 <Link
-                  href="/review"
+                  href="/review?queue=actions"
                   aria-current={pathname === "/review" ? "page" : undefined}
                 >
                   Материалы
+                </Link>
+                <Link
+                  href="/comparison"
+                  aria-current={
+                    pathname.startsWith("/comparison") ? "page" : undefined
+                  }
+                >
+                  Сравнение публикаций
                 </Link>
                 <Link
                   href="/monitoring"
@@ -643,8 +657,8 @@ function DashboardQueues({
 }: {
   summary: ReturnType<typeof useData<Dashboard>>;
 }) {
-  const ready = useData<Page<Advertisement>>(
-    "/advertisements?status=READY_FOR_REVIEW&page_size=1",
+  const unresolved = useData<AdvertisementReviewPage>(
+    "/advertisements/review-queue?page_size=1",
   );
   const failed = useData<Page<Advertisement>>(
     "/advertisements?status=FAILED&page_size=1",
@@ -659,12 +673,12 @@ function DashboardQueues({
       action: "Открыть новые материалы",
     },
     {
-      title: "Обработанные материалы",
-      count: ready.data?.total,
-      resource: ready,
-      note: "Материалы с завершённой обработкой. Решения по гипотезам и основаниям принимаются отдельно.",
-      href: "/review?status=READY_FOR_REVIEW",
-      action: "Проверить готовые материалы",
+      title: "Материалы с нерешёнными действиями",
+      count: unresolved.data?.total,
+      resource: unresolved,
+      note: "Точное число материалов, где осталось проверить гипотезы, привязку, доказательство оплаты или R2. Один материал учитывается один раз.",
+      href: "/review?queue=actions",
+      action: "Открыть очередь решений",
     },
     {
       title: "Ошибки обработки",
@@ -1011,7 +1025,7 @@ export function DashboardView() {
             className="workflow-links"
             aria-label="Основные рабочие сценарии"
           >
-            <Link href="/review">
+            <Link href="/review?queue=actions">
               <span>
                 01 · Проверить факты <ArrowRight size={15} aria-hidden="true" />
               </span>

@@ -168,7 +168,7 @@ def test_allocation_transfer_can_be_reviewed_as_evidence_without_automatic_risk(
     property_id = demo_id('orken')
     before = signed.get(f'/api/v1/properties/{property_id}/risk').json()['summary']
     ad, result, hypothesis, evidence, _ = reviewed_evidence(signed, settings, property_id, text=text)
-    assert result['pipeline_version'] == 'tesseract-rus-kaz-eng+rules-1.5+rapidfuzz-1'
+    assert result['pipeline_version'] == 'tesseract-rus-kaz-eng+rules-1.6+rapidfuzz-1'
     term = next(item for item in result['hypotheses'] if item['id'] == hypothesis['id'])
     assert term['review_status'] == 'CONFIRMED'
     assert term['value']['money'] == {'amount': '500000', 'currency': 'KZT'}

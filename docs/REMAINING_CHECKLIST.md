@@ -3,12 +3,13 @@
 ## Текущее дополнение · 17.10.2026
 
 - [x] Расширить offline оценку ИИ schema2: суммы/валюты/проценты и строгая связь с условием/фрагментом, v1 compatibility/null неразмеченных полей, новый учебный regression с разметкой без генерации из predictions. [Методика/реальные результаты](OCR_EVALUATION.md). Внешняя human/real-positive приёмка остаётся открыта.
-- [ ] Разобрать выявленные v2 regression ошибки отдельным блоком: ложные банковские условия при описательном названии/отрицании, mixed money+percent в одной фразе; отдельно оценить KZ OCR и строгость fragment boundaries. Не менять labels ради зелёных метрик.
+- [x] Исправить измеренные банковские false positives и mixed money+percent: rules-1.6, 24 новых регрессии, v1/v2 text и Linux OCR проверены с прежней разметкой. Значения v2 корректны; это не внешний holdout.
+- [ ] Закрыть KZ strict fragment/binding ошибки: четыре OCR-фрагмента с `--` вместо `—` остаются измеренными ошибками. Raw OCR/labels не подменять ради метрик; нужна независимая человеческая RU/KZ-проверка.
 - [x] Добавить backend [точного сравнения сохранённых текстов](FEATURE_PUBLICATION_COMPARISON.md): explicit original/extraction, архивные версии, provenance/dates/text SHA, bounded line diff, без записи/подмены OCR/вывода о дублях. Результаты — PROJECT_STATUS.
-- [ ] Подключить comparison API к frontend отдельным блоком; автоматические кластеры дублей/семантические изменения и image comparison остаются отдельной работой.
+- [x] Подключить comparison API к frontend: `/comparison`, явный original/extraction, URL/reload/Back, provenance/точный diff и состояния ошибок; отдельный реальный API/worker/UI сценарий проверяет отсутствие записей после выбора. Автоматические кластеры дублей/семантические изменения и image comparison остаются отдельной работой.
 
 - [x] Добавить отдельный backend API [нерешённых действий материала](FEATURE_REVIEW_QUEUE.md): latest hypotheses/match/evidence/R2, исторический PENDING, точные totals до pagination. Реальные проверки — PROJECT_STATUS; старые processing status/риск не меняются.
-- [ ] Подключить новый review-queue API к frontend отдельным согласованным блоком и проверить переходы/ошибки на реальном приложении; наличие backend API само по себе не меняет текущий экран.
+- [x] Подключить review-queue API к frontend/обзору: точный total до pagination, actions/DEMO/URL/drafts, прямые переходы, исторический R2 с отдельным решением и серверными guards. Реальные новые анализы/решения закрывают только соответствующие действия; processing список сохранён.
 
 - [x] Исправить backup для HTML-оригиналов и фактически восстановить свежую копию:24таблицы/553Assets/44READY PDF, private evidence и ограничения — LOCAL_BACKUP/PROJECT_STATUS.
 - [x] Добавить readonly диагностику компьютера без секретов/внешнихзапросов:15PASS/1ожидаемый блокер локальногоHTTPвхода при активномsharing. Это не второйПК/полныйофлайнпоказ.
