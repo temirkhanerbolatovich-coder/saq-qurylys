@@ -1,5 +1,66 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Сайт восстановлен; rules-1.6 и рабочие review/comparison UI · 17.10.2026
+
+**IMPLEMENTED / LOCAL RUNTIME VERIFIED / PUBLICATION NEXT.** Пользователь
+согласовал восстановление сайта и следующие backend/UI блоки. Ветка
+`codex/restore-site-ai-review-tools` от main f1ee219; Codex root отвечает за
+runtime/интеграцию, помощники — независимые extraction/queue/comparison области.
+Сохранены frontend master1.4, API0.13/51operations, роли/риск/исторические решения;
+новых dependencies/миграций нет. Next dev создал локальные frontend/AGENTS.md;
+проверены поставленные Next Link/searchParams docs, инструкция сохраняется в Git.
+
+**Реализовано:** rules-1.6 исправляет банковские false positives от общего отрицания
+названия и сохраняет связанные сумму/процент одной фразы; новые extraction остаются
+PENDING, старые не пересчитываются. `/review?queue=actions` и Dashboard используют
+точные серверные totals; processing режим сохранён. Actions ведут к текущей версии,
+исторический R2 имеет собственные target/factor/evidence/revision/idempotency/draft.
+`/comparison` явно выбирает две публикации или extraction версии, показывает
+bounded diff/исходники/даты/SHA; после выбора только GET, без бизнес-записей.
+
+**Рабочий сайт:** восстановлен Docker Linux с существующим SAQ volume;
+до startup/migrations получена согласованная копия и isolated restore PASS:
+24 таблицы/1936 audit events/553 Assets/66signals/44READY PDF. Перед финальным
+обновлением создан дополнительный backup. Рабочая env/БД/storage не заменялись.
+Сначала поднят точный published f1ee219 snapshot, затем проверенные новые образы.
+URL https://casey-medicine-feed-bowl.trycloudflare.com, HTTPS origin/Secure cookie
+сохранены. Chromium smoke:12наблюдений dashboard/queue/comparison375/768/1024/1440,
+overflow0/pageerror0, anonymous401/login200/logout204, business mutations0.
+
+**Проверки:** полный backend из backend/ —809passed/18WindowsLinuxPDFskips/377.33s;
+первая команда из корня дала808pass/18skip/1fail из-за child module cwd, отдельный
+повтор и полный правильный запуск PASS. Ruff app/tests/alembic check/format86files
+PASS. Tooling unittest73tests/72pass/1Windows symlink skip PASS через venv;
+system Python без зависимостей ранее дал import errors и не принят за результат.
+Frontend typecheck/lint/format, production Docker build/start,2Nodechecks PASS.
+На отдельной acceptance БД все77старых сценариев прошли; после исправления двух
+тестовых ошибок все16новых presentation/live сценариев PASS. Финальная проверка
+metadata/navigation layout —8passed/19.5s; удалённый CI ещё не выполнялся.
+
+**ИИ качество:**172целевыхpytest/44evaluatorunittest PASS; frozen labels unchanged.
+Offline Linux OCR v1/v2 безnetwork/DB: payment16/0/0/16 и8/0/0/4, top3 24/24 и10/10;
+v2money11/0/0,percent4/0/0,value10/0/0,strictbinding6/4/4 из-за четырёх KZquotes.
+CER2.49%/1.69%; оба acceptance=false. Это изученный synthetic regression, не
+real-positive holdout/человеческая приёмка. Максимум одна сумма+один процент на
+фразу; произвольные несколько платежей и KZ OCR нормализация не заявляются.
+
+**Стенд/диагностика:** отдельный Compose `saq-acceptance-20261017-d68a0f` с портами
+3199/8199/55629 и private named volumes. Первоначальные internal network/кириллический
+bind не публиковали Windowsports/исказили path; заменены только test network/storage.
+После замены storage создана новая согласованная testDB/storage pair: старый seed
+указывал на прежние файлы (75pass/2fail), рабочая система не затрагивалась.
+Все private logs/config/results лежат ignored `.local/site-refresh-20261017`;
+старые тестовые тома/backup не удалялись. Перед завершением стенд штатно остановить.
+
+**Документация:** README/CHANGELOG, architecture, AI/OCR audit, обе feature docs,
+design/UX/components/plan/audit, deployment/checklist и этот статус синхронизируются.
+CI включает write-smoke flag только одноразовому browser job; тесты требуютloopback.
+Значимых новых архитектурных решений нет: используются ADR012/013 и прежний runtime.
+Следующий шаг — финальный review/secret/link/hygiene checks, commit/push/PR и зелёный
+LinuxCI перед main; затем остановить только свой acceptance и проверить рабочий URL.
+C01/realRU-KZ/KZquotes/внешняяприёмка остаются OPEN. Пароли другойкопии/PRcache
+из предыдущего инцидента владелец обрабатывает отдельно; они не объявляются закрытыми.
+
 ## Очистка GitHub завершена в доступном объёме · 17.10.2026
 
 **PUBLISHED / MAIN SYNCHRONIZED / CI VERIFIED.** Опубликованы очищенный main

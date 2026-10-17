@@ -16,7 +16,7 @@ from app.ocr import AnalysisError, recognize
 from app.storage import read_asset, save_text
 
 logger = logging.getLogger(__name__)
-PIPELINE_VERSION = 'tesseract-rus-kaz-eng+rules-1.5+rapidfuzz-1'
+PIPELINE_VERSION = 'tesseract-rus-kaz-eng+rules-1.6+rapidfuzz-1'
 
 
 def create_extraction(db, ad, asset, text, words=None, *, job_id=None, parent=None, original_ocr=None):
@@ -29,7 +29,7 @@ def create_extraction(db, ad, asset, text, words=None, *, job_id=None, parent=No
         advertisement_id=ad.id,
         source_asset_id=asset.id,
         parent_extraction_id=parent,
-        pipeline_version=PIPELINE_VERSION if not parent else 'manual-transcription+rules-1.5+rapidfuzz-1',
+        pipeline_version=PIPELINE_VERSION if not parent else 'manual-transcription+rules-1.6+rapidfuzz-1',
         original_ocr_text=original_ocr,
         analysis_text=text,
         hypotheses=hypotheses,

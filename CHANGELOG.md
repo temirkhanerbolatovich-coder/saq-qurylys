@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-17 · Review actions, publication comparison and extraction fixes
+
+- Connected exact unresolved material actions to the review UI and dashboard, with independent processing filters and a historical R2 decision form preserving target, evidence, revisions and retry keys.
+- Added explicit original/OCR-version text comparison with server pagination, URL recovery, provenance and bounded read-only diff.
+- New rules-1.6 rejects measured RU/KZ bank-program false positives and retains a linked amount plus percentage in a payment clause. Original fragments, pending reviews and historical versions remain unchanged.
+- Restored local Docker/temporary HTTPS access after a verified database and storage backup. A temporary tunnel requires the computer and Docker to remain running.
+
 ## 2026-10-17 · Integrated frontend and repository structure
 
 - Integrated the uploaded light workspace, object search/dashboard analytics, map guidance/selection and signal review presentation into `frontend/`, preserving current APIs, drafts, server pagination, roles and immutable history.

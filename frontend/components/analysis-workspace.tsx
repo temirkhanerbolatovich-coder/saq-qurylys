@@ -23,6 +23,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { PropertyHistory } from "@/components/property-history";
+import { RemainingReviewQueue } from "@/components/review-queue";
 import {
   Auth,
   Demo,
@@ -169,6 +170,58 @@ export function FileUploadView() {
 
 export function ReviewView() {
   const params = useSearchParams();
+  const actionQueue = params.get("queue") === "actions";
+  function queueUrl(actions: boolean) {
+    const next = new URLSearchParams(params);
+    for (const name of ["page", "action", "is_demo", "review_section"])
+      next.delete(name);
+    if (actions) {
+      next.set("queue", "actions");
+      next.delete("status");
+    } else next.delete("queue");
+    return `/review?${next}`;
+  }
+  return (
+    <>
+      <PageTitle
+        eyebrow="РУЧНАЯ ПРОВЕРКА"
+        title="Оригинал → гипотезы → решение"
+        description="OCR и сходство названий помогают найти факты. Только аналитик подтверждает привязку, доказательство и фактор риска."
+        action={false}
+      />
+      <nav className="review-actions" aria-label="Виды очереди проверки">
+        <Button asChild variant={actionQueue ? "default" : "outline"}>
+          <Link
+            href={queueUrl(true)}
+            aria-current={actionQueue ? "page" : undefined}
+          >
+            Нерешённые действия
+          </Link>
+        </Button>
+        <Button asChild variant={actionQueue ? "outline" : "default"}>
+          <Link
+            href={queueUrl(false)}
+            aria-current={!actionQueue ? "page" : undefined}
+          >
+            Состояния обработки
+          </Link>
+        </Button>
+      </nav>
+      {actionQueue ? (
+        <RemainingReviewQueue
+          renderMaterial={(id, onChange) => (
+            <ReviewMaterial key={id} id={id} onChange={onChange} />
+          )}
+        />
+      ) : (
+        <ProcessingReviewQueue />
+      )}
+    </>
+  );
+}
+
+function ProcessingReviewQueue() {
+  const params = useSearchParams();
   const router = useRouter();
   const statuses = [
     "NEW",
@@ -210,12 +263,6 @@ export function ReviewView() {
   }
   return (
     <>
-      <PageTitle
-        eyebrow="РУЧНАЯ ПРОВЕРКА"
-        title="Оригинал → гипотезы → решение"
-        description="OCR и сходство названий помогают найти факты. Только аналитик подтверждает привязку, доказательство и фактор риска."
-        action={false}
-      />
       <section
         className="panel padded review-queue"
         aria-label="Очередь проверки"
@@ -349,6 +396,8 @@ function ReviewMaterial({
   id: string;
   onChange: () => void;
 }) {
+  const params = useSearchParams();
+  const router = useRouter();
   const { user } = useContext(Auth);
   const writable = user?.role === "analyst";
   const adData = useData<Advertisement>(`/advertisements/${id}`);
@@ -384,7 +433,19 @@ function ReviewMaterial({
   );
   const { version, propertyId, matchReason, transcriptionReason } =
     draft.values;
-  const setVersion = (value: string) => draft.update({ version: value });
+  const requestedVersion =
+    params.get("queue") === "actions"
+      ? params.get("review_extraction_id")
+      : null;
+  const setVersion = (value: string) => {
+    draft.update({ version: value });
+    if (params.get("queue") === "actions") {
+      const next = new URLSearchParams(params);
+      next.set("review_extraction_id", value);
+      next.delete("review_section");
+      router.replace(`/review?${next}`, { scroll: false });
+    }
+  };
   const setPropertyId = (value: string) => draft.update({ propertyId: value });
   const setMatchReason = (value: string) =>
     draft.update({ matchReason: value });
@@ -394,7 +455,8 @@ function ReviewMaterial({
   const originalPanel = useRef<HTMLElement>(null);
   const ad = adData.data;
   const extraction =
-    extractions.data?.find((e) => e.id === version) || extractions.data?.[0];
+    extractions.data?.find((e) => e.id === (requestedVersion || version)) ||
+    extractions.data?.[0];
   const transcription =
     draft.values.transcriptionEditing &&
     draft.values.transcriptionExtractionId === extraction?.id
@@ -1017,6 +1079,7 @@ function ReviewMaterial({
           extraction={extraction}
           writable={writable}
           onError={setError}
+          onChange={onChange}
         />
       )}
     </>
@@ -1270,11 +1333,13 @@ function PaymentRisk({
   extraction,
   writable,
   onError,
+  onChange,
 }: {
   ad: Advertisement;
   extraction: Extraction;
   writable: boolean;
   onError: (s: string) => void;
+  onChange: () => void;
 }) {
   const { user } = useContext(Auth);
   const property = useData<PropertyDetail>(
@@ -1334,6 +1399,7 @@ function PaymentRisk({
     try {
       await callback();
       property.reload();
+      onChange();
     } catch (e) {
       onError((e as Error).message);
     } finally {

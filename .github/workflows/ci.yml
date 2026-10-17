@@ -123,6 +123,8 @@ jobs:
           echo "Synthetic RU/KZ OCR verified; browser fixtures created."
       - name: Run browser E2E against the local MVP
         working-directory: frontend
+        env:
+          SAQ_ISOLATED_ACCEPTANCE: "1"
         run: npm run test:e2e
       - name: Stop the disposable local MVP
         if: always()

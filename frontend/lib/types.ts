@@ -57,6 +57,29 @@ export type Page<T> = {
   page_size: number;
   total: number;
 };
+export type ReviewAction =
+  | "REVIEW_HYPOTHESES"
+  | "REVIEW_MATCH"
+  | "CREATE_PAYMENT_EVIDENCE"
+  | "REVIEW_R2";
+export type AdvertisementReviewItem = {
+  advertisement: Advertisement;
+  advertisement_id: string;
+  extraction_id: string;
+  extraction_revision: number;
+  actions: ReviewAction[];
+  pending_hypothesis_ids: string[];
+  needs_property_match: boolean;
+  payment_hypothesis_ids: string[];
+  r2_reviews: {
+    property_id: string;
+    factor_id: string | null;
+    evidence_ids: string[];
+  }[];
+};
+export type AdvertisementReviewPage = Page<AdvertisementReviewItem> & {
+  action_totals: Record<ReviewAction, number>;
+};
 export type AuditEvent = {
   id: string;
   actor_id: string;

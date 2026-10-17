@@ -2,6 +2,13 @@
 
 [Правила работы через ветки и PR, расположение исходников и проверки](CONTRIBUTING.md).
 
+17.10.2026: подключены [точные нерешённые действия](docs/FEATURE_REVIEW_QUEUE.md)
+и [сравнение оригиналов/версий OCR](docs/FEATURE_PUBLICATION_COMPARISON.md).
+«Проверка» открывает очередь решений; прежние состояния обработки доступны
+отдельным режимом. Новые анализы `rules-1.6` исправляют изученные банковские
+false positives и составные условия сумма+процент. Риск, роли и исторические
+решения не меняются; KZ OCR strict quotes и внешняя приёмка остаются открыты.
+
 17.10.2026: интеграция опубликована в main через [PR1](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/1), mergebdab80a. [ПолныйCI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39043383017) зелёный:803backend/77browser/73tooltests, frontend checks/build имиграции. Прежние backend/AI блоки и согласованные frontend изменения включены; серверный deploy не выполнялся.
 
 17.10.2026: согласована интеграция загруженного frontend вместе с локальными backend/AI изменениями. Исходники интерфейса находятся только в `frontend/`: объединены светлая оболочка, поиск/обзор, карта и сигналы с текущими черновиками, пагинацией и API. Исправлена граница сборки Next/standalone start, CI проверяет отсутствие приватных artifacts/архивов и ошибочных корневых uploads. [Решение и ограничения](docs/decisions/ADR-014-frontend-build-root-and-source-hygiene.md), фактические проверки/публикация — [PROJECT_STATUS](PROJECT_STATUS.md). Старый ZIP исключён из текущего дерева; раскрытые в его истории доступы должен заменить владелец той копии.
@@ -176,7 +183,7 @@ Next.js/TypeScript/Tailwind, FastAPI/Pydantic/SQLAlchemy/Alembic, PostgreSQL, л
 История main очищена и опубликована; [старые клоны требуют перехода](CONTRIBUTING.md).
 Отзыв чужих доступов и обработка старых PR/cache refs остаются открытыми.
 
-`contracts/openapi.yaml` — контракт **0.11.0-mvp: 49 операций, 48 полностью реализованы и 1 частично**. Частичен review отдельного LegalBasis: VERIFIED_ABSENT намеренно не подменяет составной R1. Информационный Primeminister.kz import и операторские версии PDF КЖК реализованы с ограничениями; коммерческий рекламный C-01 остаётся открытым функциональным требованием. [Каталог источников](docs/DATA_SOURCES.md) не означает подключение закрытых реестров. Лимит chunked-body действует в API и proxy; production rate limiting, quotas/retention и SSO остаются открыты. Точные изменения и границы — в документах функций и PROJECT_STATUS.
+`contracts/openapi.yaml` — контракт **0.13.0-mvp: 51 операция, 50 полностью реализованы и 1 частично**. Частичен review отдельного LegalBasis: VERIFIED_ABSENT намеренно не подменяет составной R1. Информационный Primeminister.kz import и операторские версии PDF КЖК реализованы с ограничениями; коммерческий рекламный C-01 остаётся открытым функциональным требованием. [Каталог источников](docs/DATA_SOURCES.md) не означает подключение закрытых реестров. Лимит chunked-body действует в API и proxy; production rate limiting, quotas/retention и SSO остаются открыты. Точные изменения и границы — в документах функций и PROJECT_STATUS.
 
 API и worker используют одну Docker-сборку и общий storage; OCR выполняется вне HTTP/SQL-транзакции. Lease и claim token защищают от позднего worker. Пересмотр используемой гипотезы снимает зависимый CONFIRMED R2; изменение расшифровки/привязки снимает зависимые R2/R3 в PENDING. Новая автоматическая версия сама не меняет принятые решения.
 

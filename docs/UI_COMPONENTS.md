@@ -1,5 +1,13 @@
 # SAQ QURYLYS — каталог компонентов
 
+17.10.2026: `RemainingReviewQueue` / `QueueR2Decision` в review-queue.tsx
+переиспользуют useData/useReviewDraft и существующие команды. ReviewView
+переключает action queue и старый processing список; DashboardQueues использует
+review total. `PublicationComparisonView` / SourcePicker / ComparisonResult
+в publication-comparison.tsx обслуживают `/comparison`: серверный каталог,
+явные версии, metadata и bounded diff. Составные компоненты не заменяют
+общие primitives и не считают риск на клиенте.
+
 Интеграция17.10: существующие Providers/Workspace получили GlobalSearch и светлую
 оболочку без второй навигации; DashboardView использует прежние очереди и новые
 analytics panels с backend totals. PropertyMap сохраняет Leaflet client boundary,

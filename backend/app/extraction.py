@@ -35,6 +35,9 @@ PROJECT_CONSTRUCTION = re.compile(
 )
 COMPLETED = re.compile(r'(?:дом\s+)?(?:введ[её]н|готовые\s+квартиры)|пайдалануға\s+берілген', re.I)
 NAME_PREFIX = re.compile(r'(?:\bЖК\b|\bТК\b|жилой\s+комплекс|тұрғын\s+үй\s+кешені)\s*[«"“]?([^\n;,.!?»"”]{2,70})', re.I)
+UNNAMED_PROJECT = re.compile(
+    r'^(?:не\s+(?:предлага\w*|указан\w*|назван\w*)|ұсынылмайды|көрсетілмеген|аталмаған|жоқ)\b', re.I
+)
 CLAUSE_BOUNDARY = re.compile(
     r'[.!?;](?=\s|$)|\n+|,[ \t]*(?=(?:(?:а\s+|но\s+)?(?:сейчас|теперь|сегодня|енді|қазір)|'
     r'(?:но\s+)?(?:внесите|оплатите|перечислите|переведите))\b)',
@@ -121,6 +124,11 @@ def number_value(amount: str) -> Decimal:
     return Decimal(re.sub(r'\s', '', amount).replace(',', '.'))
 
 
+def project_name_matches(text: str) -> list[re.Match]:
+    # A generic absence statement after the prefix is not an advertised project name.
+    return [match for match in NAME_PREFIX.finditer(text) if not UNNAMED_PROJECT.match(match[1].lstrip())]
+
+
 def mortgage_information(text: str) -> bool:
     """Bank-loan information without a named project is not a developer's demand.
 
@@ -131,7 +139,7 @@ def mortgage_information(text: str) -> bool:
         re.search(r'\bбанк\w*', text, re.I)
         and re.search(r'ипотек\w*|\bза[её]м\w*|\bзайм\w*|\bнесие\w*|\bкредит\w*', text, re.I)
         and re.search(r'\bпрограмм\w*|\bбағдарлама\w*', text, re.I)
-        and not NAME_PREFIX.search(text)
+        and not project_name_matches(text)
         # Sector statistics ("строительство") alone do not identify a marketed project.
         and not PROJECT_CONSTRUCTION.search(text)
     )
@@ -232,7 +240,7 @@ def extract(
             }
         )
 
-    names = list(NAME_PREFIX.finditer(text))
+    names = project_name_matches(text)
     for name in names:
         content = re.split(r'\s+(?:платн|брон|депозит|квартир|старт|сатылым|бастапқы)', name[1], flags=re.I)[0].strip()
         if content:
@@ -276,17 +284,23 @@ def extract(
         content = text[start:end]
         terms = payment_terms(content, mortgage_context=mortgage_context) if not WARNING.search(text) else []
         if terms:
-            term, nearest = terms[0]
-            required_start = min(term.start(), nearest.start()) if nearest is not None else term.start()
-            required_end = max(term.end(), nearest.end()) if nearest is not None else term.end()
+            # Keep both types only when each is already associated with a positive payment term.
+            money = next(
+                (amount for _, amount in terms if amount is not None and 'currency' in amount.re.groupindex), None
+            )
+            percent = next(
+                (amount for _, amount in terms if amount is not None and 'currency' not in amount.re.groupindex), None
+            )
+            required_spans = [term for term, _ in terms] + [amount for amount in (money, percent) if amount is not None]
+            required_start = min(match.start() for match in required_spans)
+            required_end = max(match.end() for match in required_spans)
             quote_start = max(0, required_start - 120) if len(content) > 2000 else 0
             quote_end = min(len(content), quote_start + 2000)
             value = {'text': content[quote_start:quote_end]}
-            if nearest is not None:
-                if 'currency' in nearest.re.groupindex:
-                    value['money'] = money_value(nearest)
-                else:
-                    value['percent'] = float(number_value(nearest['amount']))
+            if money is not None:
+                value['money'] = money_value(money)
+            if percent is not None:
+                value['percent'] = float(number_value(percent['amount']))
             if required_end <= quote_end:
                 add('PAYMENT_TERM', start + quote_start, start + quote_end, value)
             else:

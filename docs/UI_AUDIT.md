@@ -1,5 +1,29 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Очередь решений и сравнение · 17.10.2026
+
+Реальная отдельная Linux Compose установка на loopback3199 с новой БД/storage:
+все 77 прежних сценариев прошли в полном прогоне. Из новых проверок сначала
+91passed/2failed: неоднозначный locator двух live-status в presentation тесте
+и устаревшая revision в setup исторического R2. Исправлены только тестовые
+ожидания/получение актуальной revision; guards приложения не ослаблялись.
+Повтор всех 16 новых сценариев — PASS, включая три настоящих API/worker/UI
+прохода и 13 presentation сценариев. Не смешивать эти виды доказательств.
+
+Новая очередь проверена на375/768/1024/1440: total/actions, фильтры/URL/Back/reload,
+drafts, focus, delayed/error/empty, exact historical target, 409/422, неопределённый
+retry с тем же ключом и отдельный PENDING→решение. Comparison: те же ширины,
+явные архивные версии, быстрый выбор сторон, GET-only, текстовый HTML, 404/422/413,
+viewer/keyboard и отсутствие page overflow. Просмотрены screenshots375/1440
+обеих страниц; исправлена наследуемая dl-grid ширина provenance локальным
+`.review-provenance { display:block }`, добавлена проверка ширины каждой строки.
+
+Публичный HTTPS smoke на рабочем приложении: 12 наблюдений трёх страниц на четырёх
+ширинах, overflow0/pageerrors0, API writes после login0; старые материалы не менялись.
+Артефакты остаются ignored `output/qa/{review-queue,publication-comparison,working-site}`.
+Typecheck/ESLint/Prettier/production build PASS. Внешняя UX/предметная приёмка,
+человеческий KZ holdout и рольовая production-аутентификация остаются отдельно.
+
 ## Интеграция поставленного frontend · 17.10.2026
 
 **Проверено и опубликовано:** после финальных исправлений целевой native suite —

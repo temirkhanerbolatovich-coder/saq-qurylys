@@ -1,5 +1,13 @@
 # SAQ QURYLYS — архитектура MVP
 
+17.10.2026: интерфейс подключает существующие review-queue и comparison API;
+processing список сохранён отдельным режимом. Dashboard использует точный
+material total из очереди, исторический R2 отправляет прежние команды для
+своего property/factor/evidence. `/comparison` читает только явно выбранные
+сохранённые тексты/версии. Новый pipeline `rules-1.6` исправляет изученные банковские
+false positives и составные условия сумма+процент; старые extraction/решения
+не пересчитываются. Контракт 0.13, БД/миграции/формула риска не меняются.
+
 17.10.2026, контракт0.13.0-mvp: [сравнение сохранённых текстов](FEATURE_PUBLICATION_COMPARISON.md), [ADR-013](decisions/ADR-013-bounded-saved-text-comparison.md). GET advertisements/compare читает две публикации и их original_text либо explicit extraction.analysis_text с проверкой принадлежности исходника. Stdlib bounded line diff100000символов/1000строк, provenance/dates/text SHA; нет внешних вызовов, записей, миграций, новых зависимостей или автоматической идентичности/риска. Предыдущие API и frontend сохраняются.
 
 17.10.2026, контракт 0.12.0-mvp: [вычисляемая очередь материала](FEATURE_REVIEW_QUEUE.md), [ADR-012](decisions/ADR-012-derived-material-review-work.md). GET advertisements/review-queue пакетно читает последние extraction, matches, evidence, R2 и audit timestamps, затем фильтрует действия и считает total до pagination. Assets загружаются только для страницы. Новых таблиц/миграций/внешних вызовов нет; processing statuses, risk, review-команды, signals/PDF не изменяются. Это отдельный backend API, frontend ещё не подключён.
