@@ -63,7 +63,7 @@ test("work queues use server totals and processing failure keeps the other actio
       summary.new_advertisements,
       "/advertisements?status=NEW",
     ],
-    ["Ожидают проверки", ready.total, "/review?status=READY_FOR_REVIEW"],
+    ["Обработанные материалы", ready.total, "/review?status=READY_FOR_REVIEW"],
     ["Ошибки обработки", failed.total, "/review?status=FAILED"],
     ["Сигналы без решения", summary.pending_signals, "/signals?state=DRAFT"],
   ] as const;

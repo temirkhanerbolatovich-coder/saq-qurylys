@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Property } from "@/lib/types";
 import { mapConfig } from "@/lib/map-config";
 import { Button } from "@/components/ui/button";
+import { statusLabel } from "@/lib/status-labels";
 import { propertyDossierUrl } from "@/lib/presentation";
 import "leaflet/dist/leaflet.css";
 
@@ -34,6 +36,8 @@ export function PropertyMap({
 }) {
   const container = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement>(null);
+  const markerButtons = useRef(new Map<string, HTMLElement>());
+  const currentSelection = useRef(selectedId);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const config = mapConfig();
@@ -103,11 +107,22 @@ export function PropertyMap({
           }).addTo(map);
           const select = () => {
             onSelect(row.id);
+            for (const [id, element] of markerButtons.current) {
+              const isSelected = id === row.id;
+              element.classList.toggle("is-selected", isSelected);
+              element.setAttribute("aria-pressed", String(isSelected));
+            }
             card.current?.focus();
           };
           marker.on("click", select);
           const button = marker.getElement();
           button?.setAttribute("aria-label", marker.options.title!);
+          if (button) {
+            const isSelected = currentSelection.current === row.id;
+            button.classList.toggle("is-selected", isSelected);
+            button.setAttribute("aria-pressed", String(isSelected));
+            markerButtons.current.set(row.id, button);
+          }
           button?.addEventListener("keydown", (event) => {
             if (event.key === " " || event.key === "Enter") {
               event.preventDefault();
@@ -131,33 +146,58 @@ export function PropertyMap({
       clearTimeout(timer);
       observer?.disconnect();
       map?.remove();
+      markerButtons.current.clear();
     };
   }, [rows, attempt, onSelect]);
 
   useEffect(() => {
+    currentSelection.current = selectedId;
+    for (const [id, element] of markerButtons.current) {
+      const isSelected = id === selectedId;
+      element.classList.toggle("is-selected", isSelected);
+      element.setAttribute("aria-pressed", String(isSelected));
+    }
     if (selectedId) card.current?.focus();
   }, [selectedId]);
 
   if (!rows.length) return null;
   return (
     <section className="property-map-section" aria-label="Карта объектов">
-      <p className="map-note">
-        DEMO-координаты условные и не указывают на реальные проекты. Зелёная
-        зона не подтверждает безопасность.
-      </p>
-      <div className="map-legend" aria-label="Легенда карты">
-        {Object.entries(zones).map(([zone, label]) => (
-          <span className={`zone ${zone.toLowerCase()}`} key={zone}>
-            <span className="zone-dot" />
-            {label}
-          </span>
-        ))}
-        <span>Число на метке — балл проверки</span>
+      <header className="map-section-heading">
+        <div>
+          <p className="eyebrow">КАРТА ТЕКУЩЕЙ СТРАНИЦЫ</p>
+          <h2 id="property-map-title">Выберите объект</h2>
+          <p>
+            Метка открывает краткие сведения. Полные документы и решения
+            находятся в досье объекта.
+          </p>
+        </div>
+        <div
+          className="map-count"
+          aria-label={`${located.length} из ${rows.length} объектов показаны на карте`}
+        >
+          <strong>{located.length}</strong>
+          <span>из {rows.length} на карте</span>
+        </div>
+      </header>
+      <div className="map-context">
+        <p className="map-note">
+          DEMO-координаты условные и не указывают на реальные проекты. Зелёная
+          зона не подтверждает безопасность.
+        </p>
+        <div className="map-legend" aria-label="Легенда карты">
+          {Object.entries(zones).map(([zone, label]) => (
+            <span className={`zone ${zone.toLowerCase()}`} key={zone}>
+              <span className="zone-dot" aria-hidden="true" />
+              {label}
+            </span>
+          ))}
+          <span>Число на метке — балл проверки</span>
+        </div>
       </div>
       <p className="map-note">
-        На карте: {located.length} из {rows.length} объектов текущей страницы.
-        Без пригодных координат: {rows.length - located.length}; они остаются в
-        списке ниже.
+        Без пригодных координат: {rows.length - located.length}. Такие объекты
+        остаются в списке ниже.
       </p>
       {!config ? (
         <p role="status" className="notice">
@@ -214,35 +254,65 @@ export function PropertyMap({
             >
               {selected ? (
                 <>
-                  <h2>{selected.name}</h2>
-                  {selected.is_demo && <span className="demo-badge">DEMO</span>}
-                  <p>
-                    {selected.city} · {selected.address}
+                  <div className="map-card-heading">
+                    <div>
+                      <p className="eyebrow">ВЫБРАННЫЙ ОБЪЕКТ</p>
+                      <h3>{selected.name}</h3>
+                    </div>
+                    {selected.is_demo && (
+                      <span className="demo-badge">DEMO</span>
+                    )}
+                  </div>
+                  <p className="map-card-location">
+                    <MapPin size={16} aria-hidden="true" />
+                    <span>
+                      {selected.city} · {selected.address}
+                    </span>
                   </p>
-                  <p className={`zone ${selected.risk.zone.toLowerCase()}`}>
-                    <span className="zone-dot" />
-                    <strong>{selected.risk.score}</strong>{" "}
-                    {zones[selected.risk.zone]}
-                  </p>
-                  <p>
-                    Подтверждённые факторы:{" "}
-                    {selected.risk.confirmed_codes.join(" · ") || "Нет"}
-                  </p>
-                  <Link
-                    className="text-link"
-                    href={propertyDossierUrl(selected.id, registryQuery)}
-                  >
-                    Открыть карточку
-                  </Link>
+                  <dl className="map-card-facts">
+                    <div>
+                      <dt>Приоритет проверки</dt>
+                      <dd>
+                        <span
+                          className={`zone ${selected.risk.zone.toLowerCase()}`}
+                        >
+                          <span className="zone-dot" aria-hidden="true" />
+                          <strong>{selected.risk.score}</strong>{" "}
+                          {zones[selected.risk.zone]}
+                        </span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Правовое основание</dt>
+                      <dd>{statusLabel(selected.legal_verification_status)}</dd>
+                    </div>
+                  </dl>
+                  <div className="map-card-reasons">
+                    <span>Подтверждённые причины</span>
+                    <strong>
+                      {selected.risk.confirmed_codes.join(" · ") ||
+                        "Нет подтверждённых"}
+                    </strong>
+                  </div>
+                  <Button asChild className="map-card-action">
+                    <Link href={propertyDossierUrl(selected.id, registryQuery)}>
+                      Открыть карточку
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </Link>
+                  </Button>
                 </>
               ) : (
-                <>
-                  <h2>Выберите объект на карте</h2>
+                <div className="map-card-empty">
+                  <span className="map-card-pin" aria-hidden="true">
+                    <MapPin size={22} />
+                  </span>
+                  <p className="eyebrow">СЛЕДУЮЩИЙ ШАГ</p>
+                  <h3>Выберите объект на карте</h3>
                   <p>
                     Нажмите метку или выберите её клавишей Tab и нажмите Enter.
-                    Сведения и причины проверки откроются здесь.
+                    Здесь появятся приоритет, правовой статус и переход в досье.
                   </p>
-                </>
+                </div>
               )}
             </div>
           </div>

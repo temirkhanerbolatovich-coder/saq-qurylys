@@ -1,5 +1,13 @@
 # SAQ QURYLYS — каталог компонентов
 
+Интеграция17.10: существующие Providers/Workspace получили GlobalSearch и светлую
+оболочку без второй навигации; DashboardView использует прежние очереди и новые
+analytics panels с backend totals. PropertyMap сохраняет Leaflet client boundary,
+controlled selection и таблицу, добавляет instruction/coverage/selected facts.
+SignalsView/SignalCard переиспользуют Button/Notice/LoadState/Pagination/RiskSummary
+и native details: page-local search не заменяет серверные фильтры. Новых UI или
+state dependencies нет. Дизайн master1.4, результаты проверок — UI_AUDIT/PROJECT_STATUS.
+
 Дополнение S0–S2, 17.10.2026: `Providers` в workspace.tsx содержит постоянные пять зон, контекстный `WorkspaceContext` и локальную навигацию «Проверки». `DashboardHeading`/`DashboardQueues` используют существующие PageTitle/Link/LoadState и реальные summary/list API. `ReviewView` в analysis-workspace.tsx переиспользует Pagination/LoadState/native details/select; queue и selected material независимы. `useReviewDraft`/`clearReviewDrafts` в lib/use-review-draft.ts — общий локальный draft для четырёх review-форм, TTL при восстановлении, память при storage failure и auth cleanup. Это не API/persistence серверных решений. Стили `.analyst-workspace`, `.action-queues`, `.review-queue-*`, `.review-provenance` используют прежние tokens. Новых dependencies нет.
 
 Дополнение17.10.2026: `DossierProgress` внутри workspace использует PropertyDetail и native dl/links; `UrlImportView` в url-import.tsx переиспользует Auth/Notice/PageTitle/Button и job API; `OpenRegistry` в open-registry.tsx переиспользует useData/LoadState/upload, native details/select и тот же Button. Формы версии и поиска взаимоисключены при busy. Новый UI-framework, modal или библиотека состояний не добавлены. Browser presentation-проверки — `open-sources.spec.ts`, runtime — PROJECT_STATUS.

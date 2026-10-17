@@ -15,5 +15,6 @@ test-results/
 .ruff_cache/
 coverage/
 .local/
+/*.zip
 *.tsbuildinfo
 frontend/next-env.d.ts

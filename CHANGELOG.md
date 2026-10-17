@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-17 · Integrated frontend and repository structure
+
+- Integrated the uploaded light workspace, object search/dashboard analytics, map guidance/selection and signal review presentation into `frontend/`, preserving current APIs, drafts, server pagination, roles and immutable history.
+- Removed55 misplaced root uploads/archive paths from the current tree; preserved source history and excluded runtime/private artifacts. Added CI repository hygiene checks; disclosed archive credentials require rotation by their runtime owner.
+- Pinned the Next tracing/Turbopack root to frontend and verified the standalone build/start path; added a real Next-config regression and responsive browser checks.
+
 ## 2026-10-17 · Offline AI field evaluation
 
 - Added shared schema2 amount/currency/percent and strict source-binding scores to OCR and saved-publication evaluators; schema1 inputs remain supported with unannotated field scores.

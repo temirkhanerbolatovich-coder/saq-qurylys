@@ -1,5 +1,32 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Интеграция поставленного frontend · 17.10.2026
+
+Пользователь разрешил совместить frontend и backend/AI работу с публикацией.
+Мастер1.4: светлая оболочка/поиск, реальная аналитика обзора, карта и сигналы
+из двух supplied вариантов интегрированы с текущими пятью зонами, drafts/forms,
+pagination/URL и предметными инвариантами. Корневые дубли не используются.
+Команды сигналов/revisions/idempotency/PDF polling и формы досье сохранены;
+page-local signal search явно обозначен, READY назван обработкой.
+
+Native production build/start на отдельной базе/портах3199/8199 выполнены.
+Целевые25browser scenarios (design-system/map/ux-flow/workspace-navigation/workspace)
+прошли30.4s после создания ожидаемых OCR/signal fixtures. Первый прогон на голом
+seed дал12pass/3fail/10notrun: отсутствовали READY extraction и signal, а не
+наблюдался дефект нового UI; fixtures явно подготовлены verify_ocr и DEMO draft.
+Отдельная integrated-layout проверяет375/768/1024/1440 по dashboard/map/signal,
+без page overflow, с локальной SVG map-подложкой (не live OSM), screenshots
+в ignored output/qa/integration. Первое тестовое ожидание PDF anchor исправлено
+на существующий version-specific ID. При визуальном просмотре найдены и исправлены
+clipped workflow links в узкой rail и несогласованные summary label/value classes.
+Итог повторного прогона после исправлений и удалённый Linux E2E — PROJECT_STATUS.
+
+Проверены keyboard/focus/skip/table navigation, семантические contrast tokens,
+native disclosure/черновики/409 reason, карта без координат/ошибкаtiles/API, роли и
+loading/error/empty. Screen reader, настоящий200%zoom, liveOSM, touch/landscape,
+внешняя UX и предметная приёмка остаются открыты. Native Windows не подтверждает
+Linux PDF/resource paths: они проверяются отдельным CI, без ослабления контроля.
+
 ## Повторный аудит по приложенному ТЗ · baseline f9db50b · 17.10.2026
 
 **Вывод: S0–S2 работают в проверенном объёме; весь редизайн и готовность к защите ещё не приняты.** Повторное вложение идентично исходному (SHA-256 `2f9a529f35aa680213e55a5ceffb34f7d98f5268a1e2765ca1eadd1495f255ac`). На входе ветка `main`, HEAD `f9db50bbed7e8ba1f2897a5d5151d47cef332216`, clean tree. Работа продолжена с этой контрольной точки, а не с первоначального дизайна. Раздел 10 вложения разрешает сейчас фазы 0–1; S3/S4 не реализованы этим аудитом. Единственный исполнитель — Codex root, новых агентов нет; текущий diff ограничен документацией.
