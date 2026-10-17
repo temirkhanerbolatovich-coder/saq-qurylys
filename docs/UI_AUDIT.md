@@ -2,6 +2,15 @@
 
 ## Интеграция поставленного frontend · 17.10.2026
 
+**Проверено и опубликовано:** после финальных исправлений целевой native suite —
+26passed/34.8s,12responsive screenshots, визуально просмотрены desktopdashboard/signals
+и mobilemap/signals; clipping/summaryclasses исправлены. Полный LinuxE2E —
+**77passed/1.9m** на провереннойревизииd551626,
+[CI39043383017](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39043383017)
+success по3jobs, включая803backendtests. [PR1](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/1)
+merged вmainbdab80a; дерево исходников совпадает с проверенным. Ниже — ход проверки
+и явные ограничения, а не заявка на внешнюю UX/предметную приёмку.
+
 Пользователь разрешил совместить frontend и backend/AI работу с публикацией.
 Мастер1.4: светлая оболочка/поиск, реальная аналитика обзора, карта и сигналы
 из двух supplied вариантов интегрированы с текущими пятью зонами, drafts/forms,

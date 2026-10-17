@@ -2,6 +2,8 @@
 
 [Правила работы через ветки и PR, расположение исходников и проверки](CONTRIBUTING.md).
 
+17.10.2026: интеграция опубликована в main через [PR1](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/1), mergebdab80a. [ПолныйCI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39043383017) зелёный:803backend/77browser/73tooltests, frontend checks/build имиграции. Прежние backend/AI блоки и согласованные frontend изменения включены; серверный deploy не выполнялся.
+
 17.10.2026: согласована интеграция загруженного frontend вместе с локальными backend/AI изменениями. Исходники интерфейса находятся только в `frontend/`: объединены светлая оболочка, поиск/обзор, карта и сигналы с текущими черновиками, пагинацией и API. Исправлена граница сборки Next/standalone start, CI проверяет отсутствие приватных artifacts/архивов и ошибочных корневых uploads. [Решение и ограничения](docs/decisions/ADR-014-frontend-build-root-and-source-hygiene.md), фактические проверки/публикация — [PROJECT_STATUS](PROJECT_STATUS.md). Старый ZIP исключён из текущего дерева; раскрытые в его истории доступы должен заменить владелец той копии.
 
 17.10.2026: [offline оценка ИИ schema2](docs/OCR_EVALUATION.md) измеряет суммы, валюты, проценты и строгую привязку к условию/исходному фрагменту. V1-наборы совместимы, старые baselines сохранены; добавлен отдельный учебный RU/KZ regression. Найдены ложные банковские условия и неполные mixed money+percent; качество на реальной рекламе и человеческая приёмка остаются открыты. Frontend/API/правила риска не менялись.
