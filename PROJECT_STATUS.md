@@ -1,5 +1,31 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Очистка GitHub завершена в доступном объёме · 17.10.2026
+
+**PUBLISHED / MAIN SYNCHRONIZED / CI VERIFIED.** Опубликованы очищенный main
+6059064 и документальный блок `1db8e95d8be8262864db8cd46fecb928443f0bf8`.
+Свежий single-branch clone после обычного fast-forward подтвердил совпадение
+с локальным деревом, отсутствие обеих ZIP blob и архивных путей во всей истории
+main; `git fsck --full --strict` PASS. Сохранены исходные 38 коммитов плюс
+документация; frontend/backend/контракт/миграции не менялись после зелёного
+CI39045481388. Все три CI job success: 803 backend, 77 browser E2E, 73 tool tests,
+2 Node checks, frontend checks/build/audit, OCR и migrations PASS.
+
+Перед публикацией 1078 достижимых объектов HEAD проверены на восемь известных
+текущих/раскрытых secret literals: 0 совпадений. Восемь Markdown, 113 links,
+Python/PowerShell syntax, четыре изолированных SQLite сценария, hygiene/diff-check
+PASS. Собственные две временные локальные ветки удалены после verified bundle;
+остался только main, локальное/удалённое дерево синхронно и чистое. Приватные
+старые backups, рабочие env/БД/storage сохранены. Этот заключительный update
+меняет только PROJECT_STATUS и публикуется обычным fast-forward.
+
+**Следующий шаг вне этой машины:** пользователь подтвердил отсутствие доступа
+к компьютеру frontend-разработчика; владелец выполняет
+[инструкцию ротации](docs/ROTATE_FRONTEND_WORKSTATION.md) и подтверждает отказ
+старых паролей/сессий с сохранностью данных. PR №1/cache refs остаются старой
+историей и требуют отдельной обработки владельцем/GitHub Support; обращение
+не отправлялось. Полное удаление из GitHub/чужих клонов и отзыв доступов не заявляются.
+
 ## История main очищена и опубликована · 17.10.2026
 
 **MAIN HISTORY PUBLISHED / FRESH CLONE VERIFIED / CI SUCCESS.** По разрешению
