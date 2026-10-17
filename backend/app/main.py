@@ -10,7 +10,20 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from starlette.exceptions import HTTPException
 
-from app.api import advertisements, analysis, auth, legal_bases, properties, reviews, signal_pdf, signals
+from app.api import (
+    advertisements,
+    analysis,
+    auth,
+    legal_bases,
+    monitoring,
+    open_registry,
+    properties,
+    reviews,
+    signal_pdf,
+    signals,
+    threads,
+    url_import,
+)
 from app.body_limit import BodyLimitMiddleware
 from app.config import Settings
 from app.dependencies import DB, error_response
@@ -33,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.state.sessions = sessionmaker(engine, expire_on_commit=False)
     app.state.login_attempts = defaultdict(deque)
+    app.state.threads_search_gate = threads.SearchGate()
     app.state.dummy_password = hash_password(secrets.token_urlsafe(24))
     app.add_middleware(BodyLimitMiddleware, upload_limit=settings.max_upload_bytes)
 
@@ -72,6 +86,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(legal_bases.router)
     app.include_router(signals.router)
     app.include_router(signal_pdf.router)
+    app.include_router(monitoring.router)
+    app.include_router(threads.router)
+    app.include_router(url_import.router)
+    app.include_router(open_registry.router)
     return app
 
 

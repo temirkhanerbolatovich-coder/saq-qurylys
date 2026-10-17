@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.8.0-mvp",
-    "description": "SAQ QURYLYS contract. Registry/OCR, dated legal review, manual R1-R6, immutable signals/human decisions/PDF export and passive supporting PDF upload implemented. Permitted collector remains planned. JSON is valid YAML 1.2."
+    "version": "0.13.0-mvp",
+    "description": "SAQ QURYLYS contract. Registry/OCR, dated legal review, manual R1-R6, immutable signals/human decisions/PDF export and passive supporting PDF upload implemented. Commercial advertising collector remains planned. JSON is valid YAML 1.2. Manual monitoring candidates, immutable DEMO registry snapshots, comparisons and preliminary incident decisions are additive; the closed customer registry remains unavailable. Explicit licensed Primeminister.kz information import is implemented through leased jobs. Operator-provided KHC public PDF versions and page-text search preserve provenance and never establish legal applicability or modify risk."
   },
   "servers": [
     {
@@ -1018,7 +1018,7 @@
       "get": {
         "operationId": "listPropertyAudit",
         "summary": "Read paginated property audit",
-        "description": "Read paginated property audit",
+        "description": "Paginated saved audit events, newest first with stable ID ordering for equal timestamps. Includes the current actor display name and the targeted risk code. Does not reconstruct historical risk scores.",
         "x-origin": "proposal",
         "responses": {
           "200": {
@@ -1371,61 +1371,28 @@
     },
     "/api/v1/advertisements/import-url": {
       "post": {
+        "summary": "Import Url",
         "operationId": "importAdvertisementUrl",
-        "summary": "Queue a permitted URL import",
-        "description": "Only allowlisted domain/path and permitted material. Validate DNS and each redirect; no private/internal IP access. Blocked source never yields a fabricated advertisement.",
-        "x-origin": "CODEX_TZ",
-        "responses": {
-          "202": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AnalysisJob"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          },
-          "403": {
-            "$ref": "#/components/responses/Error"
-          },
-          "404": {
-            "$ref": "#/components/responses/Error"
-          },
-          "409": {
-            "$ref": "#/components/responses/Error"
-          },
-          "413": {
-            "$ref": "#/components/responses/Error"
-          },
-          "415": {
-            "$ref": "#/components/responses/Error"
-          },
-          "422": {
-            "$ref": "#/components/responses/Error"
-          },
-          "429": {
-            "$ref": "#/components/responses/Error"
-          },
-          "500": {
-            "$ref": "#/components/responses/Error"
-          },
-          "503": {
-            "$ref": "#/components/responses/Error"
-          }
-        },
         "parameters": [
           {
-            "$ref": "#/components/parameters/CsrfHeader"
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
           },
           {
-            "$ref": "#/components/parameters/IdempotencyKey"
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "title": "X-Csrf-Token"
+            }
           }
         ],
         "requestBody": {
@@ -1438,7 +1405,48 @@
             }
           }
         },
-        "x-implementation-status": "PLANNED"
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisJobOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "user-2026-10-17-open-publications-and-register",
+        "x-implementation-status": "IMPLEMENTED",
+        "description": "Explicit import of reviewed Primeminister.kz /ru/news/<slug>, /news/<slug>, /ru/news/press/<slug> and /ru/news/reviews/<slug> information pages only (CC BY 4.0). Query strings, category roots and other nested paths are rejected. Real material requires is_demo=false. Durable leased queue, original HTML/SHA and attributed extracted text; unchanged text reuses the existing material. No automatic analysis or human confirmation. Commercial advertising sites are not enabled."
       }
     },
     "/api/v1/advertisements/{id}": {
@@ -2236,7 +2244,7 @@
       "post": {
         "operationId": "reviewRiskFactor",
         "summary": "Review factor and atomically recalculate risk",
-        "description": "Manual R1-R6 with typed evidence, separate PENDING/CONFIRMED decisions, revisions and audit. R1 requires exactly one all-mechanism LEGAL_ABSENCE_REVIEW evidence with all 3 DOCUMENTED_ABSENT, original hash, scope and exact assessment date. Applicable VERIFIED_VALID/PENDING bases block R1 with 409; new absence is dated, never a sticky current property status. R3/R5/R6 dated provenance guards remain in force. When confirming R1 or R2 and the counterpart is already CONFIRMED, at least one reviewed R2 publication must have known published_at equal to R1.as_of as an exact instant; otherwise 409. captured_at is not a substitute. The scorer formula is unchanged.",
+        "description": "Manual R1-R6 with typed evidence, separate PENDING/CONFIRMED decisions, revisions and audit. R1 requires exactly one all-mechanism LEGAL_ABSENCE_REVIEW evidence with all 3 DOCUMENTED_ABSENT, original hash, scope and exact assessment date. Applicable VERIFIED_VALID/PENDING bases block R1 with 409; new absence is dated, never a sticky current property status. R3/R5/R6 dated provenance guards remain in force. When confirming R1 or R2 and the counterpart is already CONFIRMED, at least one reviewed R2 publication must have known published_at equal to R1.as_of as an exact instant; otherwise 409. captured_at is not a substitute. The scorer formula is unchanged. When Telegram is explicitly enabled and the private chat is paired, a new transition to CONFIRMED also queues one durable notification in the same transaction (DEMO requires opt-in). Telegram delivery runs separately in the worker; timeouts may be UNKNOWN and are never retried automatically. No scoring or role change.",
         "x-origin": "CODEX_TZ",
         "responses": {
           "200": {
@@ -2875,6 +2883,1343 @@
         },
         "x-implementation-status": "IMPLEMENTED_OCR_REVIEW_SLICE"
       }
+    },
+    "/api/v1/monitoring/candidates": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Candidates",
+        "operationId": "listMonitoringCandidates",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "is_demo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Demo"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CandidateOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "USER_MONITORING_FIRST_SLICE",
+        "x-implementation-status": "IMPLEMENTED_MANUAL_DEMO_MONITORING",
+        "description": "Authenticated first manual/DEMO monitoring slice. Preliminary cases never confirm R1 or create legal signals. External collection and REAL registry input are not implemented. "
+      },
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Create Candidate",
+        "operationId": "createMonitoringCandidate",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CandidateCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "USER_MONITORING_FIRST_SLICE",
+        "x-implementation-status": "IMPLEMENTED_MANUAL_DEMO_MONITORING",
+        "description": "Authenticated first manual/DEMO monitoring slice. Preliminary cases never confirm R1 or create legal signals. External collection and REAL registry input are not implemented. "
+      }
+    },
+    "/api/v1/monitoring/candidates/{id}": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Candidate Detail",
+        "operationId": "getMonitoringCandidate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "USER_MONITORING_FIRST_SLICE",
+        "x-implementation-status": "IMPLEMENTED_MANUAL_DEMO_MONITORING",
+        "description": "Authenticated first manual/DEMO monitoring slice. Preliminary cases never confirm R1 or create legal signals. External collection and REAL registry input are not implemented. "
+      }
+    },
+    "/api/v1/monitoring/registry-snapshots": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Registry Snapshots",
+        "operationId": "listMonitoringSnapshots",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "is_demo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Demo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RegistrySnapshotOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "USER_MONITORING_FIRST_SLICE",
+        "x-implementation-status": "IMPLEMENTED_MANUAL_DEMO_MONITORING",
+        "description": "Authenticated first manual/DEMO monitoring slice. Preliminary cases never confirm R1 or create legal signals. External collection and REAL registry input are not implemented. "
+      },
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Create Snapshot",
+        "operationId": "createMonitoringSnapshot",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrySnapshotCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrySnapshotOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "USER_MONITORING_FIRST_SLICE",
+        "x-implementation-status": "IMPLEMENTED_MANUAL_DEMO_MONITORING",
+        "description": "Authenticated first manual/DEMO monitoring slice. Preliminary cases never confirm R1 or create legal signals. External collection and REAL registry input are not implemented. "
+      }
+    },
+    "/api/v1/monitoring/candidates/{id}/compare": {
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Compare Candidate",
+        "operationId": "compareMonitoringCandidate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompareRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComparisonOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "USER_MONITORING_FIRST_SLICE",
+        "x-implementation-status": "IMPLEMENTED_MANUAL_DEMO_MONITORING",
+        "description": "Authenticated first manual/DEMO monitoring slice. Preliminary cases never confirm R1 or create legal signals. External collection and REAL registry input are not implemented. "
+      }
+    },
+    "/api/v1/monitoring/incidents": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Incidents",
+        "operationId": "listMonitoringIncidents",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "is_demo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Demo"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "OPEN",
+                    "IN_REVIEW",
+                    "WAITING_DATA",
+                    "CLOSED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_IncidentOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "USER_MONITORING_FIRST_SLICE",
+        "x-implementation-status": "IMPLEMENTED_MANUAL_DEMO_MONITORING",
+        "description": "Authenticated first manual/DEMO monitoring slice. Preliminary cases never confirm R1 or create legal signals. External collection and REAL registry input are not implemented. "
+      }
+    },
+    "/api/v1/monitoring/incidents/{id}/review": {
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Review Incident",
+        "operationId": "reviewMonitoringIncident",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "USER_MONITORING_FIRST_SLICE",
+        "x-implementation-status": "IMPLEMENTED_MANUAL_DEMO_MONITORING",
+        "description": "Authenticated first manual/DEMO monitoring slice. Preliminary cases never confirm R1 or create legal signals. External collection and REAL registry input are not implemented. "
+      }
+    },
+    "/api/v1/monitoring/threads/status": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Status",
+        "operationId": "getThreadsSearchStatus",
+        "x-implementation-status": "IMPLEMENTED",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadsConnectionStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-origin": "USER_THREADS_SEARCH_PREVIEW",
+        "x-status": "IMPLEMENTED_PREVIEW_EXTERNAL_ACCESS_UNVERIFIED"
+      }
+    },
+    "/api/v1/monitoring/threads/search": {
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Preview",
+        "operationId": "searchThreadsPreview",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThreadsSearchInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadsSearchResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Authentication, validation, connection or source error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-origin": "USER_THREADS_SEARCH_PREVIEW",
+        "x-status": "IMPLEMENTED_PREVIEW_EXTERNAL_ACCESS_UNVERIFIED"
+      }
+    },
+    "/api/v1/monitoring/open-registry": {
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Import Document",
+        "operationId": "importOpenRegistryDocument",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_importOpenRegistryDocument"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenRegistryDocumentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "user-2026-10-17-open-publications-and-register",
+        "x-implementation-status": "IMPLEMENTED"
+      },
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Documents",
+        "operationId": "listOpenRegistryDocuments",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_OpenRegistryDocumentOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "user-2026-10-17-open-publications-and-register",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/api/v1/monitoring/open-registry/search": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Search",
+        "operationId": "searchOpenRegistryDocument",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100,
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenRegistrySearchOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "user-2026-10-17-open-publications-and-register",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/api/v1/advertisements/review-queue": {
+      "get": {
+        "summary": "List materials with unresolved recorded analyst decisions",
+        "operationId": "listAdvertisementReviewQueue",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "property_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Property Id"
+            }
+          },
+          {
+            "name": "is_demo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Demo"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "REVIEW_HYPOTHESES",
+                    "REVIEW_MATCH",
+                    "CREATE_PAYMENT_EVIDENCE",
+                    "REVIEW_R2"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertisementReviewPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Authentication or validated query error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or validated query error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Read-only queue for READY_FOR_REVIEW/REVIEWED materials and the latest completed extraction. Lists pending hypotheses, unresolved latest-version property identity, missing sufficient payment evidence and R2 decisions, including related invalidated historical R2. Counts precede pagination. Zero recorded tasks does not mean the source, legal status or signal was accepted. No automatic status, factor, signal or notification changes. Processing statuses remain unchanged.",
+        "x-implementation-status": "IMPLEMENTED_REVIEW_WORK_QUEUE",
+        "x-origin": "USER_APPROVED_BACKEND_FUNCTIONALITY"
+      }
+    },
+    "/api/v1/advertisements/compare": {
+      "get": {
+        "summary": "Compare two explicitly selected saved publication texts",
+        "operationId": "compareSavedPublications",
+        "parameters": [
+          {
+            "name": "left_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Left Id"
+            }
+          },
+          {
+            "name": "right_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Right Id"
+            }
+          },
+          {
+            "name": "left_extraction_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Left Extraction Id"
+            }
+          },
+          {
+            "name": "right_extraction_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Right Extraction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationComparison"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Session, source, bounded comparison or validated input error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session, source, bounded comparison or validated input error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session, source, bounded comparison or validated input error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Session, source, bounded comparison or validated input error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Read-only, exact line comparison of stored original_text by default, or explicitly selected historical extraction.analysis_text belonging to each publication and its source asset. No implicit OCR fallback, normalization, entity matching, duplicate verdict or risk changes. Missing/blank text is TEXT_UNAVAILABLE, never identical. DEMO and real sources cannot mix. Limits: 100000 Unicode characters and 1000 splitlines per selected text, rejected without truncation. Line ranges are zero-based half-open; returned blocks preserve exact line endings. text_sha256 hashes selected UTF-8 DB text, not original file bytes; storage integrity is not reverified. same_source_url compares two known URLs literally and otherwise remains null.",
+        "x-implementation-status": "IMPLEMENTED_SAVED_PUBLICATION_COMPARISON",
+        "x-origin": "USER_APPROVED_BACKEND_FUNCTIONALITY"
+      }
     }
   },
   "components": {
@@ -3154,7 +4499,8 @@
           },
           "new_advertisements": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "description": "Number of advertisements in NEW status within the selected filters; capture dates use an inclusive from and exclusive to. Pending hypotheses are counted separately across all material statuses."
           },
           "pending_hypotheses": {
             "type": "integer",
@@ -3703,22 +5049,25 @@
         ]
       },
       "ImportUrlRequest": {
-        "type": "object",
-        "additionalProperties": false,
         "properties": {
           "url": {
             "type": "string",
-            "format": "uri",
-            "maxLength": 2048
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Url"
           },
           "is_demo": {
-            "type": "boolean"
+            "type": "boolean",
+            "title": "Is Demo"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "url",
           "is_demo"
-        ]
+        ],
+        "title": "ImportUrlRequest"
       },
       "AnalysisRequest": {
         "type": "object",
@@ -5879,6 +7228,29 @@
           "details": {
             "type": "object",
             "additionalProperties": true
+          },
+          "actor_display_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Current display name of the recorded actor. Not a historical name snapshot; actor_id remains authoritative."
+          },
+          "risk_code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskCode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Immutable code of the risk factor targeted by this event, otherwise null."
           }
         },
         "required": [
@@ -6076,6 +7448,3986 @@
           "result",
           "reason"
         ]
+      },
+      "IncidentReview": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "IN_REVIEW",
+              "WAITING_DATA",
+              "CLOSED"
+            ],
+            "title": "State"
+          },
+          "close_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "MATCH_FOUND",
+                  "NOT_APPLICABLE",
+                  "DUPLICATE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason",
+          "expected_revision",
+          "state"
+        ],
+        "title": "IncidentReview"
+      },
+      "IncidentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "candidate_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Candidate Id"
+          },
+          "candidate_name": {
+            "type": "string",
+            "title": "Candidate Name"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "rule_code": {
+            "type": "string",
+            "enum": [
+              "NO_MATCH_IN_APPROVED_SNAPSHOT",
+              "RECORD_SCOPE_OR_STATUS_CONFLICT"
+            ],
+            "title": "Rule Code"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "IN_REVIEW",
+              "WAITING_DATA",
+              "CLOSED"
+            ],
+            "title": "State"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "close_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "MATCH_FOUND",
+                  "NOT_APPLICABLE",
+                  "DUPLICATE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close Reason"
+          },
+          "latest_comparison_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Latest Comparison Id"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentHistory"
+            },
+            "type": "array",
+            "title": "History"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "candidate_id",
+          "candidate_name",
+          "is_demo",
+          "rule_code",
+          "state",
+          "revision",
+          "created_at",
+          "updated_at",
+          "close_reason",
+          "latest_comparison_id",
+          "history"
+        ],
+        "title": "IncidentOut"
+      },
+      "RegistrySnapshotCreate": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "City"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "const": true,
+            "title": "Is Demo"
+          },
+          "coverage_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coverage From"
+          },
+          "coverage_until": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coverage Until"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/RegistryEntry"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Entries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason",
+          "label",
+          "city",
+          "is_demo",
+          "coverage_from",
+          "coverage_until",
+          "expires_at",
+          "complete",
+          "entries"
+        ],
+        "title": "RegistrySnapshotCreate",
+        "description": "DEMO only. Immutable snapshot; up to 200 entries. A normalized object scope + mechanism + document number must be unique within a snapshot; conflicting or exact duplicates are rejected with 422. Completeness and expiry are explicit; they do not describe the inaccessible REAL registry."
+      },
+      "CandidateDetailOut": {
+        "properties": {
+          "candidate": {
+            "$ref": "#/components/schemas/CandidateOut"
+          },
+          "advertisements": {
+            "items": {
+              "$ref": "#/components/schemas/ObservationOut"
+            },
+            "type": "array",
+            "title": "Advertisements"
+          },
+          "advertisement_total": {
+            "type": "integer",
+            "title": "Advertisement Total"
+          },
+          "comparisons": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonOut"
+            },
+            "type": "array",
+            "title": "Comparisons"
+          },
+          "incidents": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentOut"
+            },
+            "type": "array",
+            "title": "Incidents"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "candidate",
+          "advertisements",
+          "advertisement_total",
+          "comparisons",
+          "incidents"
+        ],
+        "title": "CandidateDetailOut"
+      },
+      "ComparisonOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "candidate_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Candidate Id"
+          },
+          "advertisement_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Advertisement Id"
+          },
+          "candidate_revision": {
+            "type": "integer",
+            "title": "Candidate Revision"
+          },
+          "advertisement_revision": {
+            "type": "integer",
+            "title": "Advertisement Revision"
+          },
+          "snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot Id"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "MATCHED_APPLICABLE_RECORD",
+              "NO_MATCH_IN_APPROVED_SNAPSHOT",
+              "RECORD_SCOPE_OR_STATUS_CONFLICT",
+              "REGISTRY_UNAVAILABLE",
+              "COVERAGE_OR_DATE_UNKNOWN",
+              "ENTITY_AMBIGUOUS"
+            ],
+            "title": "Result"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "matched_entries": {
+            "items": {
+              "$ref": "#/components/schemas/RegistryEntry"
+            },
+            "type": "array",
+            "title": "Matched Entries"
+          },
+          "identity_snapshot": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Identity Snapshot"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "algorithm_version": {
+            "type": "string",
+            "title": "Algorithm Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "candidate_id",
+          "advertisement_id",
+          "candidate_revision",
+          "advertisement_revision",
+          "snapshot_id",
+          "result",
+          "explanation",
+          "matched_entries",
+          "identity_snapshot",
+          "created_at",
+          "algorithm_version"
+        ],
+        "title": "ComparisonOut"
+      },
+      "RegistrySnapshotOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "revision": {
+            "type": "integer",
+            "const": 1,
+            "title": "Revision",
+            "default": 1
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "const": true,
+            "title": "Is Demo"
+          },
+          "coverage_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coverage From"
+          },
+          "coverage_until": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coverage Until"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/RegistryEntry"
+            },
+            "type": "array",
+            "title": "Entries"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Created By"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "city",
+          "is_demo",
+          "coverage_from",
+          "coverage_until",
+          "expires_at",
+          "complete",
+          "entries",
+          "sha256",
+          "created_at",
+          "created_by"
+        ],
+        "title": "RegistrySnapshotOut"
+      },
+      "Page_IncidentOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[IncidentOut]"
+      },
+      "CandidateCreate": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "City"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase"
+          },
+          "advertisement_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Advertisement Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason",
+          "name",
+          "city",
+          "advertisement_id"
+        ],
+        "title": "CandidateCreate"
+      },
+      "Page_CandidateOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[CandidateOut]"
+      },
+      "CandidateOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "City"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "last_result": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "MATCHED_APPLICABLE_RECORD",
+                  "NO_MATCH_IN_APPROVED_SNAPSHOT",
+                  "RECORD_SCOPE_OR_STATUS_CONFLICT",
+                  "REGISTRY_UNAVAILABLE",
+                  "COVERAGE_OR_DATE_UNKNOWN",
+                  "ENTITY_AMBIGUOUS"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Result"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "city",
+          "id",
+          "is_demo",
+          "revision",
+          "created_at"
+        ],
+        "title": "CandidateOut"
+      },
+      "CompareRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot Id"
+          },
+          "advertisement_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Advertisement Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason",
+          "expected_revision",
+          "snapshot_id",
+          "advertisement_id"
+        ],
+        "title": "CompareRequest"
+      },
+      "Page_RegistrySnapshotOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RegistrySnapshotOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[RegistrySnapshotOut]"
+      },
+      "RegistryEntry": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "City"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase"
+          },
+          "mechanism": {
+            "type": "string",
+            "enum": [
+              "GUARANTEE",
+              "MIO_PERMIT"
+            ],
+            "title": "Mechanism"
+          },
+          "document_number": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Document Number"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "REVOKED"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "city",
+          "mechanism",
+          "document_number",
+          "valid_from",
+          "status"
+        ],
+        "title": "RegistryEntry"
+      },
+      "ObservationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "source_label": {
+            "type": "string",
+            "title": "Source Label"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "source_label",
+          "source_url",
+          "published_at",
+          "captured_at"
+        ],
+        "title": "ObservationOut"
+      },
+      "IncidentHistory": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "IN_REVIEW",
+              "WAITING_DATA",
+              "CLOSED"
+            ],
+            "title": "State"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "actor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Actor Id"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action",
+          "state",
+          "reason",
+          "actor_id",
+          "occurred_at"
+        ],
+        "title": "IncidentHistory"
+      },
+      "ThreadsConnectionStatus": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "DISABLED",
+              "TOKEN_MISSING",
+              "TOKEN_INVALID",
+              "CONFIGURED_UNVERIFIED",
+              "ACCESS_VERIFIED"
+            ],
+            "title": "State"
+          },
+          "busy": {
+            "type": "boolean",
+            "title": "Busy"
+          },
+          "retry_after_seconds": {
+            "type": "integer",
+            "title": "Retry After Seconds"
+          },
+          "last_attempt": {
+            "type": "string",
+            "enum": [
+              "NOT_RUN",
+              "SUCCEEDED",
+              "FAILED"
+            ],
+            "title": "Last Attempt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "busy",
+          "retry_after_seconds",
+          "last_attempt"
+        ],
+        "title": "ThreadsConnectionStatus"
+      },
+      "ThreadsSearchInput": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 2,
+            "title": "Query"
+          },
+          "search_type": {
+            "type": "string",
+            "enum": [
+              "RECENT",
+              "TOP"
+            ],
+            "title": "Search Type",
+            "default": "RECENT"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 20
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "ThreadsSearchInput"
+      },
+      "ThreadsSearchResult": {
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Schema Version"
+          },
+          "source": {
+            "type": "string",
+            "const": "THREADS_OFFICIAL_KEYWORD_SEARCH",
+            "title": "Source"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Demo"
+          },
+          "request": {
+            "$ref": "#/components/schemas/ThreadsSearchInput"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "raw_response_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Raw Response Sha256"
+          },
+          "returned_count": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 0.0,
+            "title": "Returned Count"
+          },
+          "duplicate_count": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 0.0,
+            "title": "Duplicate Count"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More"
+          },
+          "coverage": {
+            "type": "string",
+            "const": "SINGLE_PAGE_NOT_EXHAUSTIVE",
+            "title": "Coverage"
+          },
+          "review_status": {
+            "type": "string",
+            "const": "UNREVIEWED_SEARCH_RESULTS",
+            "title": "Review Status"
+          },
+          "registry_status": {
+            "type": "string",
+            "const": "NOT_CHECKED",
+            "title": "Registry Status"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SearchPost"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "schema_version",
+          "source",
+          "is_demo",
+          "request",
+          "captured_at",
+          "raw_response_sha256",
+          "returned_count",
+          "duplicate_count",
+          "has_more",
+          "coverage",
+          "review_status",
+          "registry_status",
+          "items"
+        ],
+        "title": "ThreadsSearchResult"
+      },
+      "SearchPost": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9]{1,40}$",
+            "title": "Id"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          },
+          "permalink": {
+            "type": "string",
+            "maxLength": 2048,
+            "title": "Permalink"
+          },
+          "media_type": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Media Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "permalink",
+          "media_type"
+        ],
+        "title": "SearchPost"
+      },
+      "AdvertisementOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "source_label": {
+            "type": "string",
+            "title": "Source Label"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "original_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Text"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/AssetOut"
+            },
+            "type": "array",
+            "title": "Assets"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "ANALYZING",
+              "READY_FOR_REVIEW",
+              "REVIEWED",
+              "FAILED"
+            ],
+            "title": "Status"
+          },
+          "confirmed_property_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed Property Id"
+          },
+          "latest_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Job Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "revision",
+          "source_label",
+          "source_url",
+          "published_at",
+          "captured_at",
+          "original_text",
+          "assets",
+          "is_demo",
+          "status",
+          "confirmed_property_id"
+        ],
+        "title": "AdvertisementOut"
+      },
+      "AnalysisJobOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "IMPORT_URL",
+              "ANALYZE",
+              "RENDER_PDF"
+            ],
+            "title": "Kind"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "RUNNING",
+              "SUCCEEDED",
+              "FAILED",
+              "BLOCKED"
+            ],
+            "title": "State"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "attempt": {
+            "type": "integer",
+            "title": "Attempt"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "advertisement_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Advertisement Id"
+          },
+          "signal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal Id"
+          },
+          "result_asset_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Asset Id"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "state",
+          "stage",
+          "attempt",
+          "created_at",
+          "updated_at",
+          "advertisement_id",
+          "result_asset_id",
+          "error"
+        ],
+        "title": "AnalysisJobOut"
+      },
+      "AssetOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "TEXT",
+              "OCR_TEXT",
+              "HTML",
+              "IMAGE",
+              "DOCUMENT",
+              "SIGNAL_PDF"
+            ],
+            "title": "Kind"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          },
+          "byte_size": {
+            "type": "integer",
+            "title": "Byte Size"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "mime_type",
+          "byte_size",
+          "sha256",
+          "captured_at",
+          "is_demo"
+        ],
+        "title": "AssetOut"
+      },
+      "AuditEventOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "actor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Actor Id"
+          },
+          "actor_display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Display Name"
+          },
+          "risk_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "R1",
+                  "R2",
+                  "R3",
+                  "R4",
+                  "R5",
+                  "R6"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Code"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "old_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Revision"
+          },
+          "new_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Revision"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "actor_id",
+          "occurred_at",
+          "action",
+          "entity_type",
+          "entity_id",
+          "old_revision",
+          "new_revision",
+          "reason",
+          "request_id",
+          "details"
+        ],
+        "title": "AuditEventOut"
+      },
+      "Body_importOpenRegistryDocument": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "source_url": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Source Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "source_url"
+        ],
+        "title": "Body_importOpenRegistryDocument"
+      },
+      "Body_uploadAdvertisement": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "source_label": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Source Label"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "source_label",
+          "is_demo"
+        ],
+        "title": "Body_uploadAdvertisement"
+      },
+      "Body_uploadEvidenceAsset": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "property_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Property Id"
+          },
+          "source_label": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Source Label"
+          },
+          "event_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Event At"
+          },
+          "methodology": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Methodology"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "signatory_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 2.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signatory Count"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "COLLECTIVE_APPEAL",
+              "LEGAL_BASIS",
+              "LEGAL_ABSENCE_REVIEW",
+              "CONSTRUCTION_STAGE",
+              "PROGRESS_MEASUREMENT",
+              "DELAY_DOCUMENT"
+            ],
+            "title": "Purpose",
+            "default": "COLLECTIVE_APPEAL"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "construction_stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "UNDER_CONSTRUCTION",
+                  "COMPLETED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Construction Stage"
+          },
+          "measurement_percent": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measurement Percent"
+          },
+          "measurement_role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DECLARED",
+                  "VERIFIED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measurement Role"
+          },
+          "comparison_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Key"
+          },
+          "planned_completion_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Completion At"
+          },
+          "actual_completion_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Completion At"
+          },
+          "delay_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "NOT_COMPLETED",
+                  "COMPLETED_LATE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay Status"
+          },
+          "absence_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Absence As Of"
+          },
+          "scope_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Description"
+          },
+          "legal_checks": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "property_id",
+          "source_label",
+          "event_at",
+          "methodology",
+          "is_demo"
+        ],
+        "title": "Body_uploadEvidenceAsset"
+      },
+      "BoundingBox": {
+        "properties": {
+          "x": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "X"
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Y"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Width"
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Height"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "title": "BoundingBox"
+      },
+      "DeveloperOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "bin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bin"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "bin",
+          "is_demo"
+        ],
+        "title": "DeveloperOut"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "fields": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Fields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorOut": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorOut"
+      },
+      "EvidenceOut": {
+        "properties": {
+          "property_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Property Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ADVERTISEMENT_FRAGMENT",
+              "LEGAL_DOCUMENT",
+              "LEGAL_ABSENCE_REVIEW",
+              "COLLECTIVE_APPEAL",
+              "PROGRESS_MEASUREMENT",
+              "DELAY_DOCUMENT",
+              "CONSTRUCTION_STAGE",
+              "ADVERTISEMENT_PUBLICATION"
+            ],
+            "title": "Kind"
+          },
+          "asset_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Asset Id"
+          },
+          "advertisement_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Advertisement Id"
+          },
+          "extraction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Id"
+          },
+          "hypothesis_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hypothesis Id"
+          },
+          "legal_basis_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Basis Id"
+          },
+          "fragment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Fragment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "source_label": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Source Label"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "event_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event At"
+          },
+          "measurement_percent": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measurement Percent"
+          },
+          "methodology": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Methodology"
+          },
+          "signatory_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 2.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signatory Count"
+          },
+          "construction_stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "UNDER_CONSTRUCTION",
+                  "COMPLETED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Construction Stage"
+          },
+          "measurement_role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DECLARED",
+                  "VERIFIED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measurement Role"
+          },
+          "comparison_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Key"
+          },
+          "planned_completion_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Completion At"
+          },
+          "actual_completion_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Completion At"
+          },
+          "delay_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "NOT_COMPLETED",
+                  "COMPLETED_LATE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay Status"
+          },
+          "absence_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Absence As Of"
+          },
+          "scope_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Description"
+          },
+          "legal_checks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/LegalMechanismCheck"
+                },
+                "type": "array",
+                "maxItems": 3,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Checks"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Created By"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "property_id",
+          "kind",
+          "asset_id",
+          "description",
+          "source_label",
+          "event_at",
+          "is_demo",
+          "id",
+          "captured_at",
+          "created_by"
+        ],
+        "title": "EvidenceOut"
+      },
+      "ExtractionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "advertisement_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Advertisement Id"
+          },
+          "parent_extraction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Extraction Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "pipeline_version": {
+            "type": "string",
+            "title": "Pipeline Version"
+          },
+          "original_ocr_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Ocr Text"
+          },
+          "analysis_text": {
+            "type": "string",
+            "title": "Analysis Text"
+          },
+          "hypotheses": {
+            "items": {
+              "$ref": "#/components/schemas/Hypothesis"
+            },
+            "type": "array",
+            "title": "Hypotheses"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "advertisement_id",
+          "parent_extraction_id",
+          "revision",
+          "pipeline_version",
+          "original_ocr_text",
+          "analysis_text",
+          "hypotheses",
+          "created_at",
+          "warnings"
+        ],
+        "title": "ExtractionOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LegalBasisOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "property_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Property Id"
+          },
+          "mechanism": {
+            "type": "string",
+            "enum": [
+              "KZHK_GUARANTEE",
+              "BANK_WITH_MIO_PERMIT",
+              "FRAME_WITH_MIO_PERMIT"
+            ],
+            "title": "Mechanism"
+          },
+          "document_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Number"
+          },
+          "document_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Date"
+          },
+          "issuer": {
+            "type": "string",
+            "title": "Issuer"
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "asset_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Asset Id"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "applies_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applies From"
+          },
+          "applies_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applies Until"
+          },
+          "scope_description": {
+            "type": "string",
+            "title": "Scope Description"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "verification_status": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "PENDING",
+              "VERIFIED_VALID",
+              "VERIFIED_ABSENT",
+              "REJECTED"
+            ],
+            "title": "Verification Status"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "verification_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification As Of"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "property_id",
+          "mechanism",
+          "document_number",
+          "document_date",
+          "issuer",
+          "asset_id",
+          "scope_description",
+          "is_demo",
+          "captured_at",
+          "verification_status",
+          "revision",
+          "reviewed_by",
+          "reviewed_at"
+        ],
+        "title": "LegalBasisOut"
+      },
+      "OpenRegistryDocumentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "asset_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Asset Id"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "publisher": {
+            "type": "string",
+            "title": "Publisher"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date",
+            "title": "As Of"
+          },
+          "page_count": {
+            "type": "integer",
+            "title": "Page Count"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Created By"
+          },
+          "original_url": {
+            "type": "string",
+            "title": "Original Url"
+          },
+          "source_page_url": {
+            "type": "string",
+            "const": "https://khc.kz/ru/equity/uslugi/357/3260/",
+            "title": "Source Page Url",
+            "default": "https://khc.kz/ru/equity/uslugi/357/3260/"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Demo",
+            "default": false
+          },
+          "provenance_notice": {
+            "type": "string",
+            "title": "Provenance Notice",
+            "default": "Файл загружен аналитиком; ссылка и издатель указаны для проверки происхождения. Подлинность файла по адресу источника автоматически не подтверждена."
+          },
+          "limitations": {
+            "type": "string",
+            "title": "Limitations",
+            "default": "Поиск показывает совпадения слов на странице, которые могут относиться к разным записям. Очередь, статус и применимость документа требуют проверки оригинала. Отсутствие совпадения не доказывает отсутствие основания и не меняет риск. Лицензия повторного использования не установлена; автоматическая загрузка с сайта не выполняется."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "asset_id",
+          "source_url",
+          "publisher",
+          "as_of",
+          "page_count",
+          "sha256",
+          "created_at",
+          "created_by",
+          "original_url"
+        ],
+        "title": "OpenRegistryDocumentOut"
+      },
+      "OpenRegistrySearchOut": {
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/OpenRegistryDocumentOut"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PageHit"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "document",
+          "query",
+          "items",
+          "total"
+        ],
+        "title": "OpenRegistrySearchOut"
+      },
+      "PageHit": {
+        "properties": {
+          "page_number": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Page Number"
+          },
+          "snippet": {
+            "type": "string",
+            "maxLength": 1400,
+            "title": "Snippet"
+          },
+          "matched_terms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Terms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "page_number",
+          "snippet",
+          "matched_terms"
+        ],
+        "title": "PageHit"
+      },
+      "Page_AdvertisementOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdvertisementOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[AdvertisementOut]"
+      },
+      "Page_AuditEventOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEventOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[AuditEventOut]"
+      },
+      "Page_OpenRegistryDocumentOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OpenRegistryDocumentOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[OpenRegistryDocumentOut]"
+      },
+      "Page_PropertyOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PropertyOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[PropertyOut]"
+      },
+      "Page_SignalOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SignalOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[SignalOut]"
+      },
+      "PropertyDetailOut": {
+        "properties": {
+          "property": {
+            "$ref": "#/components/schemas/PropertyOut"
+          },
+          "legal_bases": {
+            "items": {
+              "$ref": "#/components/schemas/LegalBasisOut"
+            },
+            "type": "array",
+            "title": "Legal Bases"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/RiskFactorOut"
+            },
+            "type": "array",
+            "title": "Factors"
+          },
+          "advertisement_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Advertisement Ids"
+          },
+          "unknown_information": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unknown Information"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "property",
+          "legal_bases",
+          "factors",
+          "advertisement_ids",
+          "unknown_information"
+        ],
+        "title": "PropertyDetailOut"
+      },
+      "PropertyMatchOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "advertisement_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Advertisement Id"
+          },
+          "property_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Property Id"
+          },
+          "extraction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Extraction Id"
+          },
+          "similarity": {
+            "type": "number",
+            "title": "Similarity"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "REJECTED"
+            ],
+            "title": "Status"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "advertisement_id",
+          "property_id",
+          "extraction_id",
+          "similarity",
+          "reasons",
+          "status",
+          "revision"
+        ],
+        "title": "PropertyMatchOut"
+      },
+      "PropertyOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "PROJECT",
+              "PHASE",
+              "BUILDING"
+            ],
+            "title": "Level"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Aliases"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "developer": {
+            "$ref": "#/components/schemas/DeveloperOut"
+          },
+          "authorized_company": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeveloperOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contractor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeveloperOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "PLANNED",
+              "UNDER_CONSTRUCTION",
+              "COMPLETED"
+            ],
+            "title": "Stage"
+          },
+          "progress_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Percent"
+          },
+          "progress_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress As Of"
+          },
+          "legal_verification_status": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "PENDING",
+              "VERIFIED_VALID",
+              "VERIFIED_ABSENT",
+              "REJECTED"
+            ],
+            "title": "Legal Verification Status"
+          },
+          "legal_absence_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Absence As Of"
+          },
+          "risk": {
+            "$ref": "#/components/schemas/RiskSummaryOut"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "last_reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reviewed At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "parent_id",
+          "level",
+          "name",
+          "aliases",
+          "city",
+          "address",
+          "latitude",
+          "longitude",
+          "developer",
+          "stage",
+          "progress_percent",
+          "progress_as_of",
+          "legal_verification_status",
+          "risk",
+          "is_demo",
+          "revision",
+          "last_reviewed_at"
+        ],
+        "title": "PropertyOut"
+      },
+      "RiskDetailOut": {
+        "properties": {
+          "property_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Property Id"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/RiskSummaryOut"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/RiskFactorOut"
+            },
+            "type": "array",
+            "title": "Factors"
+          },
+          "unknown_information": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unknown Information"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "property_id",
+          "summary",
+          "factors",
+          "unknown_information"
+        ],
+        "title": "RiskDetailOut"
+      },
+      "RiskFactorOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "property_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Property Id"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "R1",
+              "R2",
+              "R3",
+              "R4",
+              "R5",
+              "R6"
+            ],
+            "title": "Code"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "PENDING",
+              "CONFIRMED",
+              "REJECTED"
+            ],
+            "title": "Status"
+          },
+          "weight": {
+            "type": "integer",
+            "title": "Weight"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "property_id",
+          "code",
+          "status",
+          "weight",
+          "as_of",
+          "evidence_ids",
+          "revision",
+          "reviewed_by",
+          "reviewed_at",
+          "reason"
+        ],
+        "title": "RiskFactorOut"
+      },
+      "RiskReviewOut": {
+        "properties": {
+          "factor": {
+            "$ref": "#/components/schemas/RiskFactorOut"
+          },
+          "risk": {
+            "$ref": "#/components/schemas/RiskSummaryOut"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "factor",
+          "risk"
+        ],
+        "title": "RiskReviewOut"
+      },
+      "RiskSummaryOut": {
+        "properties": {
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "zone": {
+            "type": "string",
+            "enum": [
+              "GREEN",
+              "YELLOW",
+              "RED"
+            ],
+            "title": "Zone"
+          },
+          "rules_version": {
+            "type": "string",
+            "const": "saq-rules-v1",
+            "title": "Rules Version",
+            "default": "saq-rules-v1"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "confirmed_codes": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "R1",
+                "R2",
+                "R3",
+                "R4",
+                "R5",
+                "R6"
+              ]
+            },
+            "type": "array",
+            "title": "Confirmed Codes"
+          },
+          "unknown_codes": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "R1",
+                "R2",
+                "R3",
+                "R4",
+                "R5",
+                "R6"
+              ]
+            },
+            "type": "array",
+            "title": "Unknown Codes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "score",
+          "zone",
+          "revision",
+          "as_of",
+          "confirmed_codes",
+          "unknown_codes"
+        ],
+        "title": "RiskSummaryOut"
+      },
+      "SignalOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "property_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Property Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "previous_signal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Signal Id"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "CONFIRMED",
+              "RETURNED"
+            ],
+            "title": "State"
+          },
+          "is_stale": {
+            "type": "boolean",
+            "title": "Is Stale"
+          },
+          "risk_snapshot": {
+            "$ref": "#/components/schemas/RiskSummaryOut"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "pdf_state": {
+            "type": "string",
+            "enum": [
+              "NOT_REQUESTED",
+              "QUEUED",
+              "READY",
+              "FAILED"
+            ],
+            "title": "Pdf State"
+          },
+          "pdf_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf Job Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "property_id",
+          "version",
+          "revision",
+          "previous_signal_id",
+          "state",
+          "is_stale",
+          "risk_snapshot",
+          "created_at",
+          "created_by",
+          "is_demo",
+          "pdf_state"
+        ],
+        "title": "SignalOut"
+      },
+      "UserOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "analyst",
+              "viewer"
+            ],
+            "title": "Role"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "display_name",
+          "role"
+        ],
+        "title": "UserOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "AdvertisementReviewPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdvertisementReviewItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "action_totals": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "REVIEW_HYPOTHESES",
+                "REVIEW_MATCH",
+                "CREATE_PAYMENT_EVIDENCE",
+                "REVIEW_R2"
+              ]
+            },
+            "type": "object",
+            "title": "Action Totals"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "action_totals"
+        ],
+        "title": "AdvertisementReviewPage"
+      },
+      "AdvertisementReviewItem": {
+        "properties": {
+          "advertisement_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Advertisement Id"
+          },
+          "extraction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Extraction Id"
+          },
+          "extraction_revision": {
+            "type": "integer",
+            "title": "Extraction Revision"
+          },
+          "actions": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "REVIEW_HYPOTHESES",
+                "REVIEW_MATCH",
+                "CREATE_PAYMENT_EVIDENCE",
+                "REVIEW_R2"
+              ]
+            },
+            "type": "array",
+            "title": "Actions"
+          },
+          "pending_hypothesis_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Pending Hypothesis Ids"
+          },
+          "needs_property_match": {
+            "type": "boolean",
+            "title": "Needs Property Match"
+          },
+          "payment_hypothesis_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Payment Hypothesis Ids"
+          },
+          "r2_reviews": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentReviewTarget"
+            },
+            "type": "array",
+            "title": "R2 Reviews"
+          },
+          "advertisement": {
+            "$ref": "#/components/schemas/AdvertisementOut"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "advertisement_id",
+          "extraction_id",
+          "extraction_revision",
+          "actions",
+          "pending_hypothesis_ids",
+          "needs_property_match",
+          "payment_hypothesis_ids",
+          "r2_reviews",
+          "advertisement"
+        ],
+        "title": "AdvertisementReviewItem"
+      },
+      "PaymentReviewTarget": {
+        "properties": {
+          "property_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Property Id"
+          },
+          "factor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factor Id"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "property_id",
+          "factor_id",
+          "evidence_ids"
+        ],
+        "title": "PaymentReviewTarget"
+      },
+      "PublicationComparison": {
+        "properties": {
+          "left": {
+            "$ref": "#/components/schemas/PublicationComparisonSide"
+          },
+          "right": {
+            "$ref": "#/components/schemas/PublicationComparisonSide"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "IDENTICAL_TEXT",
+              "DIFFERENT_TEXT",
+              "TEXT_UNAVAILABLE"
+            ],
+            "title": "Status"
+          },
+          "same_advertisement": {
+            "type": "boolean",
+            "title": "Same Advertisement"
+          },
+          "same_source_url": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Same Source Url"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/PublicationTextChange"
+            },
+            "type": "array",
+            "title": "Changes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "left",
+          "right",
+          "status",
+          "same_advertisement",
+          "same_source_url",
+          "changes"
+        ],
+        "title": "PublicationComparison"
+      },
+      "PublicationComparisonSide": {
+        "properties": {
+          "advertisement_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Advertisement Id"
+          },
+          "advertisement_revision": {
+            "type": "integer",
+            "title": "Advertisement Revision"
+          },
+          "source_label": {
+            "type": "string",
+            "title": "Source Label"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "text_basis": {
+            "type": "string",
+            "enum": [
+              "ORIGINAL",
+              "EXTRACTION"
+            ],
+            "title": "Text Basis"
+          },
+          "extraction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Id"
+          },
+          "extraction_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Revision"
+          },
+          "pipeline_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Version"
+          },
+          "analysis_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Created At"
+          },
+          "source_asset_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Asset Id"
+          },
+          "original_assets": {
+            "items": {
+              "$ref": "#/components/schemas/AssetOut"
+            },
+            "type": "array",
+            "title": "Original Assets"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "text_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Sha256"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "advertisement_id",
+          "advertisement_revision",
+          "source_label",
+          "source_url",
+          "published_at",
+          "captured_at",
+          "is_demo",
+          "text_basis",
+          "extraction_id",
+          "extraction_revision",
+          "pipeline_version",
+          "analysis_created_at",
+          "source_asset_id",
+          "original_assets",
+          "text",
+          "text_sha256"
+        ],
+        "title": "PublicationComparisonSide"
+      },
+      "PublicationTextChange": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "REPLACE",
+              "INSERT",
+              "DELETE"
+            ],
+            "title": "Kind"
+          },
+          "left_start_line": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Left Start Line"
+          },
+          "left_end_line": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Left End Line"
+          },
+          "right_start_line": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Right Start Line"
+          },
+          "right_end_line": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Right End Line"
+          },
+          "left_text": {
+            "type": "string",
+            "title": "Left Text"
+          },
+          "right_text": {
+            "type": "string",
+            "title": "Right Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "left_start_line",
+          "left_end_line",
+          "right_start_line",
+          "right_end_line",
+          "left_text",
+          "right_text"
+        ],
+        "title": "PublicationTextChange"
       }
     }
   }

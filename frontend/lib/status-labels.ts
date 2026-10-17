@@ -5,6 +5,7 @@ const statusLabels: Record<string, string> = {
   PROCESSING: "Обрабатывается",
   ANALYZING: "Анализируется",
   READY_FOR_REVIEW: "Готово к проверке",
+  REVIEWED: "Проверено",
   FAILED: "Ошибка обработки",
   PENDING: "На проверке",
   CONFIRMED: "Подтверждено",
@@ -19,6 +20,9 @@ const statusLabels: Record<string, string> = {
   READY: "Готово",
   VERIFIED_VALID: "Основание подтверждено",
   VERIFIED_ABSENT: "Отсутствие установлено",
+  DOCUMENTED_ABSENT: "Отсутствие документально установлено",
+  NOT_FOUND: "Не найдено в доступной выборке — недостаточно для R1",
+  UNAVAILABLE: "Источник недоступен",
 };
 
 export function statusLabel(status: string): string {

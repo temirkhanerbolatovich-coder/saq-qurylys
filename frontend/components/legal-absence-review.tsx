@@ -223,7 +223,10 @@ export function LegalAbsenceReview({
   }
 
   return (
-    <section className="panel padded" data-testid="legal-absence-review">
+    <section
+      className="panel padded legal-review"
+      data-testid="legal-absence-review"
+    >
       <h2>R1 · проверка отсутствия оснований</h2>
       <p>
         Пустой реестр, ошибка источника или отсутствие строки не доказывают

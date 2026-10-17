@@ -93,7 +93,7 @@ export function ConstructionReview({
   onSaved: () => void;
 }) {
   return (
-    <section className="panel padded">
+    <section className="panel padded legal-review">
       <h2>Строительство: документы и сравнение</h2>
       <p>
         Загрузка сохраняет материалы. Баллы добавляются только отдельным

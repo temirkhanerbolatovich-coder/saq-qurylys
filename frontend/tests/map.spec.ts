@@ -40,21 +40,38 @@ test("map uses API coordinates/risk, shares filters, and opens the selected card
   });
   await expect(card).toBeFocused();
   await expect(card.getByRole("heading", { name: row.name })).toBeVisible();
+  await expect(marker).toHaveAttribute("aria-pressed", "true");
+  await expect(marker).toHaveClass(/is-selected/);
+  await expect(
+    page.locator('.property-marker[aria-pressed="true"]'),
+  ).toHaveCount(1);
+  await expect(card.locator(".map-card-facts")).toContainText(
+    "Правовое основание",
+  );
   await expect(card.locator(".zone")).toContainText(String(row.risk.score));
+  await expect(page.locator("tr.is-map-selected")).toContainText(row.name);
+  await expect(page.locator("tr.is-map-selected")).toContainText(
+    "Выбран на карте",
+  );
   await page.getByRole("button", { name: "Список", exact: true }).click();
   await expect(page).toHaveURL(/zone=RED/);
   await expect(page.locator(".property-map")).toHaveCount(0);
   await page
     .getByRole("button", { name: "Карта и список", exact: true })
     .click();
+  await expect(card.getByRole("heading", { name: row.name })).toBeVisible();
+  await expect(marker).toHaveAttribute("aria-pressed", "true");
   await page
     .getByRole("button", { name: `Выбрать ${row.name}:`, exact: false })
     .click();
   await card
     .getByRole("link", { name: "Открыть карточку", exact: true })
     .click();
-  await expect(page).toHaveURL(new RegExp(`/properties/${row.id}$`));
+  await expect(page).toHaveURL(new RegExp(`/properties/${row.id}\\?registry=`));
   await expect(page.getByRole("heading", { name: row.name })).toBeVisible();
+  await page.getByRole("link", { name: "К реестру", exact: true }).click();
+  await expect(page).toHaveURL(/\/properties\?zone=RED&view=map$/);
+  await expect(page.locator(".property-marker")).toHaveCount(data.items.length);
 });
 
 test("missing and invalid coordinates stay in the list and source text cannot become HTML", async ({
@@ -72,6 +89,9 @@ test("missing and invalid coordinates stay in the list and source text cannot be
   );
   await page.goto("/properties?view=map");
   await expect(page.locator(".property-marker")).toHaveCount(5);
+  await expect(page.locator(".map-count")).toHaveAccessibleName(
+    "5 из 8 объектов показаны на карте",
+  );
   await expect(
     page.getByText("Без пригодных координат: 3", { exact: false }),
   ).toBeVisible();

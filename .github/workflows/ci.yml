@@ -37,20 +37,24 @@ jobs:
       - run: pip install -r backend/requirements-dev.txt
       - name: Check local backup and evaluation tooling
         run: python -m unittest discover -s scripts -p "test_*.py" -v
+      - name: Reject private artifacts and misplaced frontend uploads
+        run: python scripts/check_repository_hygiene.py
       - name: Verify repository UI skill search (offline standard library)
         run: |
           python .agents/skills/ui-ux-pro-max/scripts/search.py "filter chips wrap" --domain ux --json > /tmp/saq-ui-guidance.json
           python -c "import json; data=json.load(open('/tmp/saq-ui-guidance.json')); assert data['domain']=='ux' and data['count'] > 0; print('Repository UI skill search passed')"
-      - run: python -m ruff check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py
-      - run: python -m ruff format --check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py
+      - run: python -m ruff check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py scripts/evaluate_publications.py scripts/evaluation_fields.py scripts/test_evaluation_fields.py scripts/check_readiness.py scripts/test_check_readiness.py scripts/check_repository_hygiene.py scripts/test_check_repository_hygiene.py
+      - run: python -m ruff format --check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py scripts/evaluate_publications.py scripts/evaluation_fields.py scripts/test_evaluation_fields.py scripts/check_readiness.py scripts/test_check_readiness.py scripts/check_repository_hygiene.py scripts/test_check_repository_hygiene.py
       - name: Evaluate synthetic RU/KZ corpus (quality targets reported separately)
         run: python scripts/evaluate_ocr.py --output output/evaluation/ci
+      - name: Evaluate structured fields on the versioned regression corpus
+        run: python scripts/evaluate_ocr.py --manifest data/evaluation/ru-kz-fields-v2.json --output output/evaluation/ci-fields
       - name: Preserve synthetic evaluation evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: synthetic-ocr-evaluation
-          path: output/evaluation/ci/
+          path: output/evaluation/ci*/
           retention-days: 14
       - run: python -m ruff check backend/app backend/tests backend/alembic
       - run: python -m ruff format --check backend/app backend/tests backend/alembic
@@ -75,7 +79,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run format:check
-      - run: node --test scripts/test-map-config.mjs
+      - run: node --test scripts/test-*.mjs
       - run: npm run build
   browser-e2e:
     runs-on: ubuntu-latest

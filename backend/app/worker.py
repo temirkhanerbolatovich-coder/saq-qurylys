@@ -11,11 +11,12 @@ from sqlalchemy.orm import sessionmaker
 from app.config import Settings
 from app.extraction import extract, match_candidates
 from app.models import Advertisement, AnalysisJob, Asset, AuditEvent, ExtractionResult, Property, PropertyMatch, utcnow
+from app.notifications import process_telegram_one
 from app.ocr import AnalysisError, recognize
 from app.storage import read_asset, save_text
 
 logger = logging.getLogger(__name__)
-PIPELINE_VERSION = 'tesseract-rus-kaz-eng+rules-1.2+rapidfuzz-1'
+PIPELINE_VERSION = 'tesseract-rus-kaz-eng+rules-1.5+rapidfuzz-1'
 
 
 def create_extraction(db, ad, asset, text, words=None, *, job_id=None, parent=None, original_ocr=None):
@@ -28,7 +29,7 @@ def create_extraction(db, ad, asset, text, words=None, *, job_id=None, parent=No
         advertisement_id=ad.id,
         source_asset_id=asset.id,
         parent_extraction_id=parent,
-        pipeline_version=PIPELINE_VERSION if not parent else 'manual-transcription+rules-1.2+rapidfuzz-1',
+        pipeline_version=PIPELINE_VERSION if not parent else 'manual-transcription+rules-1.5+rapidfuzz-1',
         original_ocr_text=original_ocr,
         analysis_text=text,
         hypotheses=hypotheses,
@@ -59,7 +60,10 @@ def claim_job(sessions, settings):
         job.claim_token = uuid4()
         job.lease_until = now + timedelta(seconds=settings.job_lease_seconds)
         job.state, job.updated_at = 'RUNNING', now
-        job.stage = 'Генерация PDF' if job.kind == 'RENDER_PDF' else 'Распознавание и извлечение условий'
+        job.stage = {
+            'RENDER_PDF': 'Генерация PDF',
+            'IMPORT_URL': 'Загрузка открытой публикации',
+        }.get(job.kind, 'Распознавание и извлечение условий')
         return job.id, job.claim_token, job.advertisement_id, job.attempt
 
 
@@ -70,6 +74,10 @@ def process_one(sessions, settings):
     job_id, token, ad_id, attempt = claimed
     with sessions() as db:
         kind = db.get(AnalysisJob, job_id).kind
+    if kind == 'IMPORT_URL':
+        from app.url_import import process_import_job
+
+        return process_import_job(sessions, settings, job_id, token, attempt)
     if kind == 'RENDER_PDF':
         from app.signal_pdf import process_pdf_job
 
@@ -164,7 +172,9 @@ def main():
     try:
         while True:
             try:
-                if not process_one(sessions, settings):
+                processed = process_one(sessions, settings)
+                notified = process_telegram_one(sessions, settings)
+                if not processed and not notified:
                     time.sleep(settings.worker_poll_seconds)
             except Exception:
                 logger.exception('Worker transaction failed; lease will recover the job')

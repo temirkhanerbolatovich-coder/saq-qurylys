@@ -1,8 +1,30 @@
 # SAQ QURYLYS — каталог компонентов
 
+Интеграция17.10: существующие Providers/Workspace получили GlobalSearch и светлую
+оболочку без второй навигации; DashboardView использует прежние очереди и новые
+analytics panels с backend totals. PropertyMap сохраняет Leaflet client boundary,
+controlled selection и таблицу, добавляет instruction/coverage/selected facts.
+SignalsView/SignalCard переиспользуют Button/Notice/LoadState/Pagination/RiskSummary
+и native details: page-local search не заменяет серверные фильтры. Новых UI или
+state dependencies нет. Дизайн master1.4, результаты проверок — UI_AUDIT/PROJECT_STATUS.
+
+Дополнение S0–S2, 17.10.2026: `Providers` в workspace.tsx содержит постоянные пять зон, контекстный `WorkspaceContext` и локальную навигацию «Проверки». `DashboardHeading`/`DashboardQueues` используют существующие PageTitle/Link/LoadState и реальные summary/list API. `ReviewView` в analysis-workspace.tsx переиспользует Pagination/LoadState/native details/select; queue и selected material независимы. `useReviewDraft`/`clearReviewDrafts` в lib/use-review-draft.ts — общий локальный draft для четырёх review-форм, TTL при восстановлении, память при storage failure и auth cleanup. Это не API/persistence серверных решений. Стили `.analyst-workspace`, `.action-queues`, `.review-queue-*`, `.review-provenance` используют прежние tokens. Новых dependencies нет.
+
+Дополнение17.10.2026: `DossierProgress` внутри workspace использует PropertyDetail и native dl/links; `UrlImportView` в url-import.tsx переиспользует Auth/Notice/PageTitle/Button и job API; `OpenRegistry` в open-registry.tsx переиспользует useData/LoadState/upload, native details/select и тот же Button. Формы версии и поиска взаимоисключены при busy. Новый UI-framework, modal или библиотека состояний не добавлены. Browser presentation-проверки — `open-sources.spec.ts`, runtime — PROJECT_STATUS.
+
+Дополнение 16.10.2026 — простой каталог: `InterfaceMode`/`useInterfaceMode` в workspace.tsx задаёт только предпочтение отображения с безопасным fallback при недоступном storage. `SimpleDashboard` использует существующие summary/registry запросы, `PropertyCards` — серверный Risk, Demo/Zone, factorLabels и propertyDossierUrl. Карточки переиспользуются обзором и реестром. Кнопки — существующий Button; необязательный контекст — native details, без библиотек. `LegalBasisDecision.showControls` скрывает смонтированные controls отдельно от `writable`, чтобы переключение вида не меняло роль и не теряло ввод.
+
+Дополнение 16.10.2026: `ThreadsSearch` (`frontend/components/threads-search.tsx`) встроен в MonitoringWorkspace и использует Button/Notice/LoadState/useData, native form/input/select и existing monitoring styles. Показывает статус подключения, одну временную выдачу и recovery; API/конфигурация — [FEATURE_THREADS_SEARCH](FEATURE_THREADS_SEARCH.md). Результат фокусируется после React commit через effect, без гонки requestAnimationFrame с монтированием заголовка.
+
+Дополнение 16.10.2026: `MonitoringWorkspace` (`frontend/components/monitoring-workspace.tsx`) и route `/monitoring` расширяют существующие PageTitle, Notice, LoadState, Demo, Button, Pagination, TableRegion, useAuth/useData. Локальные candidate/snapshot/compare/review forms используют native labels/fieldset/details, не создают вторую UI-библиотеку. Очередь/фильтры/выбор сохранены в URL, resolvedPath исключает старую выдачу; ошибки команды сохраняют её ключ, 409 сохраняет обоснование и предлагает обновление. Показаны пределы последних 100 материалов/20 сверок/карточек. Семантический CSS — `frontend/app/monitoring/monitoring.css`; шестой пункт подробной навигации «Сверка», mobile grid в три колонки. [Границы](FEATURE_MONITORING_CASES.md), фактическая визуальная проверка — UI_AUDIT.
+
 Это карта существующего UI для повторного использования, а не список будущих заглушек. Визуальные правила — [DESIGN_SYSTEM](DESIGN_SYSTEM.md), сценарии — [UX_GUIDELINES](UX_GUIDELINES.md). Перед созданием компонента проверить этот каталог и `rg` по `frontend/components`.
 
 ## Базовые компоненты
+
+`PropertyHistory` (`frontend/components/property-history.tsx`) — общая пагинируемая хронология досье и раскрываемого журнала review. Читает существующий audit API с двумя дополнительными полями; использует Button/Pagination/LoadState/useData и семантические tokens. Сохранённые статусы/причины показываются без реконструкции балла, fallback не теряет неизвестный код. `history_page` сохраняет контекст URL; соседние формы не размонтируются. Границы — [FEATURE_PROPERTY_HISTORY](FEATURE_PROPERTY_HISTORY.md).
+
+Дополнение 16.10.2026: `RiskSummary` в workspace.tsx переиспользуется досье/сигналами, получает только серверный Risk и отображает score/zone/confirmed_codes/revision/as_of с оговоркой. `frontend/lib/presentation.ts` хранит единые подписи факторов/зон и `propertyDossierUrl` с фиксированным локальным путём и закодированным registry query. PropertyMap получает выбранный ID/onSelect от PropertyResults, таблица показывает тот же выбор. Pagination теперь используется и в рекламе с фактическими server metadata. Native legal forms выделены `.legal-review`; новый конкурентный form/component runtime не добавлен. Notice/evidence используют единые motion tokens и reduced-motion.
 
 | Элемент | Реализация | Контракт и применение |
 |---|---|---|
@@ -42,11 +64,11 @@ import { TableRegion } from "@/components/ui/table-region";
 | Input / Textarea | login, новый текст, review-формы | Видимый label/htmlFor, required/maxLength/type, helper через aria-describedby. Native validation остаётся; серверная проверка обязательна. На mobile font 16 px |
 | Select | фильтры реестра/сигналов, очереди review | Native select; варианты хранят API values, видимые подписи русские. Не подключать custom select без конкретной нужды |
 | Filters / Search | PropertiesView | URL q/zone/legal_status, общий list/map/page; сброс одним button удаляет эти фильтры и page, сохраняет view и остальные URL-параметры. Пустая строка поиска не требует повторного submit |
-| Navigation / Sidebar | Providers | Пять разделов, aria-current, роль/выход на всех ширинах, skip link. Регион в topbar — контекст, не интерактивная breadcrumb |
-| Breadcrumb / Back | Link «К реестру», «К рекламе» в досье | Реальные ссылки с понятным родителем. Будущий многоуровневый путь — nav aria-label + ol и aria-current=page; не выдавать статический регион за breadcrumb |
+| Navigation / Header | Providers | Пять постоянных зон в обоих видах, aria-current, роль/выход на всех ширинах, skip link. `/monitoring` входит в «Проверку»; вложенная навигация «Материалы / Сверка» |
+| Breadcrumb / Back | WorkspaceContext; Link «К реестру», «К рекламе» | Реальный родитель досье/оригинала/сверки. «К реестру» переносит закодированный registry query; точная позиция прокрутки и selected map marker отдельно не сохраняются этим helper |
 | Tabs / View switch | native links text/file, кнопки list/map | Сейчас это переходы и toggle group aria-pressed; не присваивать role=tab без roving focus/tabpanel/keyboard-контракта |
 | Card / Panel | .panel, .padded, .compact | Документальная поверхность; выбирать по содержимому, а не оборачивать всё одинаковыми cards. KPI остаются полосой, таблица — строками |
-| Dossier sections | PropertyView | Anchor targets с tabIndex=-1, forms не unmount; черновик причины не теряется при переходе по разделам |
+| Dossier sections | PropertyView | Anchor targets с tabIndex=-1; переключение вида и якорей сохраняет mounted формы. Уход с маршрута — отдельная граница: потеря R4 reason воспроизведена в повторном аудите, защита review drafts сюда пока не перенесена |
 | Review steps | ReviewMaterial в analysis-workspace.tsx | Четыре навигационных этапа: оригинал/гипотезы/объект/R2. Счётчик из существующих review_status; отсутствующий шаг объяснён, не фиктивно завершён. Anchor targets с tabIndex=-1, inputs остаются mounted; прогресс не начисляет баллы |
 | Intake form sections | NewAdvertisementView / FileUploadView | Две читаемые группы: оригинал+происхождение, необязательный контекст. Связанные hints, счётчик текста без noisy live updates, выбранные имя/размер и aria-invalid при oversize. Сохранение текста фокусирует результат; основной Next Link ведёт прямо в review, анализ остаётся отдельным действием |
 | Details / disclosure | R1 и construction forms | Native details/summary, Enter/Space. Причина отдельного решения R1 постоянно видна; сохранение материала и решение разделены |

@@ -116,7 +116,9 @@ def dashboard(
     return {
         'property_count': len(rows),
         'zones': {value: sum(row.risk.zone == value for row in rows) for value in ['GREEN', 'YELLOW', 'RED']},
-        'new_advertisements': db.scalar(select(func.count()).select_from(query.subquery())),
+        'new_advertisements': db.scalar(
+            select(func.count()).select_from(query.where(Advertisement.status == 'NEW').subquery())
+        ),
         'pending_hypotheses': pending,
         'pending_signals': db.scalar(
             select(func.count())

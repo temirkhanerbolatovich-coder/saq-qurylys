@@ -110,8 +110,8 @@ def test_text_analysis_exact_offsets_and_candidates(signed, settings):
     assert ad['confirmed_property_id'] is None
 
 
-def reviewed_evidence(signed, settings, property_id=None):
-    ad, result = analyzed(signed, settings)
+def reviewed_evidence(signed, settings, property_id=None, *, text=None):
+    ad, result = analyzed(signed, settings) if text is None else analyzed(signed, settings, text)
     property_id = property_id or demo_id('orken')
     matched = post(
         signed,
@@ -155,6 +155,26 @@ def reviewed_evidence(signed, settings, property_id=None):
     assert evidence.json()['source_label'] == ad['source_label']
     contract(evidence.json(), 'Evidence')
     return ad, result, hypothesis, evidence.json(), payload
+
+
+@pytest.mark.parametrize(
+    'text',
+    [
+        'ЖК «Жаңа Арман». Перечислите 500 000 тенге для закрепления квартиры за вами.',
+        'ТК «Жаңа Арман». Пәтерді бекіту үшін 500 000 теңге аударыңыз.',
+    ],
+)
+def test_allocation_transfer_can_be_reviewed_as_evidence_without_automatic_risk(signed, settings, text):
+    property_id = demo_id('orken')
+    before = signed.get(f'/api/v1/properties/{property_id}/risk').json()['summary']
+    ad, result, hypothesis, evidence, _ = reviewed_evidence(signed, settings, property_id, text=text)
+    assert result['pipeline_version'] == 'tesseract-rus-kaz-eng+rules-1.5+rapidfuzz-1'
+    term = next(item for item in result['hypotheses'] if item['id'] == hypothesis['id'])
+    assert term['review_status'] == 'CONFIRMED'
+    assert term['value']['money'] == {'amount': '500000', 'currency': 'KZT'}
+    assert evidence['advertisement_id'] == ad['id']
+    after = signed.get(f'/api/v1/properties/{property_id}/risk').json()['summary']
+    assert (after['score'], after['zone']) == (before['score'], before['zone'])
 
 
 def test_human_r2_confirm_reject_and_invalidate(signed, settings):

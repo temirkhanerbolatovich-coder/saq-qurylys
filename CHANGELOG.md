@@ -1,5 +1,105 @@
 # Changelog
 
+## 2026-10-17 · Integrated frontend and repository structure
+
+- Integrated the uploaded light workspace, object search/dashboard analytics, map guidance/selection and signal review presentation into `frontend/`, preserving current APIs, drafts, server pagination, roles and immutable history.
+- Removed55 misplaced root uploads/archive paths from the current tree; preserved source history and excluded runtime/private artifacts. Added CI repository hygiene checks; disclosed archive credentials require rotation by their runtime owner.
+- Pinned the Next tracing/Turbopack root to frontend and verified the standalone build/start path; added a real Next-config regression and responsive browser checks.
+
+## 2026-10-17 · Offline AI field evaluation
+
+- Added shared schema2 amount/currency/percent and strict source-binding scores to OCR and saved-publication evaluators; schema1 inputs remain supported with unannotated field scores.
+- Added a versioned synthetic RU/KZ field regression corpus, behavioral tests and CI artifact run. Preserved old labels/reports and exposed false positives, incomplete mixed values and OCR quote errors without changing production extraction.
+- Fixed native Tesseract metadata decoding for Windows Cyrillic paths; no new dependencies or API changes.
+
+## 2026-10-17 · Saved publication comparison (backend)
+
+- Added authenticated read-only `/api/v1/advertisements/compare`: explicit original or historical analysis text, source/date/version context and exact Unicode line differences.
+- Distinguished unavailable text from equality; enforced DEMO/REAL, version/source ownership and100000-character/1000-line bounds without truncation. No entity, risk, signal or notification changes.
+- Contract0.13.0-mvp; frontend integration and GitHub publication remain separate.
+
+## 2026-10-17 · Derived material review work (backend)
+
+- Added authenticated read-only `/api/v1/advertisements/review-queue` with concrete hypothesis, latest-version match, payment evidence and R2 tasks, exact filtered totals and pagination.
+- Preserved historical pending R2 after source correction and checked terminal decision freshness against source/binding review; no status, risk or signal mutations.
+- Contract 0.12.0-mvp; frontend integration remains a separate block. A zero task count is not source or legal acceptance.
+
+## 2026-10-17 · Analyst workspace S0–S2
+
+- Five permanent work zones, nested monitoring navigation and contextual breadcrumbs; compact dashboard with server-backed work queues.
+- Server-paged review queue with status/URL context and provenance beside the original.
+- Tab-scoped recovery of review reasons and manual corrections, explicit storage failure handling, authentication cleanup and preserved retry keys; no automatic decisions or changed risk rules.
+
+## Внешний RU/KZ baseline и правила1.5 · 17.10.2026
+
+- Первый неизменяемый baseline12реальных открытых публикаций; отдельные RU/KZ метрики и переводные группы. Набор отрицательный, после просмотра используется для регрессии; коммерческая/OCR/человеческая приёмка остаётся открытой.
+- URL-импорт дополнен двумя проверенными RU-подрубриками Primeminister.kz — press/reviews; остальные вложенные пути и корни рубрик запрещены.
+- rules-1.5 отличает отраслевое «строительство» от явного строительства объекта в ипотечном исключении. Исправлены2RUложных условия оплаты, прямые требования/платная бронь/названия сохранены. Существующие решения и snapshots не пересчитываются.
+- Offline evaluator защищает прежний отчёт от перезаписи, проверяет изменения исходников/manifest/кода, сохраняет runtime и считает matching top-1/top-3 с ошибками в знаменателе. Добавлен в существующий CI lint; новый CI удалённо не запускался.
+
+## Открытые публикации и документ КЖК · 17.10.2026
+
+- Явный Primeminister.kz URL import: лицензированный источник, leased job, HTML/SHA/атрибуция/текст, защита от повторов и отдельный анализ. Коммерческий рекламный C-01 остаётся открыт.
+- Операторский импорт реального PDF КЖК: версии/дата/страницы/поиск, без автоматического правового статуса или баллов.
+- rules-1.4: ограниченная обработка ипотечной информации по первым реальным RU/KZ отрицательным примерам; явная оплата/бронь/объекты сохраняются. Новая офлайн-оценка фиксирует ограничения качества.
+- Досье показывает найдено/подтверждено/недостающее/следующее действие. Новые UI используют прежние tokens и компоненты.
+
+## Простой интерфейс и каталог · 16.10.2026
+
+- По умолчанию три раздела, короткая верхняя навигация, одно главное действие обзора и карточки объектов с объяснением риска.
+- Дополнительные меню, KPI, карта/фильтры, формы документов, история и создание сигнала доступны в подробном режиме; переключение сохраняет ввод и выбранные файлы.
+- URL/дата ввода раскрываются по желанию, неработающая вкладка URL-импорта удалена. DEMO, UNKNOWN, доказательства и ручные решения сохранены. Новый вид не меняет backend/API/формулу и не удаляет данные.
+- Awwwards/Estudio Niksen использованы как визуальный референс; существующие токены/шрифты/компоненты сохранены. Исправлен контраст профиля на белой верхней панели.
+
+## Предпросмотр Threads на сайте — 16.10.2026
+
+- Доведена до локальной проверки панель поиска в `/monitoring`: подключение, ручной запрос аналитика, временные результаты, ошибки и восстановление без потери фразы. Исправлена гонка фокусировки результата при отправке клавишей Enter.
+- Контракт 0.10.0-mvp добавляет status/search; session/CSRF/analyst, один активный запрос на API-процесс, пауза и ограничение времени. Исходники/риск/инциденты не создаются и не меняются. [Настройка и ограничения](docs/FEATURE_THREADS_SEARCH.md).
+- Живой доступ не подтверждён; веб-функция остаётся отключённой. Следующий этап — официальный доступ и один проверенный запрос, затем доказательственное сохранение.
+
+## Первый адаптер Threads — 16.10.2026
+
+- Реализован CLI offline-status/одной страницы официального keyword search: даты/ссылки, bounded TLS/timeout/size, приватный отчёт, dedup и безопасные ошибки без токенов.
+- Поиск не подключён к API/worker/БД: токен отсутствует, живой доступ ожидает проверки. Источники перепроверены, в Ashyq обнаружен паспорт CSV; скачивание остановилось на TLS verification, без обхода. [Реализация и запуск](docs/FEATURE_THREADS_SEARCH.md).
+
+
+## Сверка рекламы и предварительные карточки — 16.10.2026
+
+- Добавлен раздел `/monitoring`: ручное выделение кандидата из сохранённой публикации, версии DEMO-списка, объяснение результата и история отдельных предварительных карточек.
+- Повторные/конкурентные команды защищены idempotency/revision/уникальностью активной карточки; противоречивые дубли документов отклоняются до записи. Восемь новых API-операций, контракт 0.9.0-mvp и аддитивная миграция b26f105d7c41.
+- REAL/DEMO разделены. Недоступный/неполный/устаревший реестр и неоднозначная область не дают отрицательного правового вывода; R1–R6, сигналы и Telegram не меняются. Live-поиск площадок остаётся следующим блоком. [Границы и использование](docs/FEATURE_MONITORING_CASES.md).
+
+## Исправления обзора и условий оплаты — 16.10.2026
+
+- Счётчик «Новые публикации» ограничен статусом NEW с сохранением фильтров; pending-гипотезы по последней версии продолжают учитываться независимо от статуса материала.
+- `rules-1.3`: явный перевод с суммой для закрепления квартиры в RU/KZ, мягкие переносы и исходные offsets; ограниченный контекст, отрицания назначения/необходимости, предупреждения, старые предложения и посторонние переводы.
+- Новые гипотезы остаются PENDING. API формы и веса риска не менялись, описан смысл new_advertisements; ручное создание пропущенного PAYMENT_TERM не добавлено. Версия повышена для обычного анализа и ручной расшифровки; старые извлечения и снимки не переписываются.
+
+## Telegram-уведомления — 16.10.2026
+
+- Добавлен отключённый по умолчанию transactional outbox для новых ручных CONFIRMED R1–R6, обработка существующим worker, deduplication/429/backoff/UNKNOWN и закреплённый private chat.
+- Добавлен безопасный CLI BotFather-token → одноразовая привязка → проверка/статус/retry/выключение. Secrets остаются в приватной env; Telegram SDK и новые сервисы не добавлены.
+- Миграция a91b76f2c305 создаёт telegram_notifications. Формула/роли/ручные проверки и исторические сигналы сохранены; DEMO по умолчанию не рассылается. Живая регистрация/доставка не объявляется выполненной только по тестам.
+## История объекта — 16.10.2026
+
+- Добавлена общая хронология в досье и review: понятные события, автор, причина, сохранённые изменения статусов и переходы к связанным материалам/сигналам.
+- Серверная пагинация по 10 событий с `history_page`, сохранением query/форм, loading/empty/error/retry и скрытием прежней страницы во время запроса/ошибки.
+- Существующий API аудита дополнен текущим именем автора и кодом фактора. Формула, БД/миграции, роли и исторические snapshots сохранены; график прошлого риска/уведомления не добавлялись.
+
+## Подготовка URL-импорта — 16.10.2026
+
+- Добавлен отключённый от API/worker HTTPS-транспорт одного разрешённого источника: домен/пути, проверка всех DNS-адресов и redirects, IP pinning с TLS verification, размер и общий deadline.
+- Добавлены отдельные security/HTTP/subprocess тесты и безопасные сообщения ошибок с признаком допустимости явного повтора. Автоматических retries и новых зависимостей нет.
+- Исследованы условия Krisha/Korter/BI; подтверждённого разрешённого источника нет. C-01 остаётся OPEN/BLOCKED; сохранение/извлечение/jobs/UI ещё не интегрированы. Приоритеты и следующий блок уточнены в существующем плане/статусе.
+
+## UI/UX: рабочее пространство аналитика — 16.10.2026
+
+- Обзор показывает пять приоритетных объектов с явным охватом выборки, реальные KPI и переходы к материалам/проверке/карте/сигналам.
+- Реестр показывает активные фильтры, город/застройщика; выбранный на карте объект выделен в таблице. Возврат из досье сохраняет query/page/list-map даже после reload.
+- Реклама использует существующие серверные status filters/pagination, отдельные даты публикации/фиксации и прямой переход в review. Старая выборка не показывается под новым фильтром или после ошибки.
+- Выбор материала review хранится в URL; Back/reload не запускает анализ. Общий RiskSummary, anchors сигналов и выделение версии упрощают доступ к фактам/решению/PDF/истории.
+- Единая типографика/поверхности legal forms/motion 150–200 ms с reduced-motion. Backend/API/БД/риск/права/исторические snapshots и зависимости сохранены.
+
 ## OCR/extraction rules-1.2 — 15.10.2026
 
 - Условия оплаты сохраняются через мягкий перенос суммы/термина и сокращение `тыс.`; добавлены резервирование и казахский призыв предварительной оплаты. Нулевой платёж не заимствует положительную цену квартиры.

@@ -3,6 +3,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { command, upload } from "@/lib/api";
 import type { PropertyDetail } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { statusLabel } from "@/lib/status-labels";
 
 export function AppealReview({
   detail,
@@ -110,7 +111,7 @@ export function AppealReview({
     });
   }
   return (
-    <section className="panel padded">
+    <section className="panel padded legal-review">
       <h2>R4 · коллективное обращение</h2>
       <p>
         Загрузите отдельный документ. Укажите дату, источник и основание
@@ -119,7 +120,7 @@ export function AppealReview({
       </p>
       {factor && (
         <p>
-          Текущий статус R4: <b>{factor.status}</b>
+          Текущий статус R4: <b>{statusLabel(factor.status)}</b>
         </p>
       )}
       <form

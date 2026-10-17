@@ -1,13 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
-import { login } from "./support";
+import { login, testOrigin } from "./support";
 
 async function post(page: Page, path: string, data: unknown) {
   const csrf = await (await page.request.get("/api/v1/auth/csrf")).json();
   return page.request.post(`/api/v1${path}`, {
     headers: {
-      Origin: "http://localhost:3000",
+      Origin: testOrigin,
       "X-CSRF-Token": csrf.csrf_token,
       "Idempotency-Key": randomUUID(),
     },
@@ -58,11 +58,27 @@ test("signals preserve snapshots, decisions, version history and a conflicted re
   await expect(
     panel.getByRole("button", { name: "Подтвердить сигнал", exact: true }),
   ).toBeDisabled();
+  await expect(
+    panel.getByText("Что делать сейчас", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    panel.getByRole("region", { name: "Рассчитанный приоритет проверки" }),
+  ).toBeVisible();
+  const factors = panel.locator("details").filter({
+    has: page.locator("summary", { hasText: /^Факторы риска/ }),
+  });
+  await expect(factors).not.toHaveAttribute("open", "");
   await panel
     .getByLabel("Обоснование решения по сигналу")
     .fill(
       "DEMO: проверены сохранённые материалы; сигнал направлен на дополнительную проверку и не устанавливает нарушение",
     );
+  await factors.locator("summary").focus();
+  await page.keyboard.press("Enter");
+  await expect(factors).toHaveAttribute("open", "");
+  await expect(panel.getByLabel("Обоснование решения по сигналу")).toHaveValue(
+    "DEMO: проверены сохранённые материалы; сигнал направлен на дополнительную проверку и не устанавливает нарушение",
+  );
   await panel
     .getByRole("button", { name: "Подтвердить сигнал", exact: true })
     .click();
@@ -158,6 +174,7 @@ test("signals preserve snapshots, decisions, version history and a conflicted re
   expect(after.signal.is_stale).toBe(true);
 
   await page.getByLabel("Статус сигнала").selectOption("RETURNED");
+  await page.getByText("Дополнительные фильтры", { exact: true }).click();
   await page.getByLabel("Объект сигнала").selectOption(property.id);
   await expect(page.getByLabel("Очередь сигналов")).toContainText(
     `Версия ${third.version}`,

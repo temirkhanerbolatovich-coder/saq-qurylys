@@ -266,3 +266,69 @@ test("a pending signal filter never presents the previous queue as its own resul
   ).toBeVisible();
   await expect(page.locator(".signal-queue-item")).toHaveCount(0);
 });
+
+test("signal page search preserves the selected snapshot and labels the scope of counts", async ({
+  page,
+}) => {
+  await login(page);
+  const signals: ResultPage<Signal> = await (
+    await page.request.get("/api/v1/signals?page_size=1")
+  ).json();
+  expect(signals.items.length).toBeGreaterThan(0);
+  const signal = signals.items[0];
+  let queueRequests = 0;
+  // Presentation fixture: total exceeds the loaded page; no backend data changes.
+  await page.route(/\/api\/v1\/signals\?/, async (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    if (query.get("page_size") !== "25") return route.continue();
+    queueRequests++;
+    return route.fulfill({
+      json: { items: [signal], total: 51, page: 1, page_size: 25 },
+    });
+  });
+  await page.goto(`/signals?signal_id=${signal.id}`);
+  const panel = page.getByTestId("signal-detail");
+  await expect(
+    panel.getByRole("heading", {
+      name: `Сигнал · версия ${signal.version}`,
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.locator(".signal-queue-item")).toHaveCount(1);
+  const summary = page.getByRole("region", { name: "Сводка сигналов" });
+  await expect(summary).toContainText("По выбранным фильтрам");
+  await expect(summary).toContainText("51");
+  await expect(
+    summary.getByText("На текущей странице", { exact: true }),
+  ).toHaveCount(2);
+  await expect(page.locator(".signals-extra-filters")).not.toHaveAttribute(
+    "open",
+    "",
+  );
+  const search = page.getByLabel("Поиск на текущей странице сигналов", {
+    exact: true,
+  });
+  const requestsBeforeSearch = queueRequests;
+  await search.fill("DEMO отсутствует-на-странице");
+  await expect(page.locator(".signal-queue-item")).toHaveCount(0);
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "ничего не найдено на этой странице" }),
+  ).toBeVisible();
+  await expect(panel).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`signal_id=${signal.id}$`));
+  await expect(page.locator("#signal-search-help")).toContainText(
+    "выбранный снимок остаётся открытым",
+  );
+  expect(queueRequests).toBe(requestsBeforeSearch);
+  await search.fill(signal.id);
+  await expect(page.locator(".signal-queue-item")).toHaveCount(1);
+  await page
+    .getByRole("button", { name: "Сбросить фильтры сигналов", exact: true })
+    .click();
+  await expect(search).toHaveValue("");
+  await expect(
+    page.getByLabel("Объект сигнала", { exact: true }),
+  ).toBeFocused();
+});

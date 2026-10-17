@@ -12,6 +12,12 @@ PAYMENT = re.compile(
     r'алдын\s+ала\s+т[өо]л(?:ем|еңіз))',
     re.I,
 )
+TRANSFER_PAYMENT = re.compile(r'\b(?:перечислите|переведите|аударыңыз)\b', re.I)
+APARTMENT_ALLOCATION = re.compile(
+    r'\b(?:(?:для\s+закрепления|за\s+закрепление)\s+квартиры|'
+    r'пәтерді\s+(?:өз\s+атыңызға\s+)?бекіту\s+үшін)\b',
+    re.I,
+)
 NUMBER_GAP = r'(?:[ \t\u00a0\u202f]+|[ \t\u00a0\u202f]*\r?\n[ \t\u00a0\u202f]*)'
 NUMBER = rf'(?:\d{{1,3}}(?:{NUMBER_GAP}\d{{3}})+|\d+)(?:[.,]\d{{1,2}})?'
 MONEY = re.compile(
@@ -22,11 +28,16 @@ PERCENT = re.compile(rf'(?P<amount>{NUMBER})\s*%')
 WARNING = re.compile(r'предупрежд|опасайтесь|не\s+(?:вносите|переводите|платите)|сақ\s+бол|алаяқ', re.I)
 FREE = r'бесплатн\w*|тегін|ақысыз|без\s+оплат\w*'
 UNDER = re.compile(r'строящ\w*|строит\w*|строится|до\s+сдачи|салынып\s+жатыр|құрылыс\s+кезең', re.I)
+PROJECT_CONSTRUCTION = re.compile(
+    r'строящ\w*|строится|\bстроим\b|\bстроят\b|\bстроит\b|до\s+сдачи|салынып\s+жатыр|құрылыс\s+кезең|'
+    r'строительств\w*\s+(?:(?:нашего|нового|этого|данного)\s+)?дом(?:а|е)\b',
+    re.I,
+)
 COMPLETED = re.compile(r'(?:дом\s+)?(?:введ[её]н|готовые\s+квартиры)|пайдалануға\s+берілген', re.I)
 NAME_PREFIX = re.compile(r'(?:\bЖК\b|\bТК\b|жилой\s+комплекс|тұрғын\s+үй\s+кешені)\s*[«"“]?([^\n;,.!?»"”]{2,70})', re.I)
 CLAUSE_BOUNDARY = re.compile(
     r'[.!?;](?=\s|$)|\n+|,[ \t]*(?=(?:(?:а\s+|но\s+)?(?:сейчас|теперь|сегодня|енді|қазір)|'
-    r'(?:но\s+)?(?:внесите|оплатите|перечислите))\b)',
+    r'(?:но\s+)?(?:внесите|оплатите|перечислите|переведите))\b)',
     re.I,
 )
 HISTORICAL_CONTEXT = re.compile(
@@ -55,8 +66,9 @@ def payment_is_positive(sentence: str, match: re.Match) -> bool:
     if re.search(r'(?:\bбез|\bне|\bнет)\s+(?:\w+\s+){0,2}$', before, re.I):
         return False
     if re.match(
-        r'\s*(?:не\s+(?:нуж\w*|треб\w*)|отсутств\w*|алынбайды|жоқ|қабылданбайды|ұсынылмайды|'
-        r'талап\s+етілмейді|жасамаңыз)',
+        r'\s*(?:(?:деньги|оплата|плат[её]ж\w*|ақша|төлем)\s+)?'
+        r'(?:не\s+(?:нуж\w*|треб\w*)|отсутств\w*|алынбайды|жоқ|қабылданбайды|ұсынылмайды|'
+        r'талап\s+етілмейді|жасамаңыз|(?:қажет|керек)\s+емес)',
         after,
         re.I,
     ):
@@ -80,13 +92,17 @@ def clauses(text: str):
             amount_continues = re.search(r'\d\s*$', before) and re.match(
                 r'[ \t]*(?:\d{3}\b|тыс\b|млн\b|мың\b|тенге\b|теңге\b|KZT\b|USD\b|EUR\b|[₸$€])', after, re.I
             )
-            payment_continues = PAYMENT.search(before) and re.match(
+            payment_continues = (PAYMENT.search(before) or TRANSFER_PAYMENT.search(before)) and re.match(
                 r'[ \t]*(?:\d|в[ \t]+размере\b|размере\b|тенге\b|теңге\b|[₸$€])', after, re.I
             )
             term_continues = re.search(r'(?:алдын\s+ала|первоначальн\w*|платн\w*)\s*$', before, re.I) and re.match(
                 r'[ \t]*(?:т[өо]л|взнос|брон)', after, re.I
             )
-            if amount_continues or payment_continues or term_continues:
+            allocation_continues = any(amount.end() == len(before.rstrip()) for amount in MONEY.finditer(before)) and (
+                (TRANSFER_PAYMENT.search(before) and APARTMENT_ALLOCATION.match(after.lstrip()))
+                or (APARTMENT_ALLOCATION.search(before) and TRANSFER_PAYMENT.match(after.lstrip()))
+            )
+            if amount_continues or payment_continues or term_continues or allocation_continues:
                 continue
         end = boundary.end()
         left, right = start, end
@@ -105,11 +121,41 @@ def number_value(amount: str) -> Decimal:
     return Decimal(re.sub(r'\s', '', amount).replace(',', '.'))
 
 
-def payment_terms(text: str) -> list:
+def mortgage_information(text: str) -> bool:
+    """Bank-loan information without a named project is not a developer's demand.
+
+    Only down-payment descriptions are affected; explicit payment instructions
+    and separate paid reservations must still be surfaced for human review.
+    """
+    return bool(
+        re.search(r'\bбанк\w*', text, re.I)
+        and re.search(r'ипотек\w*|\bза[её]м\w*|\bзайм\w*|\bнесие\w*|\bкредит\w*', text, re.I)
+        and re.search(r'\bпрограмм\w*|\bбағдарлама\w*', text, re.I)
+        and not NAME_PREFIX.search(text)
+        # Sector statistics ("строительство") alone do not identify a marketed project.
+        and not PROJECT_CONSTRUCTION.search(text)
+    )
+
+
+def payment_terms(text: str, *, mortgage_context: bool = False) -> list:
     terms = []
     amounts = [*MONEY.finditer(text), *PERCENT.finditer(text)]
-    for match in PAYMENT.finditer(text):
+    matches = list(PAYMENT.finditer(text))
+    for transfer in TRANSFER_PAYMENT.finditer(text):
+        # A generic transfer is not a housing offer; require a nearby explicit allocation purpose.
+        context = text[max(0, transfer.start() - 120) : transfer.end() + 120]
+        if any(payment_is_positive(context, allocation) for allocation in APARTMENT_ALLOCATION.finditer(context)):
+            matches.append(transfer)
+    for match in sorted(matches, key=lambda item: item.start()):
         if not payment_is_positive(text, match):
+            continue
+        if (
+            mortgage_context
+            and re.search(r'взнос|жарна', match.group(), re.I)
+            and not re.search(
+                r'\b(?:внесите|оплатите|перечислите|переведите|төлеңіз|аударыңыз|енгізіңіз)\b', text, re.I
+            )
+        ):
             continue
 
         def distance(amount):
@@ -126,7 +172,10 @@ def payment_terms(text: str) -> list:
 
 
 def payment_offer(text: str) -> bool:
-    return not WARNING.search(text) and any(payment_terms(text[start:end]) for start, end in clauses(text))
+    mortgage_context = mortgage_information(text)
+    return not WARNING.search(text) and any(
+        payment_terms(text[start:end], mortgage_context=mortgage_context) for start, end in clauses(text)
+    )
 
 
 def money_value(money: re.Match) -> dict:
@@ -222,9 +271,10 @@ def extract(
                 warnings.append(
                     'Название найдено с возможной потерей казахской диакритики. Сверьте объект по оригиналу.'
                 )
+    mortgage_context = mortgage_information(text) and not any(item['field'] == 'PROPERTY_NAME' for item in hypotheses)
     for start, end in clauses(text):
         content = text[start:end]
-        terms = payment_terms(content) if not WARNING.search(text) else []
+        terms = payment_terms(content, mortgage_context=mortgage_context) if not WARNING.search(text) else []
         if terms:
             term, nearest = terms[0]
             required_start = min(term.start(), nearest.start()) if nearest is not None else term.start()

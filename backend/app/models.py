@@ -1,7 +1,20 @@
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -141,6 +154,27 @@ class AuditEvent(Base):
     details: Mapped[dict] = mapped_column(JSON, default=dict, server_default='{}')
 
 
+class TelegramNotification(Base):
+    __tablename__ = 'telegram_notifications'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    deduplication_key: Mapped[str] = mapped_column(String(150), unique=True)
+    property_id: Mapped[UUID] = mapped_column(ForeignKey('properties.id'), index=True)
+    factor_id: Mapped[UUID] = mapped_column(ForeignKey('risk_factors.id'))
+    factor_revision: Mapped[int] = mapped_column(Integer)
+    bot_id: Mapped[str] = mapped_column(String(20))
+    chat_id: Mapped[str] = mapped_column(String(20))
+    text: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(String(20), default='QUEUED', index=True)
+    attempt: Mapped[int] = mapped_column(Integer, default=0)
+    next_attempt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    claim_token: Mapped[UUID | None] = mapped_column()
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    message_id: Mapped[int | None] = mapped_column(BigInteger)
+    error_code: Mapped[str | None] = mapped_column(String(60))
+
+
 class Command(Base):
     __tablename__ = 'commands'
     __table_args__ = (UniqueConstraint('actor_id', 'operation', 'key', name='uq_actor_command'),)
@@ -171,6 +205,7 @@ class AnalysisJob(Base):
     request_id: Mapped[UUID] = mapped_column()
     result_asset_id: Mapped[UUID | None] = mapped_column(ForeignKey('assets.id'))
     error: Mapped[dict | None] = mapped_column(JSON)
+    input_payload: Mapped[dict | None] = mapped_column(JSON)
 
 
 class ExtractionResult(Base):
@@ -223,3 +258,104 @@ class Signal(Base):
     pdf_state: Mapped[str] = mapped_column(String(20), default='NOT_REQUESTED')
     pdf_asset_id: Mapped[UUID | None] = mapped_column(ForeignKey('assets.id'))
     pdf_job_id: Mapped[UUID | None] = mapped_column()
+
+
+class MonitoringCandidate(Base):
+    __tablename__ = 'monitoring_candidates'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    identity_key: Mapped[str] = mapped_column(String(64), unique=True)
+    name: Mapped[str] = mapped_column(String(300))
+    city: Mapped[str] = mapped_column(String(100))
+    address: Mapped[str | None] = mapped_column(String(300))
+    phase: Mapped[str | None] = mapped_column(String(100))
+    is_demo: Mapped[bool] = mapped_column(Boolean)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+
+
+class MonitoringObservation(Base):
+    __tablename__ = 'monitoring_observations'
+    __table_args__ = (UniqueConstraint('candidate_id', 'advertisement_id', name='uq_monitoring_observation'),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    candidate_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_candidates.id'), index=True)
+    advertisement_id: Mapped[UUID] = mapped_column(ForeignKey('advertisements.id'))
+    advertisement_revision: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    reason: Mapped[str] = mapped_column(Text)
+
+
+class MonitoringRegistrySnapshot(Base):
+    __tablename__ = 'monitoring_registry_snapshots'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    label: Mapped[str] = mapped_column(String(300))
+    city: Mapped[str] = mapped_column(String(100))
+    is_demo: Mapped[bool] = mapped_column(Boolean)
+    coverage_from: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    coverage_until: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    complete: Mapped[bool] = mapped_column(Boolean)
+    entries: Mapped[list] = mapped_column(JSON)
+    sha256: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+
+    @property
+    def revision(self) -> int:
+        return 1
+
+
+class MonitoringComparison(Base):
+    __tablename__ = 'monitoring_comparisons'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    deduplication_key: Mapped[str] = mapped_column(String(64), unique=True)
+    candidate_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_candidates.id'), index=True)
+    advertisement_id: Mapped[UUID] = mapped_column(ForeignKey('advertisements.id'))
+    candidate_revision: Mapped[int] = mapped_column(Integer)
+    advertisement_revision: Mapped[int] = mapped_column(Integer)
+    snapshot_id: Mapped[UUID | None] = mapped_column(ForeignKey('monitoring_registry_snapshots.id'))
+    result: Mapped[str] = mapped_column(String(60))
+    explanation: Mapped[str] = mapped_column(Text)
+    matched_entries: Mapped[list] = mapped_column(JSON)
+    identity_snapshot: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    algorithm_version: Mapped[str] = mapped_column(String(100))
+
+    @property
+    def revision(self) -> int:
+        return 1
+
+
+class MonitoringIncident(Base):
+    __tablename__ = 'monitoring_incidents'
+    __table_args__ = (
+        Index(
+            'uq_monitoring_active_incident',
+            'candidate_id',
+            'rule_code',
+            unique=True,
+            postgresql_where=text("state <> 'CLOSED'"),
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    candidate_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_candidates.id'), index=True)
+    candidate_name: Mapped[str] = mapped_column(String(300))
+    is_demo: Mapped[bool] = mapped_column(Boolean)
+    rule_code: Mapped[str] = mapped_column(String(60))
+    state: Mapped[str] = mapped_column(String(20), default='OPEN')
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    close_reason: Mapped[str | None] = mapped_column(String(30))
+    latest_comparison_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_comparisons.id'))
+    history: Mapped[list] = mapped_column(JSON)
+
+
+class MonitoringIncidentComparison(Base):
+    __tablename__ = 'monitoring_incident_comparisons'
+    __table_args__ = (UniqueConstraint('comparison_id', name='uq_monitoring_incident_comparison'),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    incident_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_incidents.id'), index=True)
+    comparison_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_comparisons.id'))

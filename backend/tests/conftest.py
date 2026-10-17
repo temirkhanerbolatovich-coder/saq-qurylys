@@ -27,6 +27,10 @@ def settings(tmp_path_factory):
         update={
             'database_url': url.render_as_string(hide_password=False),
             'storage_root': tmp_path_factory.mktemp('assets'),
+            'telegram_enabled': False,
+            'telegram_include_demo': False,
+            'threads_search_enabled': False,
+            'threads_access_token': '',
         }
     )
     old_url = os.environ.get('DATABASE_URL')

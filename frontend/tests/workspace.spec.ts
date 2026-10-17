@@ -3,6 +3,67 @@ import { mkdir } from "node:fs/promises";
 
 import { login } from "./support";
 
+test("global search opens the registry with an encoded name and preserves the work zones", async ({
+  page,
+}) => {
+  await login(page);
+  const search = page.getByRole("search", { name: "Поиск объекта" });
+  await search
+    .getByLabel("Найти объект или адрес")
+    .fill("  DEMO Бәйтерек · очередь 2  ");
+  await search
+    .getByRole("button", { name: "Найти объект", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/properties\?q=/);
+  expect(new URL(page.url()).searchParams.get("q")).toBe(
+    "DEMO Бәйтерек · очередь 2",
+  );
+  await expect(page.getByLabel("Поиск ЖК или адреса")).toHaveValue(
+    "DEMO Бәйтерек · очередь 2",
+  );
+  await expect(
+    page
+      .getByRole("navigation", { name: "Основная навигация" })
+      .getByRole("link"),
+  ).toHaveCount(5);
+});
+
+test("dashboard analytics use server totals and distinguish legal decisions from valid grounds", async ({
+  page,
+}) => {
+  await login(page);
+  const summary = await (
+    await page.request.get("/api/v1/dashboard/summary")
+  ).json();
+  const signals = await (
+    await page.request.get("/api/v1/signals?page_size=1")
+  ).json();
+  for (const [index, zone] of ["RED", "YELLOW", "GREEN"].entries()) {
+    await expect(
+      page.locator(".risk-bar-row").nth(index).locator("strong"),
+    ).toHaveText(String(summary.zones[zone]));
+  }
+  const decisions = page.locator(".verification-card");
+  await expect(decisions.locator(".verification-legend dd").first()).toHaveText(
+    String(summary.property_count - summary.unknown_legal_bases),
+  );
+  await expect(decisions.locator(".verification-legend dd").last()).toHaveText(
+    String(summary.unknown_legal_bases),
+  );
+  await expect(decisions).toContainText(
+    "Это не число действующих правовых оснований",
+  );
+  await expect(page.locator(".history-card")).toContainText(
+    `Всего сигналов: ${signals.total}`,
+  );
+  await expect(page.locator(".history-card")).toContainText(
+    "Недостаточно данных",
+  );
+  await expect(
+    page.locator(".history-card canvas, .history-card svg.chart"),
+  ).toHaveCount(0);
+});
+
 test("anonymous visitor is redirected to login", async ({ page }) => {
   await page.goto("/properties");
   await expect(page).toHaveURL(/\/login$/);
@@ -13,6 +74,22 @@ test("anonymous visitor is redirected to login", async ({ page }) => {
 
 test("dashboard and evidence come from authenticated API", async ({ page }) => {
   await login(page);
+  const summary = await (
+    await page.request.get("/api/v1/dashboard/summary")
+  ).json();
+  const newMaterials = await (
+    await page.request.get("/api/v1/advertisements?status=NEW&page_size=1")
+  ).json();
+  expect(summary.new_advertisements).toBe(newMaterials.total);
+  const newQueue = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "Новые публикации", exact: true }),
+  });
+  await expect(newQueue.locator(".rail-number")).toHaveText(
+    String(summary.new_advertisements),
+  );
+  await expect(
+    newQueue.getByRole("link", { name: "Открыть новые материалы" }),
+  ).toHaveAttribute("href", "/advertisements?status=NEW");
   await expect(
     page.getByRole("link", { name: "DEMO Бәйтерек · очередь 2", exact: true }),
   ).toBeVisible();

@@ -1,0 +1,492 @@
+{
+  "schema_version": 2,
+  "corpus_id": "synthetic-ru-kz-fields-v2",
+  "provenance": {
+    "kind": "synthetic",
+    "author": "Codex evaluation fixture author",
+    "created_at": "2026-10-17",
+    "independence": "Agent-authored field annotations for a deliberately constructed regression fixture. The author inspected the existing evaluation schema and production extraction code before authorship, so this is not a blind holdout or independent human acceptance. No production extractor, OCR, matcher, inference or prior predictions were invoked to generate these labels. All properties, addresses and advertising offers are fictional DEMO data. Kazakh wording and domain labels require independent human review."
+  },
+  "properties": [
+    {
+      "key": "p01",
+      "name": "DEMO Липовый Берег",
+      "aliases": [
+        "DEMO Липовый Берег",
+        "DEMO Жөке Жағасы"
+      ],
+      "address": "DEMO-город, вымышленная улица Липового Света, 11"
+    },
+    {
+      "key": "p02",
+      "name": "DEMO Янтарная Долина",
+      "aliases": [
+        "DEMO Янтарная Долина",
+        "DEMO Кәріптас Алқабы"
+      ],
+      "address": "DEMO-город, вымышленная улица Янтарного Ветра, 22"
+    },
+    {
+      "key": "p03",
+      "name": "DEMO Серебряный Двор",
+      "aliases": [
+        "DEMO Серебряный Двор",
+        "DEMO Күміс Аула"
+      ],
+      "address": "DEMO-қала, ойдан шығарылған Күміс жол көшесі, 33"
+    },
+    {
+      "key": "p04",
+      "name": "DEMO Ветровая Башня",
+      "aliases": [
+        "DEMO Ветровая Башня",
+        "DEMO Самал Мұнара"
+      ],
+      "address": "DEMO-қала, ойдан шығарылған Самал жол көшесі, 44"
+    }
+  ],
+  "cases": [
+    {
+      "id": "ru-fields-01",
+      "language": "ru",
+      "text": "DEMO — синтетический макет объявления.\nЖК «DEMO Липовый Берег».\nПервоначальный взнос — 20%.\nОстаток оплачивается по отдельному графику.",
+      "readable": true,
+      "render_style": "plain",
+      "payment_offer": true,
+      "target_property_key": "p01",
+      "field_labels": {
+        "amounts": [],
+        "payment_terms": [
+          {
+            "money": null,
+            "percent": "20",
+            "fragment": {
+              "start_offset": 64,
+              "end_offset": 91,
+              "quote": "Первоначальный взнос — 20%."
+            }
+          }
+        ]
+      },
+      "notes": "Положительное условие с процентом и без денежной суммы; percent размечен десятичной строкой."
+    },
+    {
+      "id": "ru-fields-02",
+      "language": "ru",
+      "text": "DEMO — вымышленное предложение для оценки.\nЖК «DEMO Янтарная Долина».\nПлатная бронь — 125,50 USD.\nПланировку предоставят после обращения.",
+      "readable": true,
+      "render_style": "poster",
+      "payment_offer": true,
+      "target_property_key": "p02",
+      "field_labels": {
+        "amounts": [
+          {
+            "money": {
+              "amount": "125.50",
+              "currency": "USD"
+            },
+            "fragment": {
+              "start_offset": 86,
+              "end_offset": 96,
+              "quote": "125,50 USD"
+            }
+          }
+        ],
+        "payment_terms": [
+          {
+            "money": {
+              "amount": "125.50",
+              "currency": "USD"
+            },
+            "percent": null,
+            "fragment": {
+              "start_offset": 70,
+              "end_offset": 97,
+              "quote": "Платная бронь — 125,50 USD."
+            }
+          }
+        ]
+      },
+      "notes": "Десятичная запятая, явная валюта USD; сумма относится к брони."
+    },
+    {
+      "id": "ru-fields-03",
+      "language": "ru",
+      "text": "DEMO — вымышленный объект и условия.\nЖК «DEMO Серебряный Двор».\nЗадаток — 2,5 млн тенге.\nДепозит — 300 EUR.\nЭто два отдельных условия оплаты.",
+      "readable": true,
+      "render_style": "compressed",
+      "payment_offer": true,
+      "target_property_key": "p03",
+      "field_labels": {
+        "amounts": [
+          {
+            "money": {
+              "amount": "2500000",
+              "currency": "KZT"
+            },
+            "fragment": {
+              "start_offset": 74,
+              "end_offset": 87,
+              "quote": "2,5 млн тенге"
+            }
+          },
+          {
+            "money": {
+              "amount": "300",
+              "currency": "EUR"
+            },
+            "fragment": {
+              "start_offset": 99,
+              "end_offset": 106,
+              "quote": "300 EUR"
+            }
+          }
+        ],
+        "payment_terms": [
+          {
+            "money": {
+              "amount": "2500000",
+              "currency": "KZT"
+            },
+            "percent": null,
+            "fragment": {
+              "start_offset": 64,
+              "end_offset": 88,
+              "quote": "Задаток — 2,5 млн тенге."
+            }
+          },
+          {
+            "money": {
+              "amount": "300",
+              "currency": "EUR"
+            },
+            "percent": null,
+            "fragment": {
+              "start_offset": 89,
+              "end_offset": 107,
+              "quote": "Депозит — 300 EUR."
+            }
+          }
+        ]
+      },
+      "notes": "Две разные платёжные фразы и валюты; десятичный масштаб млн должен дать 2500000 KZT."
+    },
+    {
+      "id": "ru-fields-04",
+      "language": "ru",
+      "text": "DEMO — учебный рекламный текст.\nЖК «DEMO Ветровая Башня».\nВнесите аванс 10% и депозит 250 000 тенге.\nОба условия указаны в одной фразе.",
+      "readable": true,
+      "render_style": "plain",
+      "payment_offer": true,
+      "target_property_key": "p04",
+      "field_labels": {
+        "amounts": [
+          {
+            "money": {
+              "amount": "250000",
+              "currency": "KZT"
+            },
+            "fragment": {
+              "start_offset": 86,
+              "end_offset": 99,
+              "quote": "250 000 тенге"
+            }
+          }
+        ],
+        "payment_terms": [
+          {
+            "money": {
+              "amount": "250000",
+              "currency": "KZT"
+            },
+            "percent": "10",
+            "fragment": {
+              "start_offset": 58,
+              "end_offset": 100,
+              "quote": "Внесите аванс 10% и депозит 250 000 тенге."
+            }
+          }
+        ]
+      },
+      "notes": "Одно составное условие содержит процент и денежный депозит одновременно. Размечены оба значения; правила не используются как источник правильного ответа."
+    },
+    {
+      "id": "ru-fields-05",
+      "language": "ru",
+      "text": "DEMO — отрицательный контроль.\nЖК «DEMO Липовый Берег».\nБронь бесплатная.\nЦена квартиры — 27,5 млн тенге.\nПредварительный платёж не требуется.",
+      "readable": true,
+      "render_style": "poster",
+      "payment_offer": false,
+      "target_property_key": "p01",
+      "field_labels": {
+        "amounts": [
+          {
+            "money": {
+              "amount": "27500000",
+              "currency": "KZT"
+            },
+            "fragment": {
+              "start_offset": 90,
+              "end_offset": 104,
+              "quote": "27,5 млн тенге"
+            }
+          }
+        ],
+        "payment_terms": []
+      },
+      "notes": "Цена квартиры является денежным упоминанием AMOUNT, но не платёжным условием; бесплатная бронь и отрицание не дают PAYMENT_TERM."
+    },
+    {
+      "id": "ru-fields-06",
+      "language": "ru",
+      "text": "DEMO — вымышленный информационный текст о банковской программе.\nБанк описал программу ипотечного займа.\nПервоначальный взнос по программе — 15%.\nКонкретный жилой комплекс не предлагается.",
+      "readable": true,
+      "render_style": "compressed",
+      "payment_offer": false,
+      "target_property_key": null,
+      "field_labels": {
+        "amounts": [],
+        "payment_terms": []
+      },
+      "notes": "Описательный первоначальный взнос в банковской программе без конкретного объекта и без прямого призыва оплатить; самостоятельного положительного условия нет."
+    },
+    {
+      "id": "kz-fields-01",
+      "language": "kz",
+      "text": "DEMO — бағалауға арналған ойдан шығарылған хабарландыру.\nТК «DEMO Жөке Жағасы».\nБастапқы жарна — 15%.\nҚалған сома бөлек кесте бойынша төленеді.",
+      "readable": true,
+      "render_style": "plain",
+      "payment_offer": true,
+      "target_property_key": "p01",
+      "field_labels": {
+        "amounts": [],
+        "payment_terms": [
+          {
+            "money": null,
+            "percent": "15",
+            "fragment": {
+              "start_offset": 80,
+              "end_offset": 101,
+              "quote": "Бастапқы жарна — 15%."
+            }
+          }
+        ]
+      },
+      "notes": "Положительное условие первоначального взноса на казахском; известен процент, денежная сумма не названа. Требуется внешняя проверка казахской формулировки."
+    },
+    {
+      "id": "kz-fields-02",
+      "language": "kz",
+      "text": "DEMO — ойдан шығарылған жарнама үлгісі.\nТК «DEMO Кәріптас Алқабы».\nАқылы брондау — 87,25 EUR.\nПәтер жоспары сұрау бойынша беріледі.",
+      "readable": true,
+      "render_style": "poster",
+      "payment_offer": true,
+      "target_property_key": "p02",
+      "field_labels": {
+        "amounts": [
+          {
+            "money": {
+              "amount": "87.25",
+              "currency": "EUR"
+            },
+            "fragment": {
+              "start_offset": 83,
+              "end_offset": 92,
+              "quote": "87,25 EUR"
+            }
+          }
+        ],
+        "payment_terms": [
+          {
+            "money": {
+              "amount": "87.25",
+              "currency": "EUR"
+            },
+            "percent": null,
+            "fragment": {
+              "start_offset": 67,
+              "end_offset": 93,
+              "quote": "Ақылы брондау — 87,25 EUR."
+            }
+          }
+        ]
+      },
+      "notes": "Платная бронь с десятичной суммой и явной EUR. Казахская разметка агентская, не человеческая приёмка."
+    },
+    {
+      "id": "kz-fields-03",
+      "language": "kz",
+      "text": "DEMO — тек сынаққа арналған шарттар.\nТК «DEMO Күміс Аула».\nКепілақы — 150 мың теңге.\nАлдын ала төлем — 150 000 теңге.\nЕкі бөлек төлем шарты көрсетілген.",
+      "readable": true,
+      "render_style": "compressed",
+      "payment_offer": true,
+      "target_property_key": "p03",
+      "field_labels": {
+        "amounts": [
+          {
+            "money": {
+              "amount": "150000",
+              "currency": "KZT"
+            },
+            "fragment": {
+              "start_offset": 70,
+              "end_offset": 83,
+              "quote": "150 мың теңге"
+            }
+          },
+          {
+            "money": {
+              "amount": "150000",
+              "currency": "KZT"
+            },
+            "fragment": {
+              "start_offset": 103,
+              "end_offset": 116,
+              "quote": "150 000 теңге"
+            }
+          }
+        ],
+        "payment_terms": [
+          {
+            "money": {
+              "amount": "150000",
+              "currency": "KZT"
+            },
+            "percent": null,
+            "fragment": {
+              "start_offset": 59,
+              "end_offset": 84,
+              "quote": "Кепілақы — 150 мың теңге."
+            }
+          },
+          {
+            "money": {
+              "amount": "150000",
+              "currency": "KZT"
+            },
+            "percent": null,
+            "fragment": {
+              "start_offset": 85,
+              "end_offset": 117,
+              "quote": "Алдын ала төлем — 150 000 теңге."
+            }
+          }
+        ]
+      },
+      "notes": "Два отдельных условия с одинаковым числовым значением и разными исходными фрагментами; масштабы мың и запись с пробелом. Совпадение суммы не заменяет привязку к нужной фразе."
+    },
+    {
+      "id": "kz-fields-04",
+      "language": "kz",
+      "text": "DEMO — бағалау үшін жасалған мәтін.\nТК «DEMO Самал Мұнара».\nАлдын ала төлем — 12% және кепілақы — 350 000 теңге.\nЕкі шарт бір сөйлемде жазылған.",
+      "readable": true,
+      "render_style": "plain",
+      "payment_offer": true,
+      "target_property_key": "p04",
+      "field_labels": {
+        "amounts": [
+          {
+            "money": {
+              "amount": "350000",
+              "currency": "KZT"
+            },
+            "fragment": {
+              "start_offset": 98,
+              "end_offset": 111,
+              "quote": "350 000 теңге"
+            }
+          }
+        ],
+        "payment_terms": [
+          {
+            "money": {
+              "amount": "350000",
+              "currency": "KZT"
+            },
+            "percent": "12",
+            "fragment": {
+              "start_offset": 60,
+              "end_offset": 112,
+              "quote": "Алдын ала төлем — 12% және кепілақы — 350 000 теңге."
+            }
+          }
+        ]
+      },
+      "notes": "Одна составная фраза содержит процент и отдельную денежную кепілақы; оба значения являются gold независимо от возможностей текущего extractor."
+    },
+    {
+      "id": "kz-fields-05",
+      "language": "kz",
+      "text": "DEMO — теріс бақылау үлгісі.\nТК «DEMO Жөке Жағасы».\nКепілақы алынбайды.\nБрондау тегін.\nПәтердің бағасы — 18 млн теңге.",
+      "readable": true,
+      "render_style": "poster",
+      "payment_offer": false,
+      "target_property_key": "p01",
+      "field_labels": {
+        "amounts": [
+          {
+            "money": {
+              "amount": "18000000",
+              "currency": "KZT"
+            },
+            "fragment": {
+              "start_offset": 105,
+              "end_offset": 117,
+              "quote": "18 млн теңге"
+            }
+          }
+        ],
+        "payment_terms": []
+      },
+      "notes": "Кепілақы отрицалась, бронь бесплатна; цена квартиры размечена как AMOUNT, платёжные условия отсутствуют."
+    },
+    {
+      "id": "kz-fields-06",
+      "language": "kz",
+      "text": "DEMO — ойдан шығарылған банк бағдарламасы туралы ақпарат.\nБанк ипотекалық несие бағдарламасын таныстырды.\nНесие сомасы — 9 млн теңге.\nБағдарлама бойынша бастапқы жарна — 20%.\nНақты тұрғын үй кешені ұсынылмайды.",
+      "readable": true,
+      "render_style": "compressed",
+      "payment_offer": false,
+      "target_property_key": null,
+      "field_labels": {
+        "amounts": [
+          {
+            "money": {
+              "amount": "9000000",
+              "currency": "KZT"
+            },
+            "fragment": {
+              "start_offset": 121,
+              "end_offset": 132,
+              "quote": "9 млн теңге"
+            }
+          }
+        ],
+        "payment_terms": []
+      },
+      "notes": "Банковское информационное сообщение без конкретного ЖК и прямой команды оплатить; сумма кредита не является требованием платежа. Требуется проверка носителем казахского языка."
+    },
+    {
+      "id": "ru-fields-07-unreadable",
+      "language": "ru",
+      "text": "DEMO — синтетический испорченный макет. Исходный текст скрыт шумом при рендере.",
+      "readable": false,
+      "render_style": "unreadable",
+      "payment_offer": null,
+      "target_property_key": null,
+      "field_labels": null,
+      "notes": "Нечитаемый контроль: payment_offer, target_property_key и field_labels неизвестны. Не считать его отрицательным размеченным примером."
+    },
+    {
+      "id": "kz-fields-07-unreadable",
+      "language": "kz",
+      "text": "DEMO — оқылмайтын синтетикалық үлгі. Мәтін рендер кезінде әдейі бұрмаланады.",
+      "readable": false,
+      "render_style": "unreadable",
+      "payment_offer": null,
+      "target_property_key": null,
+      "field_labels": null,
+      "notes": "Нечитаемый казахский контроль с неизвестными supervised labels; не положительный и не отрицательный gold."
+    }
+  ]
+}
