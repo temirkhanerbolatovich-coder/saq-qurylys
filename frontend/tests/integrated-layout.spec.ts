@@ -55,9 +55,7 @@ test("integrated dashboard, map and selected signal stay usable at all target wi
       await expect(page.locator(view.ready)).toBeVisible();
       if (view.name === "dashboard") {
         await expect(page.locator(".risk-bar-row")).toHaveCount(3);
-        await expect(
-          page.locator(".priority-list li"),
-        ).not.toHaveCount(0);
+        await expect(page.locator(".priority-list li")).not.toHaveCount(0);
         await expect(page.locator(".workflow-links a")).toHaveCount(3);
         for (const link of await page.locator(".workflow-links a").all()) {
           expect(
