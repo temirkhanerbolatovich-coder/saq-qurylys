@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased · Dossier draft protection
+
+- Preserve R1/R4/construction/legal-basis form input across object navigation, Back and reload with scoped tab drafts and explicit restore notices.
+- Keep selected files and retry state in tab memory during SPA navigation; require and explain file reselection after reload. Clear text and memory on logout/401; never store file bytes in Web Storage or submit restored decisions automatically.
+- Verify R4 document capture and its separate decision against an existing nonzero risk baseline.
+
 ## 2026-10-17 · Selective integration of frontend updates
 
 - Integrated publication cards/details, intake forms, material review heading and signal guidance while retaining drafts, server pagination, URL context, history, controlled map selection and review/comparison workflows.

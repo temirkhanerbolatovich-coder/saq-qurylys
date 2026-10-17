@@ -1,8 +1,10 @@
 "use client";
-import { useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { command, date, upload } from "@/lib/api";
 import type { PropertyDetail } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { useDossierFormDraft } from "@/lib/use-dossier-form-draft";
+import { DossierDraftNotice } from "@/components/dossier-draft-notice";
 
 export const mechanismLabels: Record<string, string> = {
   KZHK_GUARANTEE: "Гарантия КЖК",
@@ -23,17 +25,26 @@ function localNow() {
 export function LegalBasisCreate({
   detail,
   onSaved,
+  userId,
 }: {
+  userId: string;
   detail: PropertyDetail;
   onSaved: () => void;
 }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
-  const keys = useRef<{ upload: string; create: string }>({
-    upload: crypto.randomUUID(),
-    create: crypto.randomUUID(),
-  });
+  const draft = useDossierFormDraft(
+    userId,
+    `${detail.property.id}:basis-create`,
+    () => {},
+  );
+  const keys = draft.remember("keys", () => ({
+    current: {
+      upload: crypto.randomUUID(),
+      create: crypto.randomUUID(),
+    },
+  }));
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -48,6 +59,7 @@ export function LegalBasisCreate({
     source.set("property_id", detail.property.id);
     source.set("is_demo", String(detail.property.is_demo));
     source.set("purpose", "LEGAL_BASIS");
+    draft.checkpoint();
     setBusy(true);
     setError("");
     setMessage("");
@@ -75,6 +87,7 @@ export function LegalBasisCreate({
         body,
         keys.current.create,
       );
+      draft.saved();
       setMessage(
         "Основание сохранено со статусом «На проверке». Риск не изменился.",
       );
@@ -86,8 +99,9 @@ export function LegalBasisCreate({
     }
   }
   return (
-    <section className="panel padded legal-review">
+    <section className="panel padded legal-review" {...draft.containerProps}>
       <h2>Добавить правовое основание</h2>
+      <DossierDraftNotice draft={draft} />
       <p>
         Документ относится только к этому объекту/очереди. Пустой список
         документов и отклонённый документ не доказывают отсутствие основания и
@@ -201,11 +215,13 @@ export function LegalBasisCreate({
 
 export function LegalBasisDecision({
   basis,
+  userId,
   onSaved,
   writable,
   showControls = true,
 }: {
   basis: Basis;
+  userId: string;
   onSaved: () => void;
   writable: boolean;
   showControls?: boolean;
@@ -214,7 +230,17 @@ export function LegalBasisDecision({
     [asOf, setAsOf] = useState(localNow),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
-  const key = useRef<{ payload: string; key: string } | null>(null);
+  const draft = useDossierFormDraft<HTMLDivElement>(
+    userId,
+    `basis:${basis.id}`,
+    (fields) => {
+      setReason(fields[`basis-review-reason-${basis.id}`] || "");
+      setAsOf(fields[`basis-review-date-${basis.id}`] || localNow());
+    },
+  );
+  const key = draft.remember("key", () => ({
+    current: null as { payload: string; key: string } | null,
+  }));
   async function review(status: string) {
     const body = {
       expected_revision: basis.revision,
@@ -226,10 +252,12 @@ export function LegalBasisDecision({
     const payload = JSON.stringify(body);
     if (key.current?.payload !== payload)
       key.current = { payload, key: crypto.randomUUID() };
+    draft.checkpoint();
     setBusy(true);
     setError("");
     try {
       await command(`/legal-bases/${basis.id}/review`, body, key.current.key);
+      draft.saved();
       onSaved();
     } catch (e) {
       setError((e as Error).message);
@@ -238,7 +266,7 @@ export function LegalBasisDecision({
     }
   }
   return (
-    <div className="document-review">
+    <div className="document-review" {...draft.containerProps}>
       <p>
         <strong>{mechanismLabels[basis.mechanism] || basis.mechanism}</strong> ·{" "}
         {statusLabels[basis.verification_status] || basis.verification_status} ·
@@ -266,6 +294,7 @@ export function LegalBasisDecision({
       ))}
       {writable && basis.evidence_ids.length > 0 && (
         <div className="review-form" hidden={!showControls}>
+          <DossierDraftNotice draft={draft} />
           <label htmlFor={`basis-review-date-${basis.id}`}>
             Дата проверки применимости · +05:00
           </label>

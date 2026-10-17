@@ -46,6 +46,7 @@ import { TableRegion } from "@/components/ui/table-region";
 import { PropertyMap } from "@/components/property-map";
 import { PropertyHistory } from "@/components/property-history";
 import { clearReviewDrafts } from "@/lib/use-review-draft";
+import { clearDossierFormDrafts } from "@/lib/use-dossier-form-draft";
 import { statusLabel } from "@/lib/status-labels";
 import {
   factorLabels,
@@ -203,7 +204,10 @@ export function Providers({ children }: { children: ReactNode }) {
       setError("");
     } catch (e) {
       setUser(null);
-      if (e instanceof ApiError && e.status === 401) clearReviewDrafts();
+      if (e instanceof ApiError && e.status === 401) {
+        clearReviewDrafts();
+        clearDossierFormDrafts();
+      }
       if (!(e instanceof ApiError && e.status === 401))
         setError((e as Error).message);
     } finally {
@@ -293,6 +297,7 @@ export function Providers({ children }: { children: ReactNode }) {
                 onClick={async () => {
                   await command("/auth/logout");
                   clearReviewDrafts();
+                  clearDossierFormDrafts();
                   await refresh();
                   router.replace("/login");
                 }}
@@ -1687,6 +1692,7 @@ export function PropertyView({ id }: { id: string }) {
                 <LegalBasisDecision
                   key={`${basis.id}:${basis.revision}`}
                   basis={basis}
+                  userId={user?.id || ""}
                   onSaved={detail.reload}
                   writable={user?.role === "analyst"}
                   showControls={detailed}
@@ -1786,18 +1792,34 @@ export function PropertyView({ id }: { id: string }) {
         {user?.role === "analyst" && (
           <LegalAbsenceReview
             key={row.id}
+            userId={user?.id || ""}
             detail={detail.data}
             onSaved={detail.reload}
           />
         )}
         {user?.role === "analyst" && (
-          <AppealReview detail={detail.data} onSaved={detail.reload} />
+          <AppealReview
+            key={row.id}
+            userId={user?.id || ""}
+            detail={detail.data}
+            onSaved={detail.reload}
+          />
         )}
         {user?.role === "analyst" && (
-          <ConstructionReview detail={detail.data} onSaved={detail.reload} />
+          <ConstructionReview
+            key={row.id}
+            userId={user?.id || ""}
+            detail={detail.data}
+            onSaved={detail.reload}
+          />
         )}
         {user?.role === "analyst" && (
-          <LegalBasisCreate detail={detail.data} onSaved={detail.reload} />
+          <LegalBasisCreate
+            key={row.id}
+            userId={user?.id || ""}
+            detail={detail.data}
+            onSaved={detail.reload}
+          />
         )}
         <PropertyHistory key={id} id={id} revision={row.risk.revision} />
       </div>

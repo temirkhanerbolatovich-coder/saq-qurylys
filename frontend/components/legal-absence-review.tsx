@@ -1,8 +1,10 @@
 "use client";
-import { useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { ApiError, command, date, upload } from "@/lib/api";
 import type { PropertyDetail } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { useDossierFormDraft } from "@/lib/use-dossier-form-draft";
+import { DossierDraftNotice } from "@/components/dossier-draft-notice";
 
 const mechanisms = [
   { value: "KZHK_GUARANTEE", label: "Гарантия КЖК" },
@@ -33,7 +35,9 @@ function aware(value: FormDataEntryValue | null) {
 export function LegalAbsenceReview({
   detail,
   onSaved,
+  userId,
 }: {
+  userId: string;
   detail: PropertyDetail;
   onSaved: () => void;
 }) {
@@ -49,12 +53,46 @@ export function LegalAbsenceReview({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [saved, setSaved] = useState<SavedCheck | null>(null);
-  const [draftChanged, setDraftChanged] = useState(false);
-  const cache = useRef({
-    keys: new Map<string, string>(),
-    results: new Map<string, unknown>(),
-  });
+  const draft = useDossierFormDraft(
+    userId,
+    `${detail.property.id}:R1`,
+    (fields, missingFiles) => {
+      setReason(fields["absence-decision-reason"] || "");
+      setChecks(
+        mechanisms.map(({ value }) => {
+          const result = fields[`absence-result-${value}`];
+          return {
+            mechanism: value,
+            result: Object.hasOwn(results, result)
+              ? (result as Result)
+              : "UNKNOWN",
+            reason: fields[`absence-check-reason-${value}`] || "",
+          };
+        }),
+      );
+      setDraftChanged(fields.$formChanged === "true" || missingFiles);
+    },
+  );
+  const selection = draft.remember("selection", () => ({
+    saved: null as SavedCheck | null,
+    draftChanged: false,
+  }));
+  const [saved, updateSaved] = useState(selection.saved);
+  const [draftChanged, updateDraftChanged] = useState(selection.draftChanged);
+  function setSaved(value: SavedCheck | null) {
+    selection.saved = value;
+    updateSaved(value);
+  }
+  function setDraftChanged(value: boolean) {
+    selection.draftChanged = value;
+    updateDraftChanged(value);
+  }
+  const cache = draft.remember("cache", () => ({
+    current: {
+      keys: new Map<string, string>(),
+      results: new Map<string, unknown>(),
+    },
+  }));
   const completeCount = checks.filter(
     (check) => check.result === "DOCUMENTED_ABSENT",
   ).length;
@@ -84,11 +122,13 @@ export function LegalAbsenceReview({
     );
   }
   async function run(task: () => Promise<void>) {
+    draft.checkpoint();
     setBusy(true);
     setError("");
     setMessage("");
     try {
       await task();
+      if (!selection.draftChanged) draft.saved();
     } catch (failure) {
       setError(
         failure instanceof ApiError
@@ -226,8 +266,10 @@ export function LegalAbsenceReview({
     <section
       className="panel padded legal-review"
       data-testid="legal-absence-review"
+      {...draft.containerProps}
     >
       <h2>R1 · проверка отсутствия оснований</h2>
+      <DossierDraftNotice draft={draft} />
       <p>
         Пустой реестр, ошибка источника или отсутствие строки не доказывают
         отсутствие правового основания. Для R1 требуется документированный

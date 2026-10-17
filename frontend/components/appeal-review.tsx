@@ -1,24 +1,55 @@
 "use client";
-import { useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { command, upload } from "@/lib/api";
 import type { PropertyDetail } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { useDossierFormDraft } from "@/lib/use-dossier-form-draft";
+import { DossierDraftNotice } from "@/components/dossier-draft-notice";
+
 import { statusLabel } from "@/lib/status-labels";
 
 export function AppealReview({
   detail,
   onSaved,
+  userId,
 }: {
+  userId: string;
   detail: PropertyDetail;
   onSaved: () => void;
 }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
-  const [reason, setReason] = useState(""),
-    [evidenceId, setEvidenceId] = useState("");
-  const keys = useRef(new Map<string, string>()),
-    fileKey = useRef(crypto.randomUUID());
+  const [reason, setReason] = useState("");
+  const draft = useDossierFormDraft(
+    userId,
+    `${detail.property.id}:R4`,
+    (fields, missingFiles) => {
+      setReason(fields["appeal-reason"] || "");
+      setNeedsCapture(fields.$formChanged === "true" || missingFiles);
+    },
+    ["appeal-reason"],
+  );
+  const selection = draft.remember("selection", () => ({
+    evidenceId: "",
+    needsCapture: false,
+  }));
+  const [evidenceId, updateEvidenceId] = useState(selection.evidenceId);
+  const [needsCapture, updateNeedsCapture] = useState(selection.needsCapture);
+  function setEvidenceId(value: string) {
+    selection.evidenceId = value;
+    updateEvidenceId(value);
+  }
+  function setNeedsCapture(value: boolean) {
+    selection.needsCapture = value;
+    updateNeedsCapture(value);
+  }
+  const keys = draft.remember("keys", () => ({
+    current: new Map<string, string>(),
+  }));
+  const fileKey = draft.remember("fileKey", () => ({
+    current: crypto.randomUUID(),
+  }));
   const factor = detail.factors.find((f) => f.code === "R4");
   function key(payload: string) {
     if (!keys.current.has(payload))
@@ -26,11 +57,13 @@ export function AppealReview({
     return keys.current.get(payload)!;
   }
   async function run(task: () => Promise<void>) {
+    draft.checkpoint();
     setBusy(true);
     setError("");
     setMessage("");
     try {
       await task();
+      if (!selection.needsCapture) draft.saved();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -83,6 +116,7 @@ export function AppealReview({
           key(JSON.stringify(body)),
         );
       }
+      setNeedsCapture(false);
       setMessage(
         "Документ и доказательство сохранены. R4 подтверждается отдельным решением.",
       );
@@ -111,8 +145,9 @@ export function AppealReview({
     });
   }
   return (
-    <section className="panel padded legal-review">
+    <section className="panel padded legal-review" {...draft.containerProps}>
       <h2>R4 · коллективное обращение</h2>
+      <DossierDraftNotice draft={draft} />
       <p>
         Загрузите отдельный документ. Укажите дату, источник и основание
         проверки коллективности. Это сведения аналитика; система не проверяет
@@ -126,9 +161,12 @@ export function AppealReview({
       <form
         onSubmit={save}
         className="review-form"
-        onChange={() => {
+        onChange={(event) => {
           fileKey.current = crypto.randomUUID();
-          setEvidenceId("");
+          if ((event.target as HTMLElement).id !== "appeal-reason") {
+            setEvidenceId("");
+            setNeedsCapture(true);
+          }
         }}
       >
         <label htmlFor="appeal-source">Источник обращения</label>
@@ -188,10 +226,16 @@ export function AppealReview({
           Сохранить документ обращения
         </Button>
       </form>
+      {needsCapture && factor && (
+        <p className="muted">
+          Сохраните изменённый документ перед подтверждением R4. Отклонение
+          относится к текущему сохранённому фактору.
+        </p>
+      )}
       {factor && (
         <div className="review-actions">
           <Button
-            disabled={busy || !reason.trim() || !ids.length}
+            disabled={busy || !reason.trim() || !ids.length || needsCapture}
             onClick={() => void review("CONFIRMED")}
           >
             Подтвердить R4 · +15

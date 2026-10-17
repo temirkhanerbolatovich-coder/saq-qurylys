@@ -1,5 +1,27 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Черновики форм досье · 18.10.2026
+
+`useDossierFormDraft` (`frontend/lib/use-dossier-form-draft.ts`) расширяет существующий
+`useReviewDraft`, а не вводит второй storage runtime: native input/select/textarea
+с ID собираются внутри одной scoped области, controlled поля восстанавливаются
+явным callback каждого предметного компонента. В scope не включается версия
+риска: 409 не должен удалять причину. Для решения документа scope содержит его ID;
+действующая версия берётся из API, автоматического повтора нет.
+
+`containerProps` содержит ref и capture обработчик; `checkpoint()` сохраняет поля
+перед командой. `saved()` вызывается только после успешной команды без оставшегося
+нового capture; отклонение старого фактора не стирает его незагруженные материалы.
+`decisionFieldIds` отличает изменение причины R4 от изменения исходного документа.
+`remember()` сохраняет выбранные новые evidence IDs, дату/полноту R1, retry refs/results и
+выбранные File только в памяти вкладки; logout/401 вызывают `clearDossierFormDrafts`
+вместе с прежним `clearReviewDrafts`. Files восстанавливаются через native FileList,
+содержимое не записывается в sessionStorage. После reload требуется явный повторный выбор.
+`DossierDraftNotice` (`frontend/components/dossier-draft-notice.tsx`) использует
+существующие notice/muted tokens и role=status/alert: восстановление, отсутствующий
+файл и отказ storage различаются; пустая форма не получает лишних предупреждений.
+R1/R3/R5/R6 сохраняют независимые capture/review guards и серверные проверки.
+
 ## Компоненты входящего ui-updates · 17.10.2026
 
 `DashboardPublicationOverview` в workspace.tsx читает ограниченный catalog через useData и переиспользует LoadState/empty/error/retry. Каждый источник считается один раз, точные review totals остаются в DashboardQueues. Карточки и intake forms расширяют существующие views/native controls; новой библиотеки/API нет. Master1.4 сохраняется.

@@ -97,12 +97,20 @@ test("publication charts disclose their scope, count each source once and recove
     ).toBe(true);
     await expect(sources).toBeVisible();
     if (width >= 1024) {
-      const left = await statuses.boundingBox();
-      const right = await sources.boundingBox();
-      expect(left).toBeTruthy();
-      expect(right).toBeTruthy();
-      expect(Math.abs(left!.y - right!.y)).toBeLessThan(2);
-      expect(Math.abs(left!.width - right!.width)).toBeLessThan(2);
+      // Independent dashboard responses can reflow the page between two protocol reads.
+      await expect
+        .poll(() =>
+          page.locator(".dashboard-publication-overview").evaluate((region) => {
+            const [left, right] = Array.from(region.children).map((card) =>
+              card.getBoundingClientRect(),
+            );
+            return Math.max(
+              Math.abs(left.y - right.y),
+              Math.abs(left.width - right.width),
+            );
+          }),
+        )
+        .toBeLessThan(2);
     }
   }
   await page
