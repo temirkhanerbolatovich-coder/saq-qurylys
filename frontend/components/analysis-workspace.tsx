@@ -5,10 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
 import { api, command, date, upload } from "@/lib/api";
 import { statusLabel } from "@/lib/status-labels";
-import {
-  reviewCommandFingerprint,
-  useReviewDraft,
-} from "@/lib/use-review-draft";
 import type {
   Advertisement,
   Extraction,
@@ -21,8 +17,6 @@ import type {
   Value,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Pagination } from "@/components/ui/pagination";
-import { PropertyHistory } from "@/components/property-history";
 import {
   Auth,
   Demo,
@@ -30,12 +24,10 @@ import {
   Notice,
   PageTitle,
   useData,
-  useInterfaceMode,
   Zone,
 } from "@/components/workspace";
 
 export function FileUploadView() {
-  const { detailed } = useInterfaceMode();
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -75,12 +67,13 @@ export function FileUploadView() {
         description="PNG/JPEG до 10 МБ и 25 млн пикселей или UTF-8 TXT до 100000 символов. Оригинал сохраняется без изменений."
         action={false}
       />
-      <section className="panel form-panel">
+      <section className="panel form-panel intake-advertisement-panel upload-advertisement-panel">
         <div className="form-tabs">
           <Link href="/advertisements/new">Текст</Link>
-          <strong>PNG / JPEG / TXT</strong>
+          <strong>Файл · PNG / JPEG / TXT</strong>
         </div>
         <form
+          className="intake-advertisement-form upload-advertisement-form"
           onSubmit={submit}
           onChange={() => {
             key.current = crypto.randomUUID();
@@ -95,72 +88,93 @@ export function FileUploadView() {
               <p>Укажите источник и выберите один исходный файл.</p>
             </div>
           </div>
-          <label htmlFor="image-source">Источник / происхождение</label>
-          <input
-            id="image-source"
-            name="source_label"
-            required
-            maxLength={300}
-          />
-          <label htmlFor="image-file">Оригинальный PNG / JPEG / TXT</label>
-          <input
-            id="image-file"
-            aria-describedby="image-file-help image-file-selection"
-            aria-invalid={
-              selectedFile ? selectedFile.size > 10_485_760 : undefined
-            }
-            type="file"
-            name="file"
-            accept="image/png,image/jpeg,text/plain,.txt"
-            onChange={(event) =>
-              setSelectedFile(event.currentTarget.files?.[0] || null)
-            }
-            required
-          />
-          <p id="image-file-help" className="field-help">
-            PNG, JPEG или UTF-8 TXT, не больше 10 МБ. PDF для рекламного OCR не
-            поддерживается.
-          </p>
-          <p id="image-file-selection" className="field-help file-selection">
-            {selectedFile
-              ? `${selectedFile.name} · ${(selectedFile.size / 1024).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} КБ${selectedFile.size > 10_485_760 ? " · превышен лимит 10 МБ" : ""}`
-              : "Файл пока не выбран."}
-          </p>
-          <details className="optional-context" open={detailed || undefined}>
-            <summary>Ссылка и дата публикации · необязательно</summary>
-            <div className="form-section-heading">
-              <span className="section-index" aria-hidden="true">
-                02
-              </span>
+          <div className="upload-primary-fields">
+            <label htmlFor="image-source">Источник / происхождение</label>
+            <input
+              id="image-source"
+              name="source_label"
+              required
+              maxLength={300}
+              placeholder="Например: скриншот публичной страницы"
+            />
+            <label htmlFor="image-file">Оригинальный PNG / JPEG / TXT</label>
+            <div className="upload-file-control">
+              <input
+                id="image-file"
+                aria-describedby="image-file-help image-file-selection"
+                aria-invalid={
+                  selectedFile ? selectedFile.size > 10_485_760 : undefined
+                }
+                type="file"
+                name="file"
+                accept="image/png,image/jpeg,text/plain,.txt"
+                onChange={(event) =>
+                  setSelectedFile(event.currentTarget.files?.[0] || null)
+                }
+                required
+              />
+              <p
+                id="image-file-selection"
+                className="field-help file-selection"
+              >
+                {selectedFile
+                  ? `${selectedFile.name} · ${(selectedFile.size / 1024).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} КБ${selectedFile.size > 10_485_760 ? " · превышен лимит 10 МБ" : ""}`
+                  : "Файл пока не выбран."}
+              </p>
+            </div>
+            <p id="image-file-help" className="field-help">
+              PNG, JPEG или UTF-8 TXT, не больше 10 МБ. PDF для рекламного OCR
+              не поддерживается.
+            </p>
+          </div>
+          <div className="form-section-heading">
+            <span className="section-index" aria-hidden="true">
+              02
+            </span>
+            <div>
+              <h2>Контекст публикации</h2>
+              <p>
+                Ссылка и дата необязательны. Неизвестную дату оставьте пустой.
+              </p>
+            </div>
+          </div>
+          <div className="upload-context-panel">
+            <div className="form-columns">
               <div>
-                <h2>Контекст публикации</h2>
-                <p>
-                  Ссылка и дата необязательны. Неизвестную дату оставьте пустой.
-                </p>
+                <label htmlFor="image-url">
+                  Ссылка на источник <small>необязательно</small>
+                </label>
+                <input
+                  id="image-url"
+                  name="source_url"
+                  type="url"
+                  maxLength={2048}
+                  placeholder="https://…"
+                />
+              </div>
+              <div>
+                <label htmlFor="image-date">
+                  Дата публикации <small>+05:00</small>
+                </label>
+                <input
+                  id="image-date"
+                  name="published_at"
+                  type="datetime-local"
+                />
               </div>
             </div>
-            <label htmlFor="image-url">
-              Ссылка на источник · необязательно
+            <label className="checkbox">
+              <input type="checkbox" name="is_demo" defaultChecked />
+              Демонстрационный материал (DEMO)
             </label>
-            <input
-              id="image-url"
-              name="source_url"
-              type="url"
-              maxLength={2048}
-            />
-            <label htmlFor="image-date">
-              Дата публикации · +05:00 · необязательно
-            </label>
-            <input id="image-date" name="published_at" type="datetime-local" />
-          </details>
-          <label className="checkbox">
-            <input type="checkbox" name="is_demo" defaultChecked />
-            Демонстрационный материал (DEMO)
-          </label>
+          </div>
           {error && <Notice error={error} />}
-          <Button disabled={busy} aria-busy={busy}>
-            {busy ? "Сохранение…" : "Сохранить файл"}
-          </Button>
+          <div className="form-actions">
+            <Button disabled={busy} aria-busy={busy}>
+              {busy ? "Сохранение…" : "Сохранить файл"}
+            </Button>
+            <span>После сохранения откроется ручная проверка материала.</span>
+          </div>
         </form>
       </section>
     </>
@@ -169,45 +183,13 @@ export function FileUploadView() {
 
 export function ReviewView() {
   const params = useSearchParams();
-  const router = useRouter();
-  const statuses = [
-    "NEW",
-    "ANALYZING",
-    "READY_FOR_REVIEW",
-    "REVIEWED",
-    "FAILED",
-  ];
-  const status = statuses.includes(params.get("status") || "")
-    ? params.get("status")!
-    : "";
-  const requestedPage = Number(params.get("page") || 1);
-  const page =
-    Number.isSafeInteger(requestedPage) && requestedPage > 0
-      ? requestedPage
-      : 1;
-  const pageSize = [10, 20, 50].includes(Number(params.get("page_size")))
-    ? Number(params.get("page_size"))
-    : 20;
-  const query = new URLSearchParams({
-    page: String(page),
-    page_size: String(pageSize),
-  });
-  if (status) query.set("status", status);
-  const queuePath = `/advertisements?${query}`;
-  const queue = useData<Page<Advertisement>>(queuePath);
-  const data =
-    queue.resolvedPath === queuePath && !queue.error ? queue.data : null;
-  const queueError = queue.resolvedPath === queuePath ? queue.error : "";
-  const id = params.get("advertisement_id") || "";
-  const selectedInQueue = data?.items.some((ad) => ad.id === id);
-  function navigate(name: string, value: string) {
-    const next = new URLSearchParams(params);
-    if (value) next.set(name, value);
-    else next.delete(name);
-    if (name === "status" || name === "page_size") next.delete("page");
-    if (name === "advertisement_id") next.delete("history_page");
-    router.push(`/review?${next}`, { scroll: false });
-  }
+  const queue = useData<Page<Advertisement>>("/advertisements?page_size=100");
+  const [chosen, setChosen] = useState("");
+  const id =
+    chosen ||
+    params.get("advertisement_id") ||
+    queue.data?.items.find((a) => a.status === "READY_FOR_REVIEW")?.id ||
+    queue.data?.items[0]?.id;
   return (
     <>
       <PageTitle
@@ -216,128 +198,33 @@ export function ReviewView() {
         description="OCR и сходство названий помогают найти факты. Только аналитик подтверждает привязку, доказательство и фактор риска."
         action={false}
       />
-      <section
-        className="panel padded review-queue"
-        aria-label="Очередь проверки"
-      >
-        <div className="review-toolbar">
-          <h2>Очередь проверки</h2>
-          <span>
-            {data
-              ? `${data.total} материалов`
-              : queueError
-                ? "Очередь недоступна"
-                : "Загрузка очереди…"}
-          </span>
-        </div>
-        <div className="review-queue-filters">
-          <div>
-            <label htmlFor="review-status">Состояние материала</label>
-            <select
-              id="review-status"
-              value={status}
-              onChange={(event) => navigate("status", event.target.value)}
-            >
-              <option value="">Все состояния</option>
-              {statuses.map((value) => (
-                <option value={value} key={value}>
-                  {statusLabel(value)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="review-page-size">Материалов на странице</label>
-            <select
-              id="review-page-size"
-              value={pageSize}
-              onChange={(event) => navigate("page_size", event.target.value)}
-            >
-              {[10, 20, 50].map((value) => (
-                <option value={value} key={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        {!data ? (
-          <LoadState error={queueError} retry={queue.reload} />
-        ) : (
-          <>
-            <details
-              key={id || "queue"}
-              className="review-queue-materials"
-              open={!id}
-            >
-              <summary>
-                {id
-                  ? "Выбрать другой материал"
-                  : "Выберите материал для проверки"}{" "}
-                · на странице {data.items.length}
-              </summary>
-              <ul className="review-queue-list">
-                {data.items.map((ad) => (
-                  <li key={ad.id}>
-                    <button
-                      type="button"
-                      className="review-queue-item"
-                      aria-current={id === ad.id ? "true" : undefined}
-                      onClick={() => navigate("advertisement_id", ad.id)}
-                    >
-                      <strong>{ad.source_label}</strong>
-                      <span>
-                        {ad.is_demo ? "DEMO · " : ""}
-                        {statusLabel(ad.status)}
-                      </span>
-                      <span className="review-queue-excerpt">
-                        {ad.original_text
-                          ? `${ad.original_text.slice(0, 140)}${ad.original_text.length > 140 ? "…" : ""}`
-                          : ad.assets.some((asset) => asset.kind === "IMAGE")
-                            ? "Изображение · оригинал доступен после выбора"
-                            : "Файл · оригинал доступен после выбора"}
-                      </span>
-                      <small>Зафиксировано: {date(ad.captured_at)}</small>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {!data.items.length && (
-                <p className="empty">
-                  {data.total
-                    ? "На этой странице материалов нет. Вернитесь на предыдущую страницу."
-                    : "Материалов по выбранному состоянию нет. Измените фильтр или добавьте публикацию."}
-                </p>
-              )}
-            </details>
-            <Pagination
-              label="Страницы очереди проверки"
-              page={data.page}
-              pageSize={data.page_size}
-              total={data.total}
-              onPageChange={(value) => navigate("page", String(value))}
-            />
-            {id && !selectedInQueue && (
-              <p className="field-help">
-                Выбранный материал открыт по прямой ссылке и находится вне
-                текущей страницы или фильтра очереди.
-              </p>
-            )}
-          </>
-        )}
-        <p className="field-help">
-          Оригиналы идут в серверном порядке поступления. Выбор материала,
-          фильтр и переход страницы не запускают анализ или подтверждение.
-        </p>
+      <section className="review-picker" aria-labelledby="review-picker-title">
+        <p className="eyebrow">МАТЕРИАЛ ДЛЯ ПРОВЕРКИ</p>
+        <label id="review-picker-title" htmlFor="review-ad">
+          Публикация
+        </label>
+        <select
+          id="review-ad"
+          value={id || ""}
+          onChange={(e) => setChosen(e.target.value)}
+        >
+          <option value="" disabled>
+            Выберите материал
+          </option>
+          {queue.data?.items.map((ad) => (
+            <option key={ad.id} value={ad.id}>
+              {ad.is_demo ? "DEMO · " : ""}
+              {ad.source_label} · {statusLabel(ad.status)}
+            </option>
+          ))}
+        </select>
       </section>
+      {queue.error && <Notice error={queue.error} />}
       {id ? (
         <ReviewMaterial key={id} id={id} onChange={queue.reload} />
-      ) : data ? (
-        <p className="notice">
-          Выберите материал из очереди. Для новой публикации добавьте текст или
-          изображение в разделе «Реклама».
-        </p>
-      ) : null}
+      ) : (
+        <p className="notice">Добавьте текст или изображение публикации.</p>
+      )}
     </>
   );
 }
@@ -360,61 +247,17 @@ function ReviewMaterial({
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const draft = useReviewDraft(
-    user?.id || "",
-    `material:${id}`,
-    {
-      version: "",
-      propertyId: "",
-      matchReason: "",
-      transcription: null as string | null,
-      transcriptionReason: "",
-      transcriptionEditing: false as boolean,
-      transcriptionExtractionId: "",
-      commandFingerprint: "",
-      commandKey: "",
-    },
-    [
-      "version",
-      "transcriptionEditing",
-      "transcriptionExtractionId",
-      "commandFingerprint",
-      "commandKey",
-    ],
-  );
-  const { version, propertyId, matchReason, transcriptionReason } =
-    draft.values;
-  const setVersion = (value: string) => draft.update({ version: value });
-  const setPropertyId = (value: string) => draft.update({ propertyId: value });
-  const setMatchReason = (value: string) =>
-    draft.update({ matchReason: value });
-  const setTranscriptionReason = (value: string) =>
-    draft.update({ transcriptionReason: value });
+  const [version, setVersion] = useState("");
   const [selected, setSelected] = useState<Hypothesis | null>(null);
+  const [propertyId, setPropertyId] = useState("");
+  const [matchReason, setMatchReason] = useState("");
+  const [transcription, setTranscription] = useState<string | null>(null);
+  const [transcriptionReason, setTranscriptionReason] = useState("");
+  const key = useRef<{ payload: string; value: string } | null>(null);
   const originalPanel = useRef<HTMLElement>(null);
   const ad = adData.data;
   const extraction =
     extractions.data?.find((e) => e.id === version) || extractions.data?.[0];
-  const transcription =
-    draft.values.transcriptionEditing &&
-    draft.values.transcriptionExtractionId === extraction?.id
-      ? (draft.values.transcription ?? extraction.analysis_text)
-      : null;
-  const transcriptionFields = [
-    "transcription",
-    "transcriptionReason",
-    "transcriptionEditing",
-    "transcriptionExtractionId",
-  ] as const;
-  function clearTranscriptionDraft() {
-    draft.update({
-      transcription: null,
-      transcriptionReason: "",
-      transcriptionEditing: false,
-      transcriptionExtractionId: "",
-    });
-    draft.saved([...transcriptionFields]);
-  }
   const latest = extraction?.id === extractions.data?.[0]?.id;
   const image = ad?.assets.find((a) => a.kind === "IMAGE");
   const currentSelection = extraction?.hypotheses.find(
@@ -440,22 +283,14 @@ function ReviewMaterial({
     path: string,
     body: unknown,
   ): Promise<T | undefined> {
+    const payload = JSON.stringify({ path, body });
+    if (key.current?.payload !== payload)
+      key.current = { payload, value: crypto.randomUUID() };
     setBusy(true);
     setError("");
     try {
-      const fingerprint = await reviewCommandFingerprint(path, body);
-      const key =
-        draft.values.commandFingerprint === fingerprint &&
-        draft.values.commandKey
-          ? draft.values.commandKey
-          : crypto.randomUUID();
-      draft.update({ commandFingerprint: fingerprint, commandKey: key });
-      const result = await command<T>(path, body, key);
-      draft.update({ commandFingerprint: "", commandKey: "" });
-      draft.saved(["commandFingerprint", "commandKey"]);
-      if (path.endsWith("/matches")) draft.saved(["propertyId", "matchReason"]);
-      if (path.endsWith("/transcription"))
-        draft.saved([...transcriptionFields]);
+      const result = await command<T>(path, body, key.current.value);
+      key.current = null;
       reload();
       return result;
     } catch (e) {
@@ -517,15 +352,13 @@ function ReviewMaterial({
       href: `#review-hypotheses-${id}`,
       detail: extractions.error
         ? "Не удалось загрузить"
-        : !extractions.data
-          ? "Загружаем гипотезы…"
-          : extraction
-            ? `Проверено ${reviewedCount} из ${extraction.hypotheses.length}`
-            : active
-              ? "Анализ выполняется"
-              : writable
-                ? "Сначала запустите анализ"
-                : "Ожидает анализа аналитиком",
+        : extraction
+          ? `Проверено ${reviewedCount} из ${extraction.hypotheses.length}`
+          : active
+            ? "Анализ выполняется"
+            : writable
+              ? "Сначала запустите анализ"
+              : "Ожидает анализа аналитиком",
     },
     {
       title: "Объект и очередь",
@@ -545,19 +378,7 @@ function ReviewMaterial({
     },
   ];
   return (
-    <>
-      <p className="field-help">
-        Черновик можно восстановить в текущей вкладке в течение 12 часов после
-        последнего изменения. Он не отправляется автоматически. Выход из
-        аккаунта удаляет черновики.
-      </p>
-      {draft.restored && (
-        <p role="status" className="notice">
-          Восстановлен локальный черновик этого материала. Сверьте актуальные
-          версии перед отдельным сохранением решения.
-        </p>
-      )}
-      {draft.storageError && <Notice error={draft.storageError} />}
+    <div className="review-material">
       <nav className="review-steps" aria-label="Этапы проверки материала">
         <ol>
           {reviewSteps.map((step, index) => (
@@ -583,40 +404,46 @@ function ReviewMaterial({
           ))}
         </ol>
       </nav>
-      <div className="review-toolbar">
-        <Demo value={ad.is_demo} />
-        <span>{date(ad.captured_at)}</span>
-        <Link className="text-link" href={`/advertisements/${id}`}>
-          Карточка и SHA-256
-        </Link>
-        {writable && (
-          <Button
-            aria-busy={busy || active}
-            disabled={busy || active}
-            onClick={async () => {
-              const value = await mutate<Job>(`/advertisements/${id}/analyze`, {
-                expected_advertisement_revision: ad.revision,
-              });
-              if (value) {
-                setVersion("");
-                setJob(value);
-              }
-            }}
-          >
-            {active
-              ? "Обработка…"
-              : extraction
-                ? "Повторить анализ"
-                : "Запустить анализ"}
-          </Button>
-        )}
+      <div className="review-material-top">
+        <div className="review-material-heading">
+          <p className="eyebrow">ТЕКУЩИЙ МАТЕРИАЛ</p>
+          <h2>{ad.source_label}</h2>
+          <p>
+            <span className="review-material-status">{statusLabel(ad.status)}</span> · зафиксирован {date(ad.captured_at)}
+          </p>
+        </div>
+        <div className="review-toolbar">
+          <Demo value={ad.is_demo} />
+          <Link className="text-link" href={`/advertisements/${id}`}>
+            Карточка и SHA-256
+          </Link>
+          {writable && (
+            <Button
+              aria-busy={busy || active}
+              disabled={busy || active}
+              onClick={async () => {
+                const value = await mutate<Job>(
+                  `/advertisements/${id}/analyze`,
+                  {
+                    expected_advertisement_revision: ad.revision,
+                  },
+                );
+                if (value) {
+                  setVersion("");
+                  setJob(value);
+                }
+              }}
+            >
+              {active
+                ? "Обработка…"
+                : extraction
+                  ? "Повторить анализ"
+                  : "Запустить анализ"}
+            </Button>
+          )}
+        </div>
       </div>
       {error && <Notice error={error} />}
-      {error && (
-        <Button variant="outline" onClick={reload}>
-          Обновить данные материала
-        </Button>
-      )}
       {adData.error && <Notice error={adData.error} />}
       {active && (
         <p role="status" className="notice">
@@ -645,51 +472,6 @@ function ReviewMaterial({
           tabIndex={-1}
         >
           <h2>Оригинал</h2>
-          {draft.values.transcriptionEditing &&
-            extraction &&
-            draft.values.transcriptionExtractionId !== extraction.id && (
-              <div className="notice">
-                <p>
-                  Черновик расшифровки относится к другой версии текста.
-                  Выберите ту версию для просмотра или отмените локальный
-                  черновик перед новой правкой.
-                </p>
-                <Button variant="outline" onClick={clearTranscriptionDraft}>
-                  Отменить черновик расшифровки
-                </Button>
-              </div>
-            )}
-          <dl className="review-provenance">
-            <div>
-              <dt>Источник</dt>
-              <dd>{ad.source_label}</dd>
-            </div>
-            <div>
-              <dt>URL источника</dt>
-              <dd>
-                {ad.source_url && /^https?:\/\//i.test(ad.source_url) ? (
-                  <a
-                    className="text-link"
-                    href={ad.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {ad.source_url}
-                  </a>
-                ) : (
-                  ad.source_url || "Не указан"
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt>Опубликовано</dt>
-              <dd>{date(ad.published_at)}</dd>
-            </div>
-            <div>
-              <dt>Зафиксировано</dt>
-              <dd>{date(ad.captured_at)}</dd>
-            </div>
-          </dl>
           {currentSelection && (
             <a
               className="text-link"
@@ -734,19 +516,8 @@ function ReviewMaterial({
               {writable && latest && (
                 <Button
                   variant="outline"
-                  disabled={
-                    active ||
-                    busy ||
-                    (draft.values.transcriptionEditing &&
-                      draft.values.transcriptionExtractionId !== extraction.id)
-                  }
-                  onClick={() =>
-                    draft.update({
-                      transcriptionEditing: true,
-                      transcriptionExtractionId: extraction.id,
-                      transcription: null,
-                    })
-                  }
+                  disabled={active || busy}
+                  onClick={() => setTranscription(extraction.analysis_text)}
                 >
                   Исправить расшифровку
                 </Button>
@@ -761,9 +532,7 @@ function ReviewMaterial({
                     rows={7}
                     value={transcription}
                     maxLength={100000}
-                    onChange={(e) =>
-                      draft.update({ transcription: e.target.value })
-                    }
+                    onChange={(e) => setTranscription(e.target.value)}
                   />
                   <label htmlFor="transcription-reason">
                     Причина исправления
@@ -789,14 +558,17 @@ function ReviewMaterial({
                         },
                       );
                       if (result) {
-                        clearTranscriptionDraft();
+                        setTranscription(null);
                         setVersion("");
                       }
                     }}
                   >
                     Создать новую версию
                   </Button>
-                  <Button variant="outline" onClick={clearTranscriptionDraft}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setTranscription(null)}
+                  >
                     Отмена
                   </Button>
                 </div>
@@ -811,9 +583,7 @@ function ReviewMaterial({
         >
           <h2>Извлечённые гипотезы</h2>
           {extractions.error && <Notice error={extractions.error} />}
-          {!extractions.data && !extractions.error ? (
-            <LoadState error="" retry={extractions.reload} />
-          ) : extraction ? (
+          {extraction ? (
             <>
               <label htmlFor="extraction-version">Версия текста</label>
               <select
@@ -822,6 +592,7 @@ function ReviewMaterial({
                 onChange={(e) => {
                   setVersion(e.target.value);
                   setSelected(null);
+                  setTranscription(null);
                 }}
               >
                 {extractions.data?.map((e, i) => (
@@ -845,24 +616,19 @@ function ReviewMaterial({
                   hypothesis={h}
                   writable={writable && latest}
                   busy={busy}
-                  draftScope={`hypothesis:${id}:${extraction.id}:${h.id}`}
                   onSelect={() => showOriginal(h)}
-                  onReview={async (action, value, reason) =>
-                    (await mutate(`/extractions/${extraction.id}/review`, {
+                  onReview={(action, value, reason) =>
+                    mutate(`/extractions/${extraction.id}/review`, {
                       expected_revision: extraction.revision,
                       hypothesis_id: h.id,
                       action,
                       reason,
                       ...(value ? { corrected_value: value } : {}),
-                    })) !== undefined
+                    })
                   }
                 />
               ))}
             </>
-          ) : extractions.error ? (
-            <Button variant="outline" onClick={extractions.reload}>
-              Повторить загрузку гипотез
-            </Button>
           ) : (
             <p className="empty">
               После анализа здесь появятся гипотезы и ссылки на фрагменты
@@ -955,22 +721,6 @@ function ReviewMaterial({
                     </option>
                   ))}
               </select>
-              <p className="field-help">
-                Ручной выбор ограничен первыми 100 объектами реестра.
-                {registry.data
-                  ? ` Загружено ${registry.data.items.length} из ${registry.data.total}.`
-                  : " Загружаем варианты…"}{" "}
-                Это не поиск по всему набору; проверьте точный ЖК и очередь в
-                разделе «Объекты».
-              </p>
-              {registry.error && (
-                <>
-                  <Notice error={registry.error} />
-                  <Button variant="outline" onClick={registry.reload}>
-                    Повторить загрузку объектов
-                  </Button>
-                </>
-              )}
               <label htmlFor="match-reason">
                 Обоснование выбора / отклонения
               </label>
@@ -1019,7 +769,7 @@ function ReviewMaterial({
           onError={setError}
         />
       )}
-    </>
+    </div>
   );
 }
 
@@ -1033,46 +783,30 @@ function HypothesisCard({
   hypothesis: h,
   writable,
   busy,
-  draftScope,
   onSelect,
   onReview,
 }: {
   hypothesis: Hypothesis;
   writable: boolean;
   busy: boolean;
-  draftScope: string;
   onSelect: () => void;
   onReview: (
     action: string,
     value: Value | null,
     reason: string,
-  ) => Promise<boolean>;
+  ) => Promise<unknown>;
 }) {
-  const { user } = useContext(Auth);
+  const [reason, setReason] = useState("");
+  const [editing, setEditing] = useState(false);
   const value = h.reviewed_value || h.value;
-  const draft = useReviewDraft(
-    user?.id || "",
-    draftScope,
-    {
-      reason: "",
-      editing: false as boolean,
-      text: value.text || "",
-      amount: value.money?.amount || "",
-      percent: value.percent?.toString() || "",
-      currency: value.money?.currency || "KZT",
-    },
-    ["editing"],
-  );
-  const { reason, editing, text, amount, percent, currency } = draft.values;
-  async function review(action: string, corrected: Value | null = null) {
-    if (await onReview(action, corrected, reason)) draft.saved();
-  }
+  const [text, setText] = useState(value.text || "");
+  const [amount, setAmount] = useState(value.money?.amount || "");
+  const [percent, setPercent] = useState(value.percent?.toString() || "");
+  const [currency, setCurrency] = useState<
+    NonNullable<Value["money"]>["currency"]
+  >(value.money?.currency || "KZT");
   return (
-    <article
-      className={`hypothesis hypothesis-${h.review_status.toLowerCase()}`}
-      id={`hypothesis-${h.id}`}
-      tabIndex={-1}
-    >
+    <article className="hypothesis" id={`hypothesis-${h.id}`} tabIndex={-1}>
       <div className="review-toolbar">
         <strong>{fieldLabels[h.field] || h.field}</strong>
         <span className="status">{statusLabel(h.review_status)}</span>
@@ -1091,18 +825,12 @@ function HypothesisCard({
       </button>
       {writable && (
         <div className="review-form">
-          {draft.restored && (
-            <p className="field-help" role="status">
-              Восстановлен черновик проверки гипотезы. Решение ещё не сохранено.
-            </p>
-          )}
-          {draft.storageError && <Notice error={draft.storageError} />}
           <label htmlFor={`reason-${h.id}`}>Обоснование проверки</label>
           <input
             id={`reason-${h.id}`}
             maxLength={2000}
             value={reason}
-            onChange={(e) => draft.update({ reason: e.target.value })}
+            onChange={(e) => setReason(e.target.value)}
           />
           {editing && (
             <>
@@ -1111,7 +839,7 @@ function HypothesisCard({
                 id={`value-${h.id}`}
                 maxLength={2000}
                 value={text}
-                onChange={(e) => draft.update({ text: e.target.value })}
+                onChange={(e) => setText(e.target.value)}
               />
               <label htmlFor={`amount-${h.id}`}>Сумма</label>
               <input
@@ -1120,19 +848,13 @@ function HypothesisCard({
                 min="0"
                 step="0.01"
                 value={amount}
-                onChange={(e) => draft.update({ amount: e.target.value })}
+                onChange={(e) => setAmount(e.target.value)}
               />
               <label htmlFor={`currency-${h.id}`}>Валюта</label>
               <select
                 id={`currency-${h.id}`}
                 value={currency}
-                onChange={(e) =>
-                  draft.update({
-                    currency: e.target.value as NonNullable<
-                      Value["money"]
-                    >["currency"],
-                  })
-                }
+                onChange={(e) => setCurrency(e.target.value as typeof currency)}
               >
                 {["KZT", "USD", "EUR", "UNKNOWN"].map((c) => (
                   <option value={c} key={c}>
@@ -1147,28 +869,28 @@ function HypothesisCard({
                 min="0"
                 max="100"
                 value={percent}
-                onChange={(e) => draft.update({ percent: e.target.value })}
+                onChange={(e) => setPercent(e.target.value)}
               />
             </>
           )}
           <div className="review-actions">
             <Button
               disabled={busy || !reason.trim()}
-              onClick={() => void review("CONFIRM")}
+              onClick={() => void onReview("CONFIRM", null, reason)}
             >
               Подтвердить гипотезу
             </Button>
             <Button
               variant="outline"
               disabled={busy || !reason.trim()}
-              onClick={() => void review("REJECT")}
+              onClick={() => void onReview("REJECT", null, reason)}
             >
               Отклонить
             </Button>
             <Button
               variant="outline"
               disabled={busy}
-              onClick={() => draft.update({ editing: !editing })}
+              onClick={() => setEditing(!editing)}
             >
               Исправить
             </Button>
@@ -1180,18 +902,15 @@ function HypothesisCard({
                   (!text.trim() && !amount && !percent)
                 }
                 onClick={() =>
-                  void review("CORRECT", {
-                    text: text || null,
-                    money: amount
-                      ? {
-                          amount,
-                          currency: currency as NonNullable<
-                            Value["money"]
-                          >["currency"],
-                        }
-                      : null,
-                    percent: percent ? Number(percent) : null,
-                  })
+                  void onReview(
+                    "CORRECT",
+                    {
+                      text: text || null,
+                      money: amount ? { amount, currency } : null,
+                      percent: percent ? Number(percent) : null,
+                    },
+                    reason,
+                  )
                 }
               >
                 Сохранить исправление
@@ -1276,33 +995,15 @@ function PaymentRisk({
   writable: boolean;
   onError: (s: string) => void;
 }) {
-  const { user } = useContext(Auth);
   const property = useData<PropertyDetail>(
     `/properties/${ad.confirmed_property_id}`,
   );
-  const draft = useReviewDraft(
-    user?.id || "",
-    `payment:${ad.id}:${extraction.id}:${ad.confirmed_property_id}`,
-    {
-      reason: "",
-      hypothesisId: "",
-      evidenceId: "",
-      pendingEvidenceId: "",
-      factorAsOf: "",
-      commandFingerprint: "",
-      commandKey: "",
-    },
-    [
-      "evidenceId",
-      "pendingEvidenceId",
-      "factorAsOf",
-      "commandFingerprint",
-      "commandKey",
-    ],
-  );
-  const { reason, hypothesisId, evidenceId } = draft.values;
+  const [reason, setReason] = useState("");
+  const [hypothesisId, setHypothesisId] = useState("");
+  const [evidenceId, setEvidenceId] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const retry = useRef<{ payload: string; key: string } | null>(null);
   const factor = property.data?.factors.find((f) => f.code === "R2");
   const propertyReady =
     property.data?.property.id === ad.confirmed_property_id && !property.error;
@@ -1312,15 +1013,15 @@ function PaymentRisk({
       ["CONFIRMED", "CORRECTED"].includes(h.review_status),
   );
   async function action(path: string, body: unknown) {
-    const fingerprint = await reviewCommandFingerprint(path, body);
-    const key =
-      draft.values.commandFingerprint === fingerprint && draft.values.commandKey
-        ? draft.values.commandKey
-        : crypto.randomUUID();
-    draft.update({ commandFingerprint: fingerprint, commandKey: key });
-    const result = await command<Record<string, unknown>>(path, body, key);
-    draft.update({ commandFingerprint: "", commandKey: "" });
-    draft.saved(["commandFingerprint", "commandKey"]);
+    const payload = JSON.stringify({ path, body });
+    if (retry.current?.payload !== payload)
+      retry.current = { payload, key: crypto.randomUUID() };
+    const result = await command<Record<string, unknown>>(
+      path,
+      body,
+      retry.current.key,
+    );
+    retry.current = null;
     return result;
   }
   async function run(callback: () => Promise<void>) {
@@ -1377,19 +1078,13 @@ function PaymentRisk({
       )}
       {writable && (
         <div className="review-form">
-          {draft.restored && (
-            <p className="field-help" role="status">
-              Восстановлен черновик R2. Сверьте текущий фактор перед отдельным
-              решением.
-            </p>
-          )}
-          {draft.storageError && <Notice error={draft.storageError} />}
           <label htmlFor="risk-payment">Проверенное условие оплаты</label>
           <select
             id="risk-payment"
             value={hypothesisId}
             onChange={(e) => {
-              draft.update({ hypothesisId: e.target.value, evidenceId: "" });
+              setHypothesisId(e.target.value);
+              setEvidenceId("");
             }}
           >
             <option value="">Выберите гипотезу</option>
@@ -1404,7 +1099,7 @@ function PaymentRisk({
             id="risk-reason"
             value={reason}
             maxLength={2000}
-            onChange={(e) => draft.update({ reason: e.target.value })}
+            onChange={(e) => setReason(e.target.value)}
           />
           <div className="review-actions">
             <Button
@@ -1415,35 +1110,27 @@ function PaymentRisk({
               onClick={() =>
                 void run(async () => {
                   const h = payment.find((h) => h.id === hypothesisId)!;
-                  const evidence = draft.values.pendingEvidenceId
-                    ? { id: draft.values.pendingEvidenceId }
-                    : await action("/evidence", {
-                        property_id: ad.confirmed_property_id,
-                        kind: "ADVERTISEMENT_FRAGMENT",
-                        asset_id: h.fragment.asset_id,
-                        advertisement_id: ad.id,
-                        extraction_id: extraction.id,
-                        hypothesis_id: h.id,
-                        fragment: h.fragment,
-                        description: reason,
-                        source_label: ad.source_label,
-                        event_at: ad.published_at || ad.captured_at,
-                        is_demo: ad.is_demo,
-                      });
-                  const id = evidence.id as string;
-                  const asOf =
-                    draft.values.factorAsOf || new Date().toISOString();
-                  draft.update({
-                    evidenceId: id,
-                    pendingEvidenceId: id,
-                    factorAsOf: asOf,
+                  const evidence = await action("/evidence", {
+                    property_id: ad.confirmed_property_id,
+                    kind: "ADVERTISEMENT_FRAGMENT",
+                    asset_id: h.fragment.asset_id,
+                    advertisement_id: ad.id,
+                    extraction_id: extraction.id,
+                    hypothesis_id: h.id,
+                    fragment: h.fragment,
+                    description: reason,
+                    source_label: ad.source_label,
+                    event_at: ad.published_at || ad.captured_at,
+                    is_demo: ad.is_demo,
                   });
+                  const id = evidence.id as string;
+                  setEvidenceId(id);
                   if (!factor)
                     await action(
                       `/properties/${ad.confirmed_property_id}/risk-factors`,
                       {
                         code: "R2",
-                        as_of: asOf,
+                        as_of: new Date().toISOString(),
                         evidence_ids: [id],
                         reason,
                       },
@@ -1451,14 +1138,6 @@ function PaymentRisk({
                   setMessage(
                     "Доказательство сохранено. Подтверждение R2 требует отдельного решения.",
                   );
-                  draft.update({ pendingEvidenceId: "", factorAsOf: "" });
-                  draft.saved([
-                    "reason",
-                    "hypothesisId",
-                    "evidenceId",
-                    "pendingEvidenceId",
-                    "factorAsOf",
-                  ]);
                 })
               }
             >
@@ -1482,7 +1161,6 @@ function PaymentRisk({
                         reason,
                       });
                       setMessage("R2 подтверждён. Риск пересчитан сервером.");
-                      draft.saved(["reason", "hypothesisId", "evidenceId"]);
                     })
                   }
                 >
@@ -1500,7 +1178,6 @@ function PaymentRisk({
                         reason,
                       });
                       setMessage("R2 отклонён. Баллы сняты.");
-                      draft.saved(["reason", "hypothesisId", "evidenceId"]);
                     })
                   }
                 >
@@ -1517,13 +1194,37 @@ function PaymentRisk({
         </p>
       )}
       {ad.confirmed_property_id && (
-        <PropertyHistory
-          key={ad.confirmed_property_id}
+        <PropertyAudit
           id={ad.confirmed_property_id}
           revision={property.data?.property.risk.as_of}
-          compact
         />
       )}
     </section>
+  );
+}
+
+function PropertyAudit({ id, revision }: { id: string; revision?: string }) {
+  const events = useData<
+    Page<{
+      id: string;
+      action: string;
+      occurred_at: string;
+      reason: string | null;
+      details: unknown;
+    }>
+  >(`/properties/${id}/audit?refresh=${encodeURIComponent(revision || "")}`);
+  return (
+    <details>
+      <summary>Журнал решений по объекту</summary>
+      {events.error && <Notice error={events.error} />}
+      <ol className="audit-list">
+        {events.data?.items.map((e) => (
+          <li key={e.id}>
+            <b>{e.action}</b> · {date(e.occurred_at)}
+            <p>{e.reason}</p>
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }

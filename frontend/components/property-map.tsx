@@ -7,7 +7,6 @@ import type { Property } from "@/lib/types";
 import { mapConfig } from "@/lib/map-config";
 import { Button } from "@/components/ui/button";
 import { statusLabel } from "@/lib/status-labels";
-import { propertyDossierUrl } from "@/lib/presentation";
 import "leaflet/dist/leaflet.css";
 
 const zones = { GREEN: "Зелёная", YELLOW: "Жёлтая", RED: "Красная" };
@@ -23,21 +22,10 @@ function hasCoordinates(row: Property) {
   );
 }
 
-export function PropertyMap({
-  rows,
-  registryQuery = "",
-  selectedId,
-  onSelect,
-}: {
-  rows: Property[];
-  registryQuery?: string;
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-}) {
+export function PropertyMap({ rows }: { rows: Property[] }) {
   const container = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement>(null);
-  const markerButtons = useRef(new Map<string, HTMLElement>());
-  const currentSelection = useRef(selectedId);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const config = mapConfig();
@@ -81,7 +69,7 @@ export function PropertyMap({
         const tileFailure = () => {
           if (!disposed)
             setError(
-              "Подложка карты недоступна или загружена не полностью. Объекты и список ниже доступны.",
+              "Подложка карты недоступна или загружена не полностью. Переключите вид «Список» или повторите загрузку.",
             );
         };
         tiles.on("loading", () => {
@@ -91,6 +79,7 @@ export function PropertyMap({
         tiles.on("load", () => clearTimeout(timer));
         tiles.on("tileerror", tileFailure);
         tiles.addTo(map);
+        const markerButtons = new Map<string, HTMLElement>();
         for (const row of points) {
           // Never pass source names or other API data as HTML to Leaflet.
           const label = document.createElement("span");
@@ -106,8 +95,8 @@ export function PropertyMap({
             keyboard: true,
           }).addTo(map);
           const select = () => {
-            onSelect(row.id);
-            for (const [id, element] of markerButtons.current) {
+            setSelectedId(row.id);
+            for (const [id, element] of markerButtons) {
               const isSelected = id === row.id;
               element.classList.toggle("is-selected", isSelected);
               element.setAttribute("aria-pressed", String(isSelected));
@@ -117,12 +106,8 @@ export function PropertyMap({
           marker.on("click", select);
           const button = marker.getElement();
           button?.setAttribute("aria-label", marker.options.title!);
-          if (button) {
-            const isSelected = currentSelection.current === row.id;
-            button.classList.toggle("is-selected", isSelected);
-            button.setAttribute("aria-pressed", String(isSelected));
-            markerButtons.current.set(row.id, button);
-          }
+          button?.setAttribute("aria-pressed", "false");
+          if (button) markerButtons.set(row.id, button);
           button?.addEventListener("keydown", (event) => {
             if (event.key === " " || event.key === "Enter") {
               event.preventDefault();
@@ -138,7 +123,7 @@ export function PropertyMap({
       .catch(() => {
         if (!disposed)
           setError(
-            "Не удалось загрузить карту. Используйте список ниже или повторите загрузку.",
+            "Не удалось загрузить карту. Переключите вид «Список» или повторите загрузку.",
           );
       });
     return () => {
@@ -146,40 +131,16 @@ export function PropertyMap({
       clearTimeout(timer);
       observer?.disconnect();
       map?.remove();
-      markerButtons.current.clear();
     };
-  }, [rows, attempt, onSelect]);
+  }, [rows, attempt]);
 
   useEffect(() => {
-    currentSelection.current = selectedId;
-    for (const [id, element] of markerButtons.current) {
-      const isSelected = id === selectedId;
-      element.classList.toggle("is-selected", isSelected);
-      element.setAttribute("aria-pressed", String(isSelected));
-    }
     if (selectedId) card.current?.focus();
   }, [selectedId]);
 
   if (!rows.length) return null;
   return (
     <section className="property-map-section" aria-label="Карта объектов">
-      <header className="map-section-heading">
-        <div>
-          <p className="eyebrow">КАРТА ТЕКУЩЕЙ СТРАНИЦЫ</p>
-          <h2 id="property-map-title">Выберите объект</h2>
-          <p>
-            Метка открывает краткие сведения. Полные документы и решения
-            находятся в досье объекта.
-          </p>
-        </div>
-        <div
-          className="map-count"
-          aria-label={`${located.length} из ${rows.length} объектов показаны на карте`}
-        >
-          <strong>{located.length}</strong>
-          <span>из {rows.length} на карте</span>
-        </div>
-      </header>
       <div className="map-context">
         <p className="map-note">
           DEMO-координаты условные и не указывают на реальные проекты. Зелёная
@@ -188,7 +149,7 @@ export function PropertyMap({
         <div className="map-legend" aria-label="Легенда карты">
           {Object.entries(zones).map(([zone, label]) => (
             <span className={`zone ${zone.toLowerCase()}`} key={zone}>
-              <span className="zone-dot" aria-hidden="true" />
+              <span className="zone-dot" />
               {label}
             </span>
           ))}
@@ -197,16 +158,16 @@ export function PropertyMap({
       </div>
       <p className="map-note">
         Без пригодных координат: {rows.length - located.length}. Такие объекты
-        остаются в списке ниже.
+        доступны в режиме «Список».
       </p>
       {!config ? (
         <p role="status" className="notice">
-          Карта отключена или провайдер настроен некорректно. Используйте список
-          ниже.
+          Карта отключена или провайдер настроен некорректно. Переключите вид
+          «Список».
         </p>
       ) : !located.length ? (
         <p role="status" className="notice">
-          Нет объектов с координатами для карты. Используйте список ниже.
+          Нет объектов с координатами для карты. Переключите вид «Список».
         </p>
       ) : (
         <>
@@ -224,9 +185,6 @@ export function PropertyMap({
               </Button>
             </div>
           )}
-          <a className="text-link map-skip" href="#property-list">
-            Перейти к списку объектов
-          </a>
           <div className="map-grid">
             <div className="map-frame">
               <div
@@ -276,7 +234,7 @@ export function PropertyMap({
                         <span
                           className={`zone ${selected.risk.zone.toLowerCase()}`}
                         >
-                          <span className="zone-dot" aria-hidden="true" />
+                          <span className="zone-dot" />
                           <strong>{selected.risk.score}</strong>{" "}
                           {zones[selected.risk.zone]}
                         </span>
@@ -295,7 +253,7 @@ export function PropertyMap({
                     </strong>
                   </div>
                   <Button asChild className="map-card-action">
-                    <Link href={propertyDossierUrl(selected.id, registryQuery)}>
+                    <Link href={`/properties/${selected.id}`}>
                       Открыть карточку
                       <ArrowRight size={16} aria-hidden="true" />
                     </Link>
