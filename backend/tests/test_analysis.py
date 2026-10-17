@@ -455,6 +455,59 @@ def image_job(signed):
     return ad, job
 
 
+def test_kazakh_image_transcription_preserves_raw_ocr_and_parent_fragments(signed, settings, monkeypatch):
+    raw = 'Ақылы брондау -- 100 000 теңге.'
+    corrected_text = 'Ақылы брондау — 100 000 теңге.'
+    tsv = 'level\tpage_num\tblock_num\tpar_num\tline_num\tleft\ttop\twidth\theight\tconf\ttext\n'
+    for index, token in enumerate(raw.split()):
+        tsv += f'5\t1\t1\t1\t1\t{index * 20}\t10\t20\t15\t90\t{token}\n'
+    observed, words = parse_tsv(tsv)
+    assert observed == raw
+    monkeypatch.setattr('app.worker.recognize', lambda _content, _settings: (observed, words))
+    ad, job = image_job(signed)
+    original_id = ad['assets'][0]['id']
+    original_bytes = signed.get(f'/api/v1/assets/{original_id}').content
+    assert process_one(signed.app.state.sessions, settings)
+    completed = signed.get(f'/api/v1/analysis-jobs/{job["id"]}').json()
+    assert completed['state'] == 'SUCCEEDED'
+    ocr_id = completed['result_asset_id']
+    assert signed.get(f'/api/v1/assets/{ocr_id}').content == raw.encode('utf-8')
+    versions_url = f'/api/v1/advertisements/{ad["id"]}/extractions'
+    parent = signed.get(versions_url).json()[0]
+    assert parent['original_ocr_text'] == parent['analysis_text'] == raw
+    payment = next(h for h in parent['hypotheses'] if h['field'] == 'PAYMENT_TERM')
+    assert payment['fragment']['quote'] == raw
+    assert payment['fragment']['bbox'] == {'x': 0, 'y': 10, 'width': 120, 'height': 15}
+    body = {
+        'expected_revision': parent['revision'],
+        'text': corrected_text,
+        'reason': 'DEMO: тире сверено с изображением',
+    }
+    command_key = uuid4()
+    response = post(signed, f'/extractions/{parent["id"]}/transcription', body, command_key)
+    assert response.status_code == 201, response.text
+    child = response.json()
+    contract(child, 'ExtractionResult')
+    assert child['parent_extraction_id'] == parent['id']
+    assert child['original_ocr_text'] == raw and child['analysis_text'] == corrected_text
+    assert child['pipeline_version'].startswith('manual-transcription+')
+    corrected_payment = next(h for h in child['hypotheses'] if h['field'] == 'PAYMENT_TERM')
+    assert corrected_payment['value']['money'] == payment['value']['money'] == {'amount': '100000', 'currency': 'KZT'}
+    assert corrected_payment['value']['percent'] is payment['value']['percent'] is None
+    assert corrected_payment['fragment']['quote'] == corrected_text
+    for hypothesis in child['hypotheses']:
+        part = hypothesis['fragment']
+        assert corrected_text[part['start_offset'] : part['end_offset']] == part['quote']
+        assert part['text_version_id'] == child['id'] and part['asset_id'] == original_id
+        assert part['bbox'] is None
+        assert hypothesis['review_status'] == 'PENDING'
+    assert post(signed, f'/extractions/{parent["id"]}/transcription', body, command_key).json() == child
+    assert signed.get(versions_url).json() == [child, parent]
+    assert post(signed, f'/extractions/{parent["id"]}/transcription', body).status_code == 409
+    assert signed.get(f'/api/v1/assets/{original_id}').content == original_bytes
+    assert signed.get(f'/api/v1/assets/{ocr_id}').content == raw.encode('utf-8')
+
+
 def test_missing_ocr_blocks_job_and_preserves_original(signed, settings):
     ad, job = image_job(signed)
     assert process_one(

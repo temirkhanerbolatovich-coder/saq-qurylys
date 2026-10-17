@@ -2,6 +2,13 @@
 
 [Правила работы через ветки и PR, расположение исходников и проверки](CONTRIBUTING.md).
 
+17.10.2026, продолжение после интеграции: рабочий Docker/HTTPS восстановлен,
+новый временный адрес — [honey-identity-approx-hotel.trycloudflare.com](https://honey-identity-approx-hotel.trycloudflare.com).
+230 связанных backend-тестов, 74 tool checks (1 платформенный skip) и 36
+read-only browser наблюдений PASS. Добавлены регрессии сохранности KZ raw OCR
+при ручной коррекции; четыре ошибки точности пунктуации и независимая приёмка
+остаются открыты. Границы проверок — [PROJECT_STATUS](PROJECT_STATUS.md).
+
 17.10.2026: подключены [точные нерешённые действия](docs/FEATURE_REVIEW_QUEUE.md)
 и [сравнение оригиналов/версий OCR](docs/FEATURE_PUBLICATION_COMPARISON.md).
 «Проверка» открывает очередь решений; прежние состояния обработки доступны

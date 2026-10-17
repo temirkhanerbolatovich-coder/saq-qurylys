@@ -1,5 +1,21 @@
 # Публичное размещение SAQ QURYLYS
 
+## Текущее восстановление · 17.10.2026
+
+После остановки Docker Desktop восстановлены прежние четыре SAQ сервиса
+без build и замены данных/образов. Новый туннель запущен через штатный
+`scripts/share_site.ps1 -Action Start`; публичный origin и Secure cookie
+применены helper, приватная `.env` не менялась. Текущий адрес:
+**https://honey-identity-approx-hotel.trycloudflare.com**. Прежние адреса ниже
+исторические; актуальная локальная ссылка всегда в `.local/tunnel/url.txt`.
+
+Свежий Chromium smoke: 9 страниц × 4 ширины = 36 наблюдений, overflow0,
+pageerrors0, business mutations0. Вход/Secure cookie/anonymous401/logout204,
+очередь/сравнение и SHA-256 существующего скачанного Asset PASS. Сквозной
+записывающий E2E и новый OCR этим не проверялись. Сервисы и туннель включены;
+ссылка требует работающего компьютера, Docker и сети. Evidence и границы —
+[PROJECT_STATUS](../PROJECT_STATUS.md).
+
 ## Frontend-only обновление PR №3 · 17.10.2026
 
 Установлен проверенный frontend из main4552d44 после зелёного PR/push CI.

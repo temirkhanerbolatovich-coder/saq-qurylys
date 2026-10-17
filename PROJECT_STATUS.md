@@ -1,5 +1,57 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Продолжение: runtime восстановлен, KZ provenance проверен · 17.10.2026
+
+**COMPLETED / TARGETED VERIFIED; KZ OCR FIDELITY OPEN.** Исходная интеграция
+PR №3 уже завершена; повторная интеграция не нужна. Codex root, база
+`aefb72f`, ветка `codex/verify-ocr-provenance`; помощник выполнил независимый
+read-only разбор KZ ошибок и review двух тестов, замечаний нет.
+
+При продолжении Docker Desktop и туннель оказались остановлены. Запущен Docker
+и только четыре существующих SAQ сервиса, без сборки/замены образов/рабочих
+volumes. Новый туннель штатным helper применил публичный origin к API;
+приватная `.env` сохранена. Текущий адрес:
+**https://honey-identity-approx-hotel.trycloudflare.com**. Прежний адрес ниже
+исторический. Рабочие сервисы и туннель оставлены включёнными.
+
+Проверка Chromium: 9 страниц × 375/768/1024/1440 px = **36 наблюдений PASS**,
+0 overflow / 0 pageerrors / 0 business mutations. Anonymous401/login200/
+Secure cookie/logout204, точная очередь, сравнение и SHA-256 скачанного
+сохранённого Asset PASS. Это read-only runtime smoke, не повтор полного
+записывающего E2E или внешняя UX-приёмка.
+
+Четыре KZ strict ошибки — OCR `—` → `--`, а не неверные суммы/привязка к
+другому условию. Повторная оценка сохранённых predictions воспроизвела
+KZ raw11/11 и strict fragment/binding1TP/4FP/4FN; manifests, raw reports и
+labels неизменны. Новый Tesseract-прогон не выполнялся. Добавлены регрессии
+пунктуационной строгости и пути mocked TSV → worker → ручная дочерняя версия:
+raw OCR/исходные байты/родитель/bbox сохраняются, новые offsets точны,
+унаследованного bbox нет, гипотезы PENDING, retry идемпотентен, stale parent409.
+Mocked OCR не доказывает качество распознавания изображения.
+
+Фактические проверки: из backend/ `python -m pytest -q tests/test_analysis.py
+tests/test_extraction_payment_fields.py tests/test_extraction_payments.py
+tests/test_extraction_names.py tests/test_publication_evaluation.py` —
+**230 passed / 27.94s** на отдельном PostgreSQL `127.0.0.1:55639`, private tmpfs;
+после тестов контейнер остановлен. `python -m unittest discover -s scripts
+-p "test_*.py" -v` — **74 tests OK / 1 Windows symlink skip**. Ruff check/
+format двух тестовых файлов, repository hygiene и `git diff --check` PASS.
+Локальные команды используют `.venv`; скриптовый Ruff — config backend/pyproject.toml.
+Frontend/API/правила/контракт/миграции/dependencies не менялись; build и полная
+backend/browser suite не повторялись. Evidence ignored
+`.local/resume-verification-20261017`, captures `output/qa/resume-verification-20261017`.
+
+Обновлены README, DEPLOYMENT, OCR_EVALUATION и REMAINING_CHECKLIST. Нового ADR
+нет: production-поведение не меняется. Финальная проверка пяти Markdown/145
+локальных ссылок/UTF-8 PASS; семь изменённых файлов проверены по четырём
+локальным sensitive literals, совпадений0. Изменения сохранены локальным
+коммитом в указанной ветке; GitHub push/merge и удалённый CI не выполнялись.
+Этот блок закрывает восстановление и
+проверку provenance, не точность KZ OCR. Следующий шаг: независимая RU/KZ
+разметка разрешённых реальных примеров и проверка KZ-пунктуации; коммерческий
+C01 по-прежнему требует разрешённого источника. claude-mem недоступен для новых
+записей из-за отозванной авторизации; передача сохранена здесь.
+
 ## PR №3 опубликован; новый frontend установлен · 17.10.2026
 
 **PUBLISHED / CI SUCCESS / PUBLIC HTTPS VERIFIED.** Проверенный merge
