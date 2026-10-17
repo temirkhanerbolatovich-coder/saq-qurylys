@@ -2,6 +2,14 @@
 
 ## Текущее дополнение · 17.10.2026
 
+- [x] Расширить offline оценку ИИ schema2: суммы/валюты/проценты и строгая связь с условием/фрагментом, v1 compatibility/null неразмеченных полей, новый учебный regression с разметкой без генерации из predictions. [Методика/реальные результаты](OCR_EVALUATION.md). Внешняя human/real-positive приёмка остаётся открыта.
+- [ ] Разобрать выявленные v2 regression ошибки отдельным блоком: ложные банковские условия при описательном названии/отрицании, mixed money+percent в одной фразе; отдельно оценить KZ OCR и строгость fragment boundaries. Не менять labels ради зелёных метрик.
+- [x] Добавить backend [точного сравнения сохранённых текстов](FEATURE_PUBLICATION_COMPARISON.md): explicit original/extraction, архивные версии, provenance/dates/text SHA, bounded line diff, без записи/подмены OCR/вывода о дублях. Результаты — PROJECT_STATUS.
+- [ ] Подключить comparison API к frontend отдельным блоком; автоматические кластеры дублей/семантические изменения и image comparison остаются отдельной работой.
+
+- [x] Добавить отдельный backend API [нерешённых действий материала](FEATURE_REVIEW_QUEUE.md): latest hypotheses/match/evidence/R2, исторический PENDING, точные totals до pagination. Реальные проверки — PROJECT_STATUS; старые processing status/риск не меняются.
+- [ ] Подключить новый review-queue API к frontend отдельным согласованным блоком и проверить переходы/ошибки на реальном приложении; наличие backend API само по себе не меняет текущий экран.
+
 - [x] Исправить backup для HTML-оригиналов и фактически восстановить свежую копию:24таблицы/553Assets/44READY PDF, private evidence и ограничения — LOCAL_BACKUP/PROJECT_STATUS.
 - [x] Добавить readonly диагностику компьютера без секретов/внешнихзапросов:15PASS/1ожидаемый блокер локальногоHTTPвхода при активномsharing. Это не второйПК/полныйофлайнпоказ.
 - [x] Восстанавливать URL-importjob послеreload/Back поUUIDquery, без повторнойкоманды; итогbrowserпроверки и границы — PROJECT_STATUS.

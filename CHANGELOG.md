@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-17 · Offline AI field evaluation
+
+- Added shared schema2 amount/currency/percent and strict source-binding scores to OCR and saved-publication evaluators; schema1 inputs remain supported with unannotated field scores.
+- Added a versioned synthetic RU/KZ field regression corpus, behavioral tests and CI artifact run. Preserved old labels/reports and exposed false positives, incomplete mixed values and OCR quote errors without changing production extraction.
+- Fixed native Tesseract metadata decoding for Windows Cyrillic paths; no new dependencies or API changes.
+
+## 2026-10-17 · Saved publication comparison (backend)
+
+- Added authenticated read-only `/api/v1/advertisements/compare`: explicit original or historical analysis text, source/date/version context and exact Unicode line differences.
+- Distinguished unavailable text from equality; enforced DEMO/REAL, version/source ownership and100000-character/1000-line bounds without truncation. No entity, risk, signal or notification changes.
+- Contract0.13.0-mvp; frontend integration and GitHub publication remain separate.
+
+## 2026-10-17 · Derived material review work (backend)
+
+- Added authenticated read-only `/api/v1/advertisements/review-queue` with concrete hypothesis, latest-version match, payment evidence and R2 tasks, exact filtered totals and pagination.
+- Preserved historical pending R2 after source correction and checked terminal decision freshness against source/binding review; no status, risk or signal mutations.
+- Contract 0.12.0-mvp; frontend integration remains a separate block. A zero task count is not source or legal acceptance.
+
 ## 2026-10-17 · Analyst workspace S0–S2
 
 - Five permanent work zones, nested monitoring navigation and contextual breadcrumbs; compact dashboard with server-backed work queues.

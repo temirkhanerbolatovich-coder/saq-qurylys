@@ -183,6 +183,24 @@ class EvaluationInputTests(unittest.TestCase):
                 evaluator.evaluate(self.corpus, self.manifest, output, None, SimpleNamespace())
         self.assertFalse(output.exists())
 
+    def test_native_runtime_metadata_reads_system_encoded_cyrillic_path(self):
+        directory = self.root / 'языки'
+        directory.mkdir()
+        (directory / 'rus.traineddata').write_bytes(b'bounded test model')
+
+        def native_run(args, **kwargs):
+            message = 'tesseract test\n' if args[-1] == '--version' else f'List in "{directory}" (1):\nrus\n'
+            # Native Windows CLI metadata uses the system code page even with Python -X utf8.
+            return SimpleNamespace(stdout=message.encode('cp1251').decode(kwargs.get('encoding', 'utf-8')))
+
+        with (
+            patch.object(evaluator.locale, 'getencoding', return_value='cp1251'),
+            patch.object(evaluator.subprocess, 'run', side_effect=native_run),
+        ):
+            metadata = evaluator.runtime_metadata(None, SimpleNamespace(tesseract_command='test', ocr_languages='rus'))
+        self.assertEqual(metadata['tesseract'], 'tesseract test')
+        self.assertEqual(metadata['traineddata_sha256']['rus'], evaluator.sha256(b'bounded test model'))
+
     def test_modified_manifest_is_flagged_without_losing_the_loaded_snapshot(self):
         self.save()
         original = self.manifest.read_bytes()
@@ -199,6 +217,79 @@ class EvaluationInputTests(unittest.TestCase):
         self.assertEqual(report['inputs_changed_during_run'], ['manifest_or_font'])
         self.assertEqual((self.root / 'mutated/manifest.json').read_bytes(), original)
         self.assertFalse(report['proposed_targets_met'])
+
+    def test_v1_remains_unannotated_in_v2_report(self):
+        self.save()
+        with (
+            patch.object(evaluator, 'runtime_metadata', return_value={}),
+            patch.object(evaluator, 'recognize', return_value=(self.corpus['cases'][0]['text'], [])),
+        ):
+            report = evaluator.evaluate(self.corpus, self.manifest, self.root / 'v1', None, SimpleNamespace())
+        self.assertEqual(report['schema_version'], 2)
+        self.assertEqual(report['manifest_schema_version'], 1)
+        fields = report['summaries']['all']['image_pipeline']['structured_fields']
+        self.assertEqual(fields['annotation_status'], 'not_annotated')
+        self.assertIsNone(fields['scores'])
+        self.assertIn('scripts/evaluation_fields.py', report['source_sha256'])
+        self.assertFalse(report['acceptance_established'])
+
+    def test_v2_fields_are_scored_for_both_pipelines(self):
+        self.corpus['schema_version'] = 2
+        case = self.corpus['cases'][0]
+        quote = 'Платная бронь 10 тенге'
+        start = case['text'].index(quote)
+        amount_start = case['text'].index('10 тенге')
+        money = {'amount': '10.00', 'currency': 'KZT'}
+        case['field_labels'] = {
+            'amounts': [
+                {
+                    'money': money,
+                    'fragment': {'start_offset': amount_start, 'end_offset': len(case['text']), 'quote': '10 тенге'},
+                }
+            ],
+            'payment_terms': [
+                {
+                    'money': money,
+                    'percent': None,
+                    'fragment': {'start_offset': start, 'end_offset': len(case['text']), 'quote': quote},
+                }
+            ],
+        }
+        self.save()
+        with (
+            patch.object(evaluator, 'runtime_metadata', return_value={}),
+            patch.object(evaluator, 'recognize', return_value=(case['text'], [])),
+        ):
+            report = evaluator.evaluate(self.corpus, self.manifest, self.root / 'v2', None, SimpleNamespace())
+        for pipeline in ('text_baseline', 'image_pipeline'):
+            fields = report['summaries']['ru'][pipeline]['structured_fields']
+            self.assertEqual(fields['scores']['money']['tp'], 1)
+            self.assertEqual(fields['scores']['payment_binding']['tp'], 1)
+        self.assertEqual(report['summaries']['kz']['image_pipeline']['structured_fields']['annotated_case_count'], 0)
+        case['field_labels']['payment_terms'][0]['money'] = {'amount': '11', 'currency': 'KZT'}
+        self.save()
+        with (
+            patch.object(evaluator, 'runtime_metadata', return_value={}),
+            patch.object(evaluator, 'recognize', return_value=(case['text'], [])),
+        ):
+            relabeled = evaluator.evaluate(self.corpus, self.manifest, self.root / 'relabeled', None, SimpleNamespace())
+        self.assertEqual(
+            relabeled['summaries']['all']['image_pipeline']['structured_fields']['scores']['payment_value']['tp'], 0
+        )
+        original_prediction = json.loads((self.root / 'v2/cases.jsonl').read_text(encoding='utf-8'))['image_pipeline']
+        relabeled_prediction = json.loads((self.root / 'relabeled/cases.jsonl').read_text(encoding='utf-8'))[
+            'image_pipeline'
+        ]
+        self.assertEqual(original_prediction, relabeled_prediction)
+
+    def test_v2_labels_required_and_v1_cannot_silently_score_them(self):
+        self.corpus['schema_version'] = 2
+        with self.assertRaises(ValueError):
+            self.save()
+        self.corpus['schema_version'] = 1
+        self.corpus['cases'][0]['field_labels'] = {'amounts': [], 'payment_terms': []}
+        with self.assertRaises(ValueError):
+            self.save()
 
 
 if __name__ == '__main__':

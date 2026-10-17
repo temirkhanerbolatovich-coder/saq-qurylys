@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.11.0-mvp",
+    "version": "0.13.0-mvp",
     "description": "SAQ QURYLYS contract. Registry/OCR, dated legal review, manual R1-R6, immutable signals/human decisions/PDF export and passive supporting PDF upload implemented. Commercial advertising collector remains planned. JSON is valid YAML 1.2. Manual monitoring candidates, immutable DEMO registry snapshots, comparisons and preliminary incident decisions are additive; the closed customer registry remains unavailable. Explicit licensed Primeminister.kz information import is implemented through leased jobs. Operator-provided KHC public PDF versions and page-text search preserve provenance and never establish legal applicability or modify risk."
   },
   "servers": [
@@ -3947,6 +3947,278 @@
         },
         "x-origin": "user-2026-10-17-open-publications-and-register",
         "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/api/v1/advertisements/review-queue": {
+      "get": {
+        "summary": "List materials with unresolved recorded analyst decisions",
+        "operationId": "listAdvertisementReviewQueue",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "property_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Property Id"
+            }
+          },
+          {
+            "name": "is_demo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Demo"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "REVIEW_HYPOTHESES",
+                    "REVIEW_MATCH",
+                    "CREATE_PAYMENT_EVIDENCE",
+                    "REVIEW_R2"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertisementReviewPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Authentication or validated query error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication or validated query error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Read-only queue for READY_FOR_REVIEW/REVIEWED materials and the latest completed extraction. Lists pending hypotheses, unresolved latest-version property identity, missing sufficient payment evidence and R2 decisions, including related invalidated historical R2. Counts precede pagination. Zero recorded tasks does not mean the source, legal status or signal was accepted. No automatic status, factor, signal or notification changes. Processing statuses remain unchanged.",
+        "x-implementation-status": "IMPLEMENTED_REVIEW_WORK_QUEUE",
+        "x-origin": "USER_APPROVED_BACKEND_FUNCTIONALITY"
+      }
+    },
+    "/api/v1/advertisements/compare": {
+      "get": {
+        "summary": "Compare two explicitly selected saved publication texts",
+        "operationId": "compareSavedPublications",
+        "parameters": [
+          {
+            "name": "left_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Left Id"
+            }
+          },
+          {
+            "name": "right_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Right Id"
+            }
+          },
+          {
+            "name": "left_extraction_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Left Extraction Id"
+            }
+          },
+          {
+            "name": "right_extraction_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Right Extraction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationComparison"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Session, source, bounded comparison or validated input error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session, source, bounded comparison or validated input error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session, source, bounded comparison or validated input error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Session, source, bounded comparison or validated input error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Read-only, exact line comparison of stored original_text by default, or explicitly selected historical extraction.analysis_text belonging to each publication and its source asset. No implicit OCR fallback, normalization, entity matching, duplicate verdict or risk changes. Missing/blank text is TEXT_UNAVAILABLE, never identical. DEMO and real sources cannot mix. Limits: 100000 Unicode characters and 1000 splitlines per selected text, rejected without truncation. Line ranges are zero-based half-open; returned blocks preserve exact line endings. text_sha256 hashes selected UTF-8 DB text, not original file bytes; storage integrity is not reverified. same_source_url compares two known URLs literally and otherwise remains null.",
+        "x-implementation-status": "IMPLEMENTED_SAVED_PUBLICATION_COMPARISON",
+        "x-origin": "USER_APPROVED_BACKEND_FUNCTIONALITY"
       }
     }
   },
@@ -10726,6 +10998,436 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "AdvertisementReviewPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdvertisementReviewItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "action_totals": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "REVIEW_HYPOTHESES",
+                "REVIEW_MATCH",
+                "CREATE_PAYMENT_EVIDENCE",
+                "REVIEW_R2"
+              ]
+            },
+            "type": "object",
+            "title": "Action Totals"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "action_totals"
+        ],
+        "title": "AdvertisementReviewPage"
+      },
+      "AdvertisementReviewItem": {
+        "properties": {
+          "advertisement_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Advertisement Id"
+          },
+          "extraction_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Extraction Id"
+          },
+          "extraction_revision": {
+            "type": "integer",
+            "title": "Extraction Revision"
+          },
+          "actions": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "REVIEW_HYPOTHESES",
+                "REVIEW_MATCH",
+                "CREATE_PAYMENT_EVIDENCE",
+                "REVIEW_R2"
+              ]
+            },
+            "type": "array",
+            "title": "Actions"
+          },
+          "pending_hypothesis_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Pending Hypothesis Ids"
+          },
+          "needs_property_match": {
+            "type": "boolean",
+            "title": "Needs Property Match"
+          },
+          "payment_hypothesis_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Payment Hypothesis Ids"
+          },
+          "r2_reviews": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentReviewTarget"
+            },
+            "type": "array",
+            "title": "R2 Reviews"
+          },
+          "advertisement": {
+            "$ref": "#/components/schemas/AdvertisementOut"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "advertisement_id",
+          "extraction_id",
+          "extraction_revision",
+          "actions",
+          "pending_hypothesis_ids",
+          "needs_property_match",
+          "payment_hypothesis_ids",
+          "r2_reviews",
+          "advertisement"
+        ],
+        "title": "AdvertisementReviewItem"
+      },
+      "PaymentReviewTarget": {
+        "properties": {
+          "property_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Property Id"
+          },
+          "factor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factor Id"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "property_id",
+          "factor_id",
+          "evidence_ids"
+        ],
+        "title": "PaymentReviewTarget"
+      },
+      "PublicationComparison": {
+        "properties": {
+          "left": {
+            "$ref": "#/components/schemas/PublicationComparisonSide"
+          },
+          "right": {
+            "$ref": "#/components/schemas/PublicationComparisonSide"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "IDENTICAL_TEXT",
+              "DIFFERENT_TEXT",
+              "TEXT_UNAVAILABLE"
+            ],
+            "title": "Status"
+          },
+          "same_advertisement": {
+            "type": "boolean",
+            "title": "Same Advertisement"
+          },
+          "same_source_url": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Same Source Url"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/PublicationTextChange"
+            },
+            "type": "array",
+            "title": "Changes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "left",
+          "right",
+          "status",
+          "same_advertisement",
+          "same_source_url",
+          "changes"
+        ],
+        "title": "PublicationComparison"
+      },
+      "PublicationComparisonSide": {
+        "properties": {
+          "advertisement_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Advertisement Id"
+          },
+          "advertisement_revision": {
+            "type": "integer",
+            "title": "Advertisement Revision"
+          },
+          "source_label": {
+            "type": "string",
+            "title": "Source Label"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "text_basis": {
+            "type": "string",
+            "enum": [
+              "ORIGINAL",
+              "EXTRACTION"
+            ],
+            "title": "Text Basis"
+          },
+          "extraction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Id"
+          },
+          "extraction_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Revision"
+          },
+          "pipeline_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Version"
+          },
+          "analysis_created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Created At"
+          },
+          "source_asset_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Asset Id"
+          },
+          "original_assets": {
+            "items": {
+              "$ref": "#/components/schemas/AssetOut"
+            },
+            "type": "array",
+            "title": "Original Assets"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "text_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Sha256"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "advertisement_id",
+          "advertisement_revision",
+          "source_label",
+          "source_url",
+          "published_at",
+          "captured_at",
+          "is_demo",
+          "text_basis",
+          "extraction_id",
+          "extraction_revision",
+          "pipeline_version",
+          "analysis_created_at",
+          "source_asset_id",
+          "original_assets",
+          "text",
+          "text_sha256"
+        ],
+        "title": "PublicationComparisonSide"
+      },
+      "PublicationTextChange": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "REPLACE",
+              "INSERT",
+              "DELETE"
+            ],
+            "title": "Kind"
+          },
+          "left_start_line": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Left Start Line"
+          },
+          "left_end_line": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Left End Line"
+          },
+          "right_start_line": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Right Start Line"
+          },
+          "right_end_line": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Right End Line"
+          },
+          "left_text": {
+            "type": "string",
+            "title": "Left Text"
+          },
+          "right_text": {
+            "type": "string",
+            "title": "Right Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "left_start_line",
+          "left_end_line",
+          "right_start_line",
+          "right_end_line",
+          "left_text",
+          "right_text"
+        ],
+        "title": "PublicationTextChange"
       }
     }
   }

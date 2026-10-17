@@ -6,14 +6,81 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import FileResponse
 from sqlalchemy import func, select, text
+from sqlalchemy.orm import selectinload
 from starlette.exceptions import HTTPException
 
 from app import dto
+from app.analysis_dto import AdvertisementReviewItem, AdvertisementReviewPage, PublicationComparison, ReviewAction
 from app.dependencies import DB, Actor, check_csrf
 from app.models import Advertisement, Asset, AuditEvent, Command, Evidence, utcnow
+from app.publication_comparison import compare_publications
+from app.review_queue import ACTIONS, review_work
 from app.storage import save_text
 
 router = APIRouter()
+
+
+@router.get(
+    '/api/v1/advertisements/compare', response_model=PublicationComparison, operation_id='compareSavedPublications'
+)
+def compare(
+    actor: Actor,
+    db: DB,
+    left_id: UUID,
+    right_id: UUID,
+    left_extraction_id: UUID | None = None,
+    right_extraction_id: UUID | None = None,
+):
+    return compare_publications(db, left_id, right_id, left_extraction_id, right_extraction_id)
+
+
+@router.get(
+    '/api/v1/advertisements/review-queue',
+    response_model=AdvertisementReviewPage,
+    operation_id='listAdvertisementReviewQueue',
+)
+def review_queue(
+    actor: Actor,
+    db: DB,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    property_id: UUID | None = None,
+    is_demo: bool | None = None,
+    action: ReviewAction | None = None,
+    date_from: Annotated[dto.AwareDatetime | None, Query(alias='from')] = None,
+    date_to: Annotated[dto.AwareDatetime | None, Query(alias='to')] = None,
+):
+    query = select(Advertisement)
+    if property_id:
+        query = query.where(Advertisement.confirmed_property_id == property_id)
+    if is_demo is not None:
+        query = query.where(Advertisement.is_demo == is_demo)
+    if date_from:
+        query = query.where(Advertisement.captured_at >= date_from)
+    if date_to:
+        query = query.where(Advertisement.captured_at < date_to)
+    work = {
+        id: item
+        for id, item in review_work(db, query).items()
+        if item.actions and (not action or action in item.actions)
+    }
+    rows = db.scalars(
+        query.where(Advertisement.id.in_(work))
+        .options(selectinload(Advertisement.assets))
+        .order_by(Advertisement.captured_at.desc(), Advertisement.id)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    return AdvertisementReviewPage(
+        items=[
+            AdvertisementReviewItem(**work[row.id].model_dump(), advertisement=dto.AdvertisementOut.model_validate(row))
+            for row in rows
+        ],
+        page=page,
+        page_size=page_size,
+        total=len(work),
+        action_totals={code: sum(code in item.actions for item in work.values()) for code in ACTIONS},
+    )
 
 
 @router.get('/api/v1/advertisements', response_model=dto.Page[dto.AdvertisementOut], operation_id='listAdvertisements')

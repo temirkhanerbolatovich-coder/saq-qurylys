@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, Field, HttpUrl, field_validator, model_validator
 
-from app.dto import DTO, ErrorOut, RiskCode, RiskFactorOut, RiskSummaryOut
+from app.dto import DTO, AdvertisementOut, AssetOut, ErrorOut, Page, RiskCode, RiskFactorOut, RiskSummaryOut
 from app.legal_absence import LegalMechanismCheck
 
 
@@ -133,6 +133,72 @@ class PropertyMatchOut(DTO):
     reasons: list[str]
     status: Literal['PENDING', 'CONFIRMED', 'REJECTED']
     revision: int
+
+
+ReviewAction = Literal['REVIEW_HYPOTHESES', 'REVIEW_MATCH', 'CREATE_PAYMENT_EVIDENCE', 'REVIEW_R2']
+
+
+class PaymentReviewTarget(DTO):
+    property_id: UUID
+    factor_id: UUID | None
+    evidence_ids: list[UUID]
+
+
+class AdvertisementReviewWork(DTO):
+    advertisement_id: UUID
+    extraction_id: UUID
+    extraction_revision: int
+    actions: list[ReviewAction]
+    pending_hypothesis_ids: list[UUID]
+    needs_property_match: bool
+    payment_hypothesis_ids: list[UUID]
+    r2_reviews: list[PaymentReviewTarget]
+
+
+class AdvertisementReviewItem(AdvertisementReviewWork):
+    advertisement: AdvertisementOut
+
+
+class AdvertisementReviewPage(Page[AdvertisementReviewItem]):
+    action_totals: dict[ReviewAction, int]
+
+
+class PublicationComparisonSide(DTO):
+    advertisement_id: UUID
+    advertisement_revision: int
+    source_label: str
+    source_url: str | None
+    published_at: datetime | None
+    captured_at: datetime
+    is_demo: bool
+    text_basis: Literal['ORIGINAL', 'EXTRACTION']
+    extraction_id: UUID | None
+    extraction_revision: int | None
+    pipeline_version: str | None
+    analysis_created_at: datetime | None
+    source_asset_id: UUID | None
+    original_assets: list[AssetOut]
+    text: str | None
+    text_sha256: str | None
+
+
+class PublicationTextChange(DTO):
+    kind: Literal['REPLACE', 'INSERT', 'DELETE']
+    left_start_line: int = Field(ge=0)
+    left_end_line: int = Field(ge=0)
+    right_start_line: int = Field(ge=0)
+    right_end_line: int = Field(ge=0)
+    left_text: str
+    right_text: str
+
+
+class PublicationComparison(DTO):
+    left: PublicationComparisonSide
+    right: PublicationComparisonSide
+    status: Literal['IDENTICAL_TEXT', 'DIFFERENT_TEXT', 'TEXT_UNAVAILABLE']
+    same_advertisement: bool
+    same_source_url: bool | None
+    changes: list[PublicationTextChange]
 
 
 class MatchReview(ReviewInput):

@@ -18,10 +18,13 @@ from types import SimpleNamespace
 from uuid import NAMESPACE_URL, uuid5
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'backend'))
 from app.extraction import extract, match_candidates  # noqa: E402
 from app.url_fetcher import HtmlPage  # noqa: E402
 from app.url_import import parse_publication  # noqa: E402
+
+from scripts.evaluation_fields import structured_metrics, validate_labels  # noqa: E402
 
 LIMITATIONS = [
     'Text extraction only; no image OCR was performed.',
@@ -31,6 +34,9 @@ LIMITATIONS = [
     'Matching results apply only to the finite manifest catalog, not to registry coverage.',
     'Translations within one topic group are related observations, not independent examples.',
     'No hypotheses, matches, factors or legal conclusions are confirmed by this report.',
+    'Schema 1 has no field annotations; structured scores remain null.',
+    'Binding uses strict whitespace-normalized source alignment, not semantic correctness.',
+    'Percent scores cover PAYMENT_TERM values, not all percentages in a document.',
 ]
 
 
@@ -49,11 +55,12 @@ def load_manifest(path, *, content=None):
     manifest = json.loads(content.decode('utf-8'))
     if (
         not isinstance(manifest, dict)
-        or manifest.get('schema_version') != 1
+        or type(manifest.get('schema_version')) is not int
+        or manifest['schema_version'] not in (1, 2)
         or not isinstance(manifest.get('provenance'), dict)
         or manifest['provenance'].get('kind') != 'external'
     ):
-        raise ValueError('Expected schema_version 1 and external provenance')
+        raise ValueError('Expected schema_version 1 or 2 and external provenance')
     properties, cases = manifest.get('properties'), manifest.get('cases')
     if not isinstance(properties, list) or not 1 <= len(properties) <= 1000:
         raise ValueError('Expected 1..1000 catalog properties')
@@ -101,6 +108,10 @@ def load_manifest(path, *, content=None):
             and (not isinstance(expected['target_property'], str) or expected['target_property'] not in keys)
         ):
             raise ValueError(f'{identity}: explicit payment and catalog-target labels required')
+        if manifest['schema_version'] == 2:
+            validate_labels(expected.get('field_labels'), expected.get('reference_text'), expected['payment_offer'])
+        elif 'field_labels' in expected:
+            raise ValueError(f'{identity}: field_labels require schema_version 2')
         source = case.get('source')
         required = ('requested_url', 'final_url', 'content_type', 'captured_at', 'publisher', 'license_url')
         if not isinstance(source, dict) or any(
@@ -133,6 +144,7 @@ def load_manifest(path, *, content=None):
 def source_code_hashes():
     sources = [
         'scripts/evaluate_publications.py',
+        'scripts/evaluation_fields.py',
         'backend/app/url_import.py',
         'backend/app/url_fetcher.py',
         'backend/app/extraction.py',
@@ -168,6 +180,16 @@ def metrics(records):
         'evaluated_count': len(completed),
         'error_count': len(records) - len(completed),
         'coverage': fraction(len(completed), len(records)),
+        'structured_fields': structured_metrics(
+            [
+                {
+                    'reference_text': row['expected'].get('reference_text'),
+                    'field_labels': row['expected'].get('field_labels'),
+                    'prediction': row['prediction'],
+                }
+                for row in records
+            ]
+        ),
         'payment': {
             'tp': tp,
             'fp': fp,
@@ -234,10 +256,16 @@ def evaluate(path):
             publication = parse_publication(page)
             if publication.language != case['language']:
                 raise ValueError('Parsed language disagrees with corpus label')
+            if manifest['schema_version'] == 2 and publication.text != case['expected']['reference_text']:
+                raise ValueError('Parsed text disagrees with frozen field-label reference')
             identity = uuid5(NAMESPACE_URL, f'saq-publication-evaluation/{case["id"]}')
             hypotheses, warnings = extract(publication.text, identity, identity, properties)
             candidates = match_candidates(publication.text, hypotheses, properties)
             row['prediction'] = {
+                'text': publication.text,
+                'hypotheses': [
+                    {key: item[key] for key in ['field', 'value', 'fragment', 'review_status']} for item in hypotheses
+                ],
                 'title': publication.title,
                 'text_sha256': digest(publication.text.encode('utf-8')),
                 'text_characters': len(publication.text),
@@ -268,7 +296,8 @@ def evaluate(path):
         final_sources = {}
     changed.extend(f'code:{name}' for name, sha in initial_sources.items() if final_sources.get(name) != sha)
     return {
-        'schema_version': 1,
+        'schema_version': 2,
+        'manifest_schema_version': manifest['schema_version'],
         'generated_at': datetime.now(UTC).isoformat(),
         'manifest_sha256': digest(manifest_bytes),
         'provenance': manifest['provenance'],

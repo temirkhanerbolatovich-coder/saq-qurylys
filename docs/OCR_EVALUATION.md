@@ -1,5 +1,138 @@
 # Оценка OCR, условий оплаты и сопоставления RU/KZ
 
+## Структурные поля и привязка к источнику · schema 2 · 17.10.2026
+
+`evaluate_ocr.py` и `evaluate_publications.py` принимают manifests версий **1 и 2**,
+новые отчёты имеют `schema_version=2` и отдельный `manifest_schema_version`.
+Старые manifests/labels/reports не мигрируются. Для v1 раздел `structured_fields`
+возвращает `annotation_status=not_annotated`, `scores=null`, а прежние payment,
+matching и CER считаются как раньше. Ни один label не генерируется из prediction.
+Хеш общего scorer `scripts/evaluation_fields.py` входит в начальные/конечные
+source hashes обоих инструментов. Все результаты сохраняются в новый output.
+
+В v2 читаемый OCR-case содержит `field_labels`; reference — существующий `text`.
+HTML-case содержит `expected.reference_text` и `expected.field_labels`.
+Reference HTML должен точно совпасть с результатом parser, иначе документ остаётся
+ошибкой обработки; его ожидаемые поля остаются в знаменателе recall. Reference
+ограничен 100000 символами (OCR-case по-прежнему 10000), каждый список — 250 полями.
+
+Пример структуры (offsets считаются по полному исходному reference, в Unicode
+символах, end исключающий):
+
+```json
+{
+  "amounts": [
+    {"money": {"amount": "100.00", "currency": "KZT"},
+     "fragment": {"start_offset": 6, "end_offset": 11, "quote": "100 ₸"}}
+  ],
+  "payment_terms": [
+    {"money": {"amount": "100", "currency": "KZT"}, "percent": null,
+     "fragment": {"start_offset": 0, "end_offset": 12, "quote": "Бронь 100 ₸."}}
+  ]
+}
+```
+
+`amounts` размечает **все** денежные упоминания AMOUNT, включая цену квартиры и
+информационный кредит; это не список предложений платежа. `payment_terms`
+размечает самостоятельные условия вместе с полным предназначенным фрагментом.
+Несколько условий в одной фразе представляются одним money+percent tuple,
+например аванс10% и депозит250000KZT; произвольный список нескольких денежных
+значений внутри одного tuple пока не поддержан. Проценты оцениваются только как
+значения PAYMENT_TERM, а не как все проценты документа. `null` означает проверенное
+отсутствие значения, `[]` — проверенное отсутствие полей; это не неразмеченность.
+Нечитаемый case имеет `field_labels=null` и не участвует в структурной оценке.
+Для читаемого v2 `payment_offer == bool(payment_terms)` обязателен.
+
+Фрагмент должен точно равняться `reference[start:end]`; дубли span в одном списке
+запрещены. Числа в labels — десятичные строки без exponent/знака/NaN, до24цифр
+до точки и12после; currency KZT/USD/EUR, percent0..100. Сравнение Decimal даёт
+равенство `100`, `100.0` и `100.00` без потери точности.
+
+В all/RU/KZ, отдельно text baseline и image pipeline, раздел `structured_fields`
+сохраняет coverage и TP/FP/FN/expected/predicted/precision/recall_end_to_end:
+
+| Метрика | Что означает TP |
+|---|---|
+| amount / currency / money | Соответственно число / валюта / их пара в AMOUNT; multiset по документу, без доказательства связи с фразой |
+| percent | Точное значение процента в PAYMENT_TERM, без доказательства связи |
+| payment_value | Полный tuple money+percent одного PAYMENT_TERM, с учётом null |
+| payment_fragment | Правильный предназначенный интервал источника |
+| payment_binding | Одновременно полный tuple и правильный интервал PAYMENT_TERM |
+| amount_binding | Одновременно пара amount+currency и правильный интервал AMOUNT |
+
+Каждое ожидаемое вхождение даёт максимум один TP; лишний дубль — FP. При сбое
+inference все ожидаемые поля документа дают FN; ошибка не становится успешным
+воздержанием. При нулевом знаменателе метрика `null`. Отдельные amount/currency
+не следует выдавать за правильную привязку: для этого нужны `*_binding`.
+
+Привязка **строгая, с нормализацией только пробелов**. Сначала проверяется raw
+`observed[start:end] == quote` (`raw_fragment_count/raw_fragment_valid`), затем
+Levenshtein alignment полного reference/observed переносит неизменённый интервал
+к ожидаемому occurrence. Нет поиска первого похожего substring и допуска по
+значению. Изменённые регистр, пунктуация или буква внутри quote дают FP+FN для
+привязки, даже при верной сумме; CER и value scores показывают это отдельно.
+Добавленный префикс и переносы пробелов не портят неизменённый интервал.
+Детерминированное выравнивание повторяющихся идентичных фраз не доказывает их
+семантическую идентичность. При observed>100000 alignment не выполняется и
+строгая привязка не получает TP, value scores сохраняются. Это диагностическая
+метрика, не универсальная оценка понимания смысла.
+
+Новый [учебный корпус](../data/evaluation/ru-kz-fields-v2.json):14cases,
+12читаемых (6RU/6KZ,8positive/4negative),2нечитаемых,4вымышленных DEMO-объекта,
+11денежных и10payment labels,4процента. Агентская разметка создана с доступом к
+коду и требует независимой человеческой проверки KZ; это regression, не holdout.
+Правила извлечения и исторические решения этим блоком не менялись.
+
+Фактический native Windows прогон Tesseract5.4, Arial, tessdata_fast commit
+`87416418657359cb625c412a48b6e1d6d41c29bd`, SHA моделей/шрифта в report:
+`output/evaluation/fields-v2-20261017/configured-run/report.json`.
+Ошибки обработки0, inputs_changed=[],12/12coverage, rawфрагменты23/23валидны.
+
+| Поля нового regression-набора | Text: TP/FP/FN | Image→OCR: TP/FP/FN |
+|---|---|---|
+| money (AMOUNT, пара суммы и валюты) | 11/0/0 | 11/0/0 |
+| percent (PAYMENT_TERM) | 4/2/0 | 4/2/0 |
+| payment_value | 8/4/2 | 8/4/2 |
+| payment_fragment | 10/2/0 | 6/6/4 |
+| payment_binding | 8/4/2 | 5/7/5 |
+
+Документальный payment:8TP/2FP/0FN/2TN, precision80%, recall100%. Два банковских
+описания ru-fields-06/kz-fields-06 дают ложные условия, mixed ru-fields-04/kz-fields-04
+теряют money в tuple. KZ image payment_binding1TP/5FP/4FN против RU4/2/1:
+строгие фрагменты чувствительны к OCR-символам/пунктуации. Правильность этих
+агентских labels и достаточность границ quote нуждаются в человеческой проверке.
+CER21/1775≈1,18%, matching10/10 по учебным известным объектам. Размер14 не
+выполняет прежний ≥30-протокол; `acceptance_established=false`, новые поля не
+имеют утверждённого порога качества. Новые ошибки не скрыты и не исправлялись
+под этот набор в том же блоке.
+
+Совместимость проверена отдельным прогоном прежних36изображений в
+`output/evaluation/fields-v1-compat-20261017/configured-run`:16TP/0FP/0FN/16TN,
+top3 24/24,1/8unknown false candidate, CER128/6311≈2,03%, `--require-targets`
+exit0; structured scores=null. Это иной native runtime, поэтому CER нельзя
+выдавать за улучшение модели относительно исторического Docker report157/6311.
+Внешний12HTML v1 также обработан12/12, TN12/FP0, structured scores=null:
+`.local/publication-quality/fresh-2026-10-17/fields-v1-compat-20261017.json`.
+Старые отчёты сохранены.
+
+Воспроизведение на установленном Tesseract с rus/kaz/eng и configs/tsv:
+
+```powershell
+.venv\Scripts\python.exe scripts/evaluate_ocr.py --manifest data/evaluation/ru-kz-fields-v2.json --output output/evaluation/fields-new-run --tesseract "C:\Program Files\Tesseract-OCR\tesseract.exe"
+```
+
+При отдельном каталоге моделей задайте `TESSDATA_PREFIX` в процессе и сохраните
+`configs/tsv` вместе с traineddata; иначе Tesseract может вернуть0 без TSV, а
+production OCR правильно отклонит результат как OCR_OUTPUT_LIMIT. Наши модели и
+config размещены только в ignored `.local/field-evaluation-tessdata`; .env и
+приложение не менялись. Native служебный вывод читается в системной кодировке,
+чтобы путь с кириллицей работал и при Python `-X utf8`. Первые неуспешные
+preflight/config прогоны и логи сохранены, не заменены успешным результатом.
+CI дополнен отдельным v2 regression run и сохранением обоих artifacts; удалённый
+CI этим локальным изменением не запускался. Следующий шаг — разбор измеренных
+пропусков/ложных гипотез отдельным блоком и разрешённые реальные RU/KZ positive,
+изображения и замороженная человеческая разметка.
+
 ## Новый внешний HTML-набор / rules-1.5 · 17.10.2026
 
 До просмотра predictions отдельный агент, не читавший production extractor/parser, старые тексты и тесты, сохранил **12 новых публикаций: 6RU/6KZ, 10 тематических групп, две пары переводов**. Каждый оригинал имеет источник, время получения, SHA и ссылку CC BY4.0; разметка и восемь новых явно DEMO имён зафиксированы до первого запуска. Manifest SHA `ae74d20ba7618d608279dfbc5e06b784fd575151db64a3f98564c38c80aed6ee`; frozen labels SHA `cf68789e14e7673fe3928cc0f605ad14387e5e4bb3f9c507a8a9a9bb7c9de115`. Исходники и отчёты — ignored `.local/publication-quality/fresh-2026-10-17/`, без публикации оригиналов в CI.

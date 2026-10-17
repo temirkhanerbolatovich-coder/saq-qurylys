@@ -199,6 +199,67 @@ def test_report_keeps_ru_and_kz_results_separate(saved_corpus):
     assert report['by_language']['kz']['payment']['recall'] is None
 
 
+def test_v1_fields_are_unannotated_and_helper_hash_is_frozen(saved_corpus, monkeypatch):
+    path, _ = saved_corpus
+    stub_inference(monkeypatch)
+    report = evaluator.evaluate(path)
+    assert report['schema_version'] == 2
+    assert report['manifest_schema_version'] == 1
+    assert report['overall']['structured_fields']['scores'] is None
+    assert 'scripts/evaluation_fields.py' in report['source_code_sha256']
+
+
+@pytest.mark.parametrize('mismatch', [False, True], ids=['exact-reference', 'changed-parser-text'])
+def test_v2_scores_source_bound_values_and_keeps_reference_failures(saved_corpus, monkeypatch, mismatch):
+    path, manifest = saved_corpus
+    reference = 'Платная бронь 10 тенге'
+    money = {'amount': '10', 'currency': 'KZT'}
+    fragment = {'start_offset': 0, 'end_offset': len(reference), 'quote': reference}
+    manifest['schema_version'] = 2
+    manifest['cases'][0]['expected'].update(
+        payment_offer=True,
+        reference_text=reference,
+        field_labels={'amounts': [], 'payment_terms': [{'money': money, 'percent': None, 'fragment': fragment}]},
+    )
+    path.write_text(json.dumps(manifest), encoding='utf-8')
+    monkeypatch.setattr(
+        evaluator,
+        'parse_publication',
+        lambda page: SimpleNamespace(
+            language='ru', title='DEMO', text=reference + ('!' if mismatch else ''), published_at=None
+        ),
+    )
+    calls = []
+
+    def extract(text, *args):
+        calls.append(text)
+        return [
+            {
+                'field': 'PAYMENT_TERM',
+                'value': {'money': money, 'percent': None},
+                'fragment': fragment,
+                'review_status': 'PENDING',
+            }
+        ], []
+
+    monkeypatch.setattr(evaluator, 'extract', extract)
+    monkeypatch.setattr(evaluator, 'match_candidates', lambda *args: [])
+    report = evaluator.evaluate(path)
+    fields = report['overall']['structured_fields']
+    assert fields['scores']['payment_binding']['tp'] == (0 if mismatch else 1)
+    assert fields['scores']['payment_binding']['fn'] == (1 if mismatch else 0)
+    assert fields['coverage'] == (0 if mismatch else 1)
+    assert bool(calls) is not mismatch
+
+
+def test_v2_rejects_missing_labels_before_inference(saved_corpus):
+    path, manifest = saved_corpus
+    manifest['schema_version'] = 2
+    path.write_text(json.dumps(manifest), encoding='utf-8')
+    with pytest.raises(ValueError, match='reference text'):
+        evaluator.load_manifest(path)
+
+
 def test_changed_original_stops_scoring(saved_corpus):
     path, _ = saved_corpus
     (path.parent / 'original.html').write_bytes(b'changed source')

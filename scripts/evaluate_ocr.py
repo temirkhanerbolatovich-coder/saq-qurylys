@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import io
 import json
+import locale
 import platform
 import re
 import subprocess
@@ -20,12 +21,21 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from rapidfuzz.distance import Levenshtein
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'backend'))
 from app.extraction import extract, match_candidates  # noqa: E402
 from app.ocr import recognize  # noqa: E402
 from app.uploads import validate_image  # noqa: E402
 
-SOURCE_FILES = ['scripts/evaluate_ocr.py', 'backend/app/extraction.py', 'backend/app/ocr.py', 'backend/app/uploads.py']
+from scripts.evaluation_fields import structured_metrics, validate_labels  # noqa: E402
+
+SOURCE_FILES = [
+    'scripts/evaluate_ocr.py',
+    'scripts/evaluation_fields.py',
+    'backend/app/extraction.py',
+    'backend/app/ocr.py',
+    'backend/app/uploads.py',
+]
 
 
 def sha256(content):
@@ -38,8 +48,12 @@ def load_corpus(path):
     corpus = json.loads(path.read_text(encoding='utf-8'))
     if not isinstance(corpus, dict) or not isinstance(corpus.get('provenance'), dict):
         raise ValueError('Expected corpus object with provenance')
-    if corpus.get('schema_version') != 1 or corpus['provenance'].get('kind') not in {'synthetic', 'external'}:
-        raise ValueError('Expected schema_version 1 and synthetic/external provenance')
+    if (
+        type(corpus.get('schema_version')) is not int
+        or corpus['schema_version'] not in (1, 2)
+        or corpus['provenance'].get('kind') not in {'synthetic', 'external'}
+    ):
+        raise ValueError('Expected schema_version 1 or 2 and synthetic/external provenance')
     properties, cases = corpus.get('properties', []), corpus.get('cases', [])
     if (
         not isinstance(properties, list)
@@ -83,6 +97,12 @@ def load_corpus(path):
             not isinstance(case['target_property_key'], str) or case['target_property_key'] not in keys
         ):
             raise ValueError(f'{identity}: unknown target property')
+        if corpus['schema_version'] == 2:
+            if 'field_labels' not in case:
+                raise ValueError(f'{identity}: explicit field_labels required in schema 2')
+            validate_labels(case['field_labels'], case['text'], case['payment_offer'], readable=case['readable'])
+        elif 'field_labels' in case:
+            raise ValueError(f'{identity}: field_labels require schema_version 2')
         if case.get('image'):
             if not isinstance(case['image'], str):
                 raise ValueError(f'{identity}: image must be a relative path string')
@@ -196,6 +216,16 @@ def metrics(records, pipeline):
         'readable_count': len(readable),
         'evaluated_count': len(scored),
         'coverage': fraction(len(scored), len(readable)),
+        'structured_fields': structured_metrics(
+            [
+                {
+                    'reference_text': item['expected']['text'],
+                    'field_labels': item['expected'].get('field_labels'),
+                    'prediction': item[pipeline],
+                }
+                for item in readable
+            ]
+        ),
         'payment': {
             'tp': tp,
             'fp': fp,
@@ -341,7 +371,8 @@ def evaluate(corpus, manifest, output, font_path, settings):
         )
     )
     report = {
-        'schema_version': 1,
+        'schema_version': 2,
+        'manifest_schema_version': corpus['schema_version'],
         'corpus_id': corpus.get('corpus_id'),
         'provenance': corpus['provenance'],
         'created_at': datetime.now(UTC).isoformat(),
@@ -358,10 +389,14 @@ def evaluate(corpus, manifest, output, font_path, settings):
         and not changed
         and not any(item['error'] or item['baseline_error'] for item in records)
         and proposed_targets_met(summaries['all']['image_pipeline']),
+        'acceptance_established': False,
         'limitations': [
             'Synthetic results are not real-world accuracy or independent human acceptance.',
             'Once inspected for changes this corpus is a regression set, not a fresh holdout.',
-            'Payment metrics are document-level detection, not correctness of sums/currencies or legal risk.',
+            'Payment targets remain document-level; structured fields have separate scores and no acceptance threshold.',
+            'Schema 1 has no field annotations; structured scores are null, never inferred from predictions.',
+            'Binding is strict whitespace-normalized alignment, not semantic correctness; OCR substitutions inside quotes fail.',
+            'Percent scores cover PAYMENT_TERM values, not every percentage mentioned in a document.',
         ],
     }
     (output / 'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
@@ -370,10 +405,20 @@ def evaluate(corpus, manifest, output, font_path, settings):
 
 def runtime_metadata(font_path, settings):
     version = subprocess.run(
-        [settings.tesseract_command, '--version'], capture_output=True, text=True, timeout=10, check=True
+        [settings.tesseract_command, '--version'],
+        capture_output=True,
+        text=True,
+        encoding=locale.getencoding(),
+        timeout=10,
+        check=True,
     ).stdout.splitlines()[0]
     languages = subprocess.run(
-        [settings.tesseract_command, '--list-langs'], capture_output=True, text=True, timeout=10, check=True
+        [settings.tesseract_command, '--list-langs'],
+        capture_output=True,
+        text=True,
+        encoding=locale.getencoding(),
+        timeout=10,
+        check=True,
     ).stdout
     available = languages.splitlines()[1:]
     requested = settings.ocr_languages.split('+')

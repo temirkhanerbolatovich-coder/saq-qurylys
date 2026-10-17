@@ -21,6 +21,7 @@ def test_live_responses_match_approved_contract(signed):
         ('/properties/' + str(demo_id('orken')), 'PropertyDetail'),
         ('/properties/' + str(demo_id('samal')) + '/risk', 'RiskDetail'),
         ('/advertisements', 'AdvertisementPage'),
+        ('/advertisements/review-queue', 'AdvertisementReviewPage'),
         ('/dashboard/summary', 'DashboardSummary'),
         ('/monitoring/candidates', 'Page_CandidateOut_'),
         ('/monitoring/registry-snapshots', 'Page_RegistrySnapshotOut_'),
@@ -28,6 +29,8 @@ def test_live_responses_match_approved_contract(signed):
         ('/monitoring/threads/status', 'ThreadsConnectionStatus'),
         ('/auth/me', 'User'),
     ]
+    left_id, right_id = str(demo_id('ad-1')), str(demo_id('ad-2'))
+    samples.append((f'/advertisements/compare?left_id={left_id}&right_id={right_id}', 'PublicationComparison'))
     for path, schema in samples:
         response = signed.get('/api/v1' + path)
         assert response.status_code == 200
