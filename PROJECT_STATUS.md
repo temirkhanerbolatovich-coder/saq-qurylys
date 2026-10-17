@@ -12,6 +12,12 @@
 во всех трёх jobs frontend/backend/browser-e2e. После fetch и fast-forward
 дерево main полностью совпало с проверенным коммитом. Codex root отвечает за
 runtime/интеграцию, помощники — независимые extraction/queue/comparison области.
+Повторный [CI на merge-коммите main](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39053400753)
+также завершился success во всех трёх jobs. Собственная объединённая ветка
+удалена после проверки ancestry; чужая `codex/ui-updates` сохранена.
+Заключительный docs update:351trackedфайл/8известных literals/0совпадений,
+5Markdown/114относительных ссылок/UTF-8/hygiene/diff-check PASS;
+обычный push завершён, main чистый и синхронный с origin.
 Сохранены frontend master1.4, API0.13/51operations, роли/риск/исторические решения;
 новых dependencies/миграций нет. Next dev создал локальные frontend/AGENTS.md;
 проверены поставленные Next Link/searchParams docs, инструкция сохраняется в Git.
