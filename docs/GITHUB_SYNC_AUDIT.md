@@ -1,5 +1,9 @@
 # GitHub: совместимость публикации с frontend · 17.10.2026
 
+## Выборочная интеграция новой ветки
+
+Следующее «гоу» разрешает интеграцию `codex/ui-updates`. Ветка `codex/integrate-ui-updates` объединяет main33173a0 и вход9691bf0 с обоими родителями. Три конфликта разрешены переносом представления: новые forms/cards/heading/guide/диаграммы приняты; функциональные удаления drafts/history/pagination/controlled map и ошибочные статусы отклонены. Чужая ветка/история не переписываются. Backend/API/dependencies, точные totals/comparison и исторические данные сохранены. Результаты95browser/28responsiveнаблюдений и финальная публикация — PROJECT_STATUS. Ниже сохранён аудит входящей ветки до интеграции.
+
 ## Текущее состояние после PR №2
 
 Наш проверенный `6c2b8cd` объединён через [PR №2](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/2)

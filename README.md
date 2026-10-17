@@ -12,8 +12,10 @@ false positives и составные условия сумма+процент. 
 Опубликовано в `main` через [PR №2](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/2),
 merge `d95c95d`; [CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39052856375)
 зелёный во всех трёх jobs. Рабочий сайт обновлён и проверен через HTTPS.
-Новая отдельная frontend-ветка `codex/ui-updates` пока не интегрирована:
-её CI и три конфликта описаны в [аудите совместимости](docs/GITHUB_SYNC_AUDIT.md).
+Frontend-ветка `codex/ui-updates` выборочно интегрируется с сохранением
+черновиков, истории, очереди и сравнения. Добавлены формы/карточки и диаграммы
+с явным ограничением охвата. Проверки и публикация — в [статусе](PROJECT_STATUS.md)
+и [аудите совместимости](docs/GITHUB_SYNC_AUDIT.md).
 
 17.10.2026: интеграция опубликована в main через [PR1](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/1), mergebdab80a. [ПолныйCI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39043383017) зелёный:803backend/77browser/73tooltests, frontend checks/build имиграции. Прежние backend/AI блоки и согласованные frontend изменения включены; серверный deploy не выполнялся.
 

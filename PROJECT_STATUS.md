@@ -1,5 +1,15 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Интеграция новой frontend-ветки · 17.10.2026
+
+**IMPLEMENTED / LOCAL VERIFIED / PUBLICATION NEXT.** Пользователь «гоу» согласовал безопасную интеграцию и обновление сайта. Codex root; база main `33173a0363bb454b5be48a75d730e1a5d8399930`, вход `9691bf0489ba1e5d5ecd207306e803e368e6bb8a`, ветка `codex/integrate-ui-updates`. Три конфликта разрешены выборочным переносом представления; история обоих родителей сохраняется, чужая ветка не переписывается.
+
+Приняты карточки/детали публикаций, даты/версия/SHA, оформление text/file intake, заголовок материала review, инструкция сигналов и две диаграммы. Диаграммы явно ограничены первыми100/сервернымtotal; image+URL считается один раз, реальные processing statuses не заменяются выдуманными SUCCEEDED. Точные action totals остаются отдельной очередью. Пять зон, оба вида, URL/Back/reload, server pagination, drafts/idempotency, PropertyHistory, controlled map, comparison, роли/решения/исторические snapshots сохранены. Backend/контракт/миграции/dependencies/frozen data не менялись; нового ADR не требуется.
+
+Первый targeted browser run:19passed/1failed — новый тест читал URL до завершения client navigation. Исправлено ожидание, без ослабления guards. Полный Linux API/worker/production frontend прогон:95passed/2.6m. Typecheck/ESLint/Prettier,2Nodechecks, Windows и Docker production builds PASS. Read-only осмотр7страниц×4ширины375/768/1024/1440:28наблюдений,overflow0/pageerrors0/businesswrites0. Captures375/1440 просмотрены вручную; исправлены full-row span диаграммы и группировка upload fields, caption≥12px/native links≥44px/существующие color tokens. Финальный полный повтор после визуальных исправлений:95passed/2.6m; повторный read-only осмотр28наблюдений PASS, logout204.
+
+Стенд `saq-ui-acceptance-20261017-53b240`: новые private DB/storage volumes, loopback3199/8199/55629. Рабочие данные не используются в write tests; Docker frontend имеет отдельный tag. Config/logs ignored `.local/ui-integration-20261017`, screenshots `output/qa/ui-updates`. README/CHANGELOG, design/UX/components/plan/audit и GitHub audit обновлены. Следующий шаг: финальные проверки/secret scan → merge commit/push/PR/CI → обновление только рабочего frontend с прежним HTTPS override/read-only smoke; свой стенд остановить. KZ quotes/независимая RU-KZ приёмка/разрешённый C01 остаются OPEN.
+
 ## Сайт обновлён; rules-1.6 и review/comparison опубликованы · 17.10.2026
 
 **PUBLISHED / CI SUCCESS / WORKING SITE VERIFIED.** Пользователь

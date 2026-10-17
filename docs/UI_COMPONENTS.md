@@ -1,5 +1,9 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Компоненты входящего ui-updates · 17.10.2026
+
+`DashboardPublicationOverview` в workspace.tsx читает ограниченный catalog через useData и переиспользует LoadState/empty/error/retry. Каждый источник считается один раз, точные review totals остаются в DashboardQueues. Карточки и intake forms расширяют существующие views/native controls; новой библиотеки/API нет. Master1.4 сохраняется.
+
 17.10.2026: `RemainingReviewQueue` / `QueueR2Decision` в review-queue.tsx
 переиспользуют useData/useReviewDraft и существующие команды. ReviewView
 переключает action queue и старый processing список; DashboardQueues использует

@@ -1,5 +1,11 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Выборочная интеграция новой frontend-ветки · 17.10.2026
+
+Вход9691bf0 объединён с main33173a0 в отдельной ветке; сохранены drafts/history/pagination/map/queue/comparison. Typecheck/ESLint/Prettier/2Nodechecks и Windows/Docker production builds PASS. Первый targeted run19pass/1fail: новый тест ожидал URL синхронно после Link.click; исправлено ожидание. Полный прогон95passed/2.6m на отдельной Linux DB/storage. Новые presentation cases проверяют100/total205, image+URL без дубля, processing states, error/retry без старых значений, card→detail→list с query, полный оригинал/SHA. Это дополнение к настоящим API/worker/UI сценариям.
+
+Read-only осмотр7страниц×4ширины:28наблюдений,overflow0/pageerrors0/businesswrites0. Screenshots375/1440 в ignored output/qa/ui-updates; вручную просмотрены loaded dashboard, forms, original, review и signals guide. Исправлены full-row span диаграммы и inline labels upload; caption≥12px, tab links≥44px, color tokens существуют. После визуальных исправлений полный повтор95passed/2.6m и повтор28наблюдений PASS. Публикация — PROJECT_STATUS. Внешняя UX/предметная и независимая RU/KZ приёмка остаются открытыми.
+
 ## Очередь решений и сравнение · 17.10.2026
 
 Проверенная версия опубликована через [PR №2](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/2),
