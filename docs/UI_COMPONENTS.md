@@ -1,5 +1,21 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Локальные секции досье · B2/S3 · 18.10.2026
+
+`PropertyView` сохраняет существующий компонент/роут, семь native anchors и
+семантические section IDs. Старые #dossier-summary/#dossier-bases/#dossier-factors/
+#dossier-history/#dossier-materials сохранены. Добавлены advertisements/evidence/
+signals и editor-R1/R3/R4/R5/R6. `revealDossierTarget` открывает native details
+ancestors и переносит фокус после изменения вида; не remount и не submit.
+Длинные формы остаются одним экземпляром. ConstructionFactor получил стабильный
+editor ID/tabIndex без изменения capture/review. UI mode setter читается из ref:
+смена его identity не должна заново открывать редактор при переключении вида.
+
+Прежний `EvidenceItem` обслуживает одну выбранную группу факторов/оснований;
+дедуп IDs действует в показе/счётчике, не переписывает backend evidence. Нет новой
+коллекции, глобального API или компонента tabs. Button/Link/native select/details,
+DossierProgress, PropertyHistory и CreateSignalButton переиспользованы.
+
 ## Черновики форм досье · 18.10.2026
 
 `useDossierFormDraft` (`frontend/lib/use-dossier-form-draft.ts`) расширяет существующий

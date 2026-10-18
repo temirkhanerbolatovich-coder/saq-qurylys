@@ -448,6 +448,8 @@ function ConstructionFactor({
     <details
       className="document"
       data-testid={`construction-${code}`}
+      id={`dossier-editor-${code}`}
+      tabIndex={-1}
       {...draft.containerProps}
     >
       <summary>{definition.title}</summary>

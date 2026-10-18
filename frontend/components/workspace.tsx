@@ -1584,6 +1584,17 @@ function DossierProgress({
   );
 }
 
+function revealDossierTarget(targetId: string) {
+  const target = document.getElementById(targetId);
+  // Native disclosures stay mounted: opening an editor must preserve files and retry state.
+  for (let node = target; node; node = node.parentElement)
+    if (node instanceof HTMLDetailsElement) node.open = true;
+  requestAnimationFrame(() => {
+    target?.focus();
+    target?.scrollIntoView({ block: "start" });
+  });
+}
+
 export function PropertyView({ id }: { id: string }) {
   const { user } = useContext(Auth);
   const { detailed, setDetailed } = useInterfaceMode();
@@ -1593,9 +1604,44 @@ export function PropertyView({ id }: { id: string }) {
   ).toString();
   const detail = useData<PropertyDetail>(`/properties/${id}`);
   const [evidence, setEvidence] = useState<string | null>(null);
+  const setDetailedRef = useRef(setDetailed);
+  setDetailedRef.current = setDetailed;
+  useEffect(() => {
+    const reveal = () => {
+      const target = window.location.hash.slice(1);
+      if (!/^dossier-(materials|editor-R[13456])$/.test(target)) return;
+      setDetailedRef.current(true);
+      revealDossierTarget(target);
+    };
+    reveal();
+    window.addEventListener("hashchange", reveal);
+    return () => window.removeEventListener("hashchange", reveal);
+  }, [detail.data?.property.id]);
   if (!detail.data)
     return <LoadState error={detail.error} retry={detail.reload} />;
   const row = detail.data.property;
+  const groups = [
+    ...detail.data.factors.map((factor) => ({
+      id: factor.id,
+      label: `${factor.code} · ${factorLabels[factor.code] || factor.code}`,
+      ids: factor.evidence_ids,
+    })),
+    ...detail.data.legal_bases.map((basis) => ({
+      id: `basis:${basis.id}`,
+      label: `Основание · ${basis.document_number || "Номер не указан"}`,
+      ids: basis.evidence_ids,
+    })),
+  ];
+  const selected = groups.find((group) => group.id === evidence);
+  const evidenceCount = new Set(groups.flatMap((group) => group.ids)).size;
+  function openEditor(code?: string) {
+    setDetailed(true);
+    revealDossierTarget(code ? `dossier-editor-${code}` : "dossier-materials");
+  }
+  function showEvidence(value: string | null) {
+    setEvidence(value);
+    if (value) revealDossierTarget("dossier-evidence");
+  }
   return (
     <>
       <Link
@@ -1616,213 +1662,373 @@ export function PropertyView({ id }: { id: string }) {
         <span>{legalLabels[row.legal_verification_status]}</span>
       </div>
       <RiskSummary risk={row.risk} />
-      <DossierProgress
-        detail={detail.data}
-        writable={user?.role === "analyst"}
-        openTools={() => setDetailed(true)}
-      />
-      <nav
-        className="dossier-nav"
-        aria-label="Разделы карточки объекта"
-        hidden={!detailed}
-      >
-        <a href="#dossier-summary">Сведения</a>
+      <nav className="dossier-nav" aria-label="Разделы карточки объекта">
+        <a href="#dossier-summary">Обзор</a>
         <a href="#dossier-bases">Основания</a>
-        <a href="#dossier-factors">Факторы и решения</a>
-        <a href="#dossier-history">История объекта</a>
-        <a href="#dossier-materials">Материалы и проверки</a>
+        <a href="#dossier-advertisements">Реклама</a>
+        <a href="#dossier-factors">Факторы риска</a>
+        <a href="#dossier-evidence">Доказательства</a>
+        <a href="#dossier-history">История</a>
+        <a href="#dossier-signals">Сигналы</a>
       </nav>
       {detail.data.unknown_information.map((value) => (
         <p className="notice" key={value}>
           {value}
         </p>
       ))}
-      <div className="detail-grid dossier-overview">
-        <section className="panel padded" id="dossier-summary" tabIndex={-1}>
-          <h2>Сведения об объекте</h2>
-          <div hidden={!detailed}>
-            <CreateSignalButton property={row} onChange={detail.reload} />
-          </div>
-          <dl>
-            <dt>Застройщик</dt>
-            <dd>
-              {row.developer.name} <Demo value={row.is_demo} />
-            </dd>
-            <dt>БИН</dt>
-            <dd>{row.developer.bin || "Не указан · DEMO"}</dd>
-            <dt>Стадия</dt>
-            <dd>{stageLabels[row.stage] || "Не проверена"}</dd>
-            <dt>Готовность</dt>
-            <dd>
-              {row.progress_percent === null
-                ? "Не проверена"
-                : `${row.progress_percent}% · DEMO`}
-            </dd>
-            <dt>Правовой статус</dt>
-            <dd>{legalLabels[row.legal_verification_status]}</dd>
-            <dt>Проверено</dt>
-            <dd>{date(row.last_reviewed_at)}</dd>
-            {row.legal_absence_as_of && (
-              <>
-                <dt>Отсутствие документировано на дату</dt>
-                <dd>{date(row.legal_absence_as_of)} · решение R1</dd>
-              </>
-            )}
-          </dl>
-          <Link
-            className="text-link"
-            href={`/advertisements?property_id=${row.id}`}
-          >
-            Связанные публикации: {detail.data.advertisement_ids.length}{" "}
-            <ArrowRight size={14} />
-          </Link>
-        </section>
-        <section className="panel padded" id="dossier-bases" tabIndex={-1}>
-          <h2>Основания и документы</h2>
-          {detail.data.legal_bases.length ? (
-            detail.data.legal_bases.map((basis) => (
-              <div className="document" key={basis.id}>
-                <Demo value={basis.is_demo} />
-                <h3>
-                  {basis.document_number || "Номер не указан"} ·{" "}
-                  {basis.document_date || "Дата не установлена"}
-                </h3>
-                <p>{basis.issuer}</p>
-                <p>Охват: {basis.scope_description}</p>
-                <LegalBasisDecision
-                  key={`${basis.id}:${basis.revision}`}
-                  basis={basis}
-                  userId={user?.id || ""}
-                  onSaved={detail.reload}
-                  writable={user?.role === "analyst"}
-                  showControls={detailed}
-                />
-                <a
-                  className="text-link"
-                  href={`/api/v1/assets/${basis.asset_id}`}
-                >
-                  Открыть сохранённый материал <ArrowRight size={14} />
-                </a>
-              </div>
-            ))
-          ) : (
-            <p className="muted">
-              Документы об основании в карточку не добавлены. Это само по себе
-              не подтверждает его отсутствие.
-            </p>
-          )}
-        </section>
-      </div>
-      <section className="panel" id="dossier-factors" tabIndex={-1}>
-        <div className="panel-heading">
-          <div>
-            <h2>Факторы и решения</h2>
-            <p>
-              Только подтверждённые факторы участвуют в балле. DEMO-решения из
-              учебного набора отмечены отдельно.
-            </p>
-          </div>
-        </div>
-        {detail.data.factors.length ? (
-          detail.data.factors.map((factor) => (
-            <div
-              className={`factor-row factor-${factor.status.toLowerCase()}`}
-              key={factor.id}
-            >
-              <span className="factor-token">{factor.code}</span>
-              <div>
-                <strong>{factorLabels[factor.code] || factor.code}</strong>
-                <small>{factor.reason}</small>
-                <small>Дата оценки: {date(factor.as_of)}</small>
-              </div>
-              <span className="points">
-                {factor.status === "CONFIRMED" ? `+${factor.weight}` : "0"}
-                <small>{statusLabel(factor.status)}</small>
-              </span>
-              <Button
-                variant="outline"
-                aria-expanded={evidence === factor.id}
-                aria-controls={`factor-evidence-${factor.id}`}
-                onClick={() =>
-                  setEvidence(evidence === factor.id ? null : factor.id)
-                }
-              >
-                Доказательства
-              </Button>
-              {evidence === factor.id && (
-                <div
-                  className="evidence-list"
-                  id={`factor-evidence-${factor.id}`}
-                >
-                  {factor.evidence_ids.map((value) => (
-                    <EvidenceItem key={value} id={value} />
-                  ))}
-                </div>
+      <section
+        id="dossier-summary"
+        tabIndex={-1}
+        className="dossier-section"
+        aria-labelledby="dossier-summary-title"
+      >
+        <h2 id="dossier-summary-title">Обзор и следующий шаг</h2>
+        <div className="detail-grid dossier-overview">
+          <section className="panel padded">
+            <h2>Сведения об объекте</h2>
+            <dl>
+              <dt>Застройщик</dt>
+              <dd>
+                {row.developer.name} <Demo value={row.is_demo} />
+              </dd>
+              <dt>БИН</dt>
+              <dd>{row.developer.bin || "Не указан · DEMO"}</dd>
+              <dt>Стадия</dt>
+              <dd>{stageLabels[row.stage] || "Не проверена"}</dd>
+              <dt>Готовность</dt>
+              <dd>
+                {row.progress_percent === null
+                  ? "Не проверена"
+                  : `${row.progress_percent}% · DEMO`}
+              </dd>
+              <dt>Правовой статус</dt>
+              <dd>{legalLabels[row.legal_verification_status]}</dd>
+              <dt>Проверено</dt>
+              <dd>{date(row.last_reviewed_at)}</dd>
+              {row.legal_absence_as_of && (
+                <>
+                  <dt>Отсутствие документировано на дату</dt>
+                  <dd>{date(row.legal_absence_as_of)} · решение R1</dd>
+                </>
               )}
+            </dl>
+            <Link
+              className="text-link"
+              href={`/advertisements?property_id=${row.id}`}
+            >
+              Связанные публикации: {detail.data.advertisement_ids.length}{" "}
+              <ArrowRight size={14} />
+            </Link>
+          </section>
+          <DossierProgress
+            detail={detail.data}
+            writable={user?.role === "analyst"}
+            openTools={() => setDetailed(true)}
+          />
+        </div>
+      </section>
+      <section className="panel padded" id="dossier-bases" tabIndex={-1}>
+        <h2>Основания и документы</h2>
+        {!detailed && user?.role === "analyst" && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setDetailed(true);
+              revealDossierTarget("dossier-bases");
+            }}
+          >
+            Проверить или добавить основание
+          </Button>
+        )}
+        {detail.data.legal_bases.length ? (
+          detail.data.legal_bases.map((basis) => (
+            <div className="document" key={basis.id}>
+              <Demo value={basis.is_demo} />
+              <h3>
+                {basis.document_number || "Номер не указан"} ·{" "}
+                {basis.document_date || "Дата не установлена"}
+              </h3>
+              <p>{basis.issuer}</p>
+              <p>Охват: {basis.scope_description}</p>
+              <LegalBasisDecision
+                key={`${basis.id}:${basis.revision}`}
+                basis={basis}
+                userId={user?.id || ""}
+                onSaved={detail.reload}
+                writable={user?.role === "analyst"}
+                showControls={detailed}
+              />
+              <a
+                className="text-link"
+                href={`/api/v1/assets/${basis.asset_id}`}
+              >
+                Открыть сохранённый материал <ArrowRight size={14} />
+              </a>
             </div>
           ))
         ) : (
-          <div className="empty">
-            Факторы пока не зафиксированы. Добавьте и проверьте материалы.
-          </div>
+          <p className="muted">
+            Документы об основании в карточку не добавлены. Это само по себе не
+            подтверждает его отсутствие.
+          </p>
         )}
+        <div hidden={!detailed}>
+          {user?.role === "analyst" && (
+            <LegalBasisCreate
+              key={row.id}
+              userId={user.id}
+              detail={detail.data}
+              onSaved={detail.reload}
+            />
+          )}
+        </div>
       </section>
-      {!detailed && (
-        <section className="expert-invitation">
+      <section
+        className="panel padded"
+        id="dossier-advertisements"
+        tabIndex={-1}
+        aria-labelledby="dossier-advertisements-title"
+      >
+        <h2 id="dossier-advertisements-title">Реклама и публикации</h2>
+        <p>
+          Связанные публикации: {detail.data.advertisement_ids.length}.
+          Оригиналы, источники, даты и отдельные решения доступны в списке
+          публикаций объекта.
+        </p>
+        <div className="dossier-actions">
+          <Button asChild variant="outline">
+            <Link href={`/advertisements?property_id=${row.id}`}>
+              Открыть публикации объекта
+            </Link>
+          </Button>
+          {user?.role === "analyst" && (
+            <Link className="text-link" href="/advertisements/new">
+              Добавить публикацию и проверить привязку
+            </Link>
+          )}
+        </div>
+        <p className="muted">
+          Наличие публикации не подтверждает фактор. R2 проверяется у оригинала
+          после проверки гипотезы и привязки к объекту.
+        </p>
+      </section>
+      <section
+        className="panel"
+        id="dossier-factors"
+        tabIndex={-1}
+        aria-labelledby="dossier-factors-title"
+      >
+        <div className="panel-heading">
           <div>
-            <h2>Нужно дополнить проверку?</h2>
+            <h2 id="dossier-factors-title">Факторы риска и решения</h2>
             <p>
-              Документы, решения по факторам и история доступны в инструментах
-              аналитика.
+              Только подтверждённые факторы участвуют в серверном балле.
+              DEMO-решения отмечены отдельно. Отсутствие данных не подтверждает
+              нарушение.
             </p>
           </div>
-          <Button variant="outline" onClick={() => setDetailed(true)}>
-            Открыть инструменты
-          </Button>
-        </section>
-      )}
-      <div hidden={!detailed}>
-        <div id="dossier-materials" tabIndex={-1}>
-          <h2>Материалы и проверки</h2>
-          <p className="muted">
-            Сохраните источник и область его применения. Подтверждение каждого
-            фактора выполняется отдельно.
-          </p>
         </div>
-        {user?.role === "analyst" && (
-          <LegalAbsenceReview
-            key={row.id}
-            userId={user?.id || ""}
-            detail={detail.data}
-            onSaved={detail.reload}
-          />
+        {Object.entries(factorLabels).map(([code, label]) => {
+          const factor = detail.data!.factors.find(
+            (item) => item.code === code,
+          );
+          return (
+            <div
+              className={`factor-row factor-${factor?.status.toLowerCase() || "unknown"}`}
+              key={code}
+            >
+              <span className="factor-token">{code}</span>
+              <div>
+                <strong>{label}</strong>
+                <small>
+                  {factor?.reason ||
+                    "Сохранённого фактора нет. Нужны материалы и отдельное решение."}
+                </small>
+                {factor && <small>Дата оценки: {date(factor.as_of)}</small>}
+              </div>
+              <span className="points">
+                {factor?.status === "CONFIRMED" ? `+${factor.weight}` : "0"}
+                <small>
+                  {factor ? statusLabel(factor.status) : "Не зафиксирован"}
+                </small>
+              </span>
+              <div className="dossier-factor-actions">
+                {factor && (
+                  <Button
+                    variant="outline"
+                    aria-expanded={evidence === factor.id}
+                    aria-controls={`factor-evidence-${factor.id}`}
+                    onClick={() =>
+                      showEvidence(evidence === factor.id ? null : factor.id)
+                    }
+                  >
+                    Доказательства
+                  </Button>
+                )}
+                {user?.role === "analyst" &&
+                  (code === "R2" ? (
+                    <Link
+                      className="text-link"
+                      href={`/advertisements?property_id=${row.id}`}
+                    >
+                      Проверить у публикации
+                    </Link>
+                  ) : (
+                    <a
+                      className="text-link"
+                      href={`#dossier-editor-${code}`}
+                      onClick={() => openEditor(code)}
+                    >
+                      Проверить {code}
+                    </a>
+                  ))}
+              </div>
+            </div>
+          );
+        })}
+        {!detailed && user?.role === "analyst" && (
+          <div className="expert-invitation">
+            <div>
+              <h3>Нужно дополнить проверку?</h3>
+              <p>
+                Документы и решения открываются без потери введённых данных.
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => openEditor()}>
+              Открыть инструменты
+            </Button>
+          </div>
         )}
-        {user?.role === "analyst" && (
-          <AppealReview
-            key={row.id}
-            userId={user?.id || ""}
-            detail={detail.data}
-            onSaved={detail.reload}
-          />
+        <div hidden={!detailed}>
+          {user?.role === "analyst" && (
+            <details
+              className="dossier-tools"
+              id="dossier-materials"
+              tabIndex={-1}
+            >
+              <summary>
+                <h3>Материалы и проверки</h3>
+                <span>R1, R3–R6 · загрузка и решения</span>
+              </summary>
+              <p className="muted">
+                Сохраните источник и область его применения. Подтверждение
+                каждого фактора выполняется отдельно.
+              </p>
+              <div id="dossier-editor-R1" tabIndex={-1}>
+                {user?.role === "analyst" && (
+                  <LegalAbsenceReview
+                    key={row.id}
+                    userId={user?.id || ""}
+                    detail={detail.data}
+                    onSaved={detail.reload}
+                  />
+                )}
+              </div>
+              <div id="dossier-editor-R4" tabIndex={-1}>
+                {user?.role === "analyst" && (
+                  <AppealReview
+                    key={row.id}
+                    userId={user?.id || ""}
+                    detail={detail.data}
+                    onSaved={detail.reload}
+                  />
+                )}
+              </div>
+              {user?.role === "analyst" && (
+                <ConstructionReview
+                  key={row.id}
+                  userId={user?.id || ""}
+                  detail={detail.data}
+                  onSaved={detail.reload}
+                />
+              )}
+            </details>
+          )}
+        </div>
+      </section>
+      <section
+        className="panel padded"
+        id="dossier-evidence"
+        tabIndex={-1}
+        aria-labelledby="dossier-evidence-title"
+      >
+        <h2 id="dossier-evidence-title">Доказательства</h2>
+        <p>
+          Доказательства сохранённых факторов и оснований: {evidenceCount}. У
+          одного материала может быть несколько связей; это не отдельные
+          нарушения.
+        </p>
+        {groups.length > 0 ? (
+          <>
+            <label htmlFor="dossier-evidence-selection">
+              Материалы фактора или основания
+            </label>
+            <select
+              id="dossier-evidence-selection"
+              value={selected?.id || ""}
+              onChange={(event) => setEvidence(event.target.value || null)}
+            >
+              <option value="">Выберите, чьи доказательства изучить</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.label} · {new Set(group.ids).size}
+                </option>
+              ))}
+            </select>
+            {selected ? (
+              <div
+                className="evidence-list"
+                id={`factor-evidence-${selected.id}`}
+              >
+                <h3>{selected.label}</h3>
+                {selected.ids.length ? (
+                  Array.from(new Set(selected.ids)).map((value) => (
+                    <EvidenceItem key={value} id={value} />
+                  ))
+                ) : (
+                  <p className="empty">
+                    К этому решению доказательства не прикреплены.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="muted">
+                Выберите фактор или основание. Источник, дата и сохранённый
+                исходник загружаются по запросу.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="empty">
+            Доказательства ещё не привязаны к факторам или основаниям.
+          </p>
         )}
-        {user?.role === "analyst" && (
-          <ConstructionReview
-            key={row.id}
-            userId={user?.id || ""}
-            detail={detail.data}
-            onSaved={detail.reload}
-          />
-        )}
-        {user?.role === "analyst" && (
-          <LegalBasisCreate
-            key={row.id}
-            userId={user?.id || ""}
-            detail={detail.data}
-            onSaved={detail.reload}
-          />
-        )}
-        <PropertyHistory key={id} id={id} revision={row.risk.revision} />
-      </div>
+      </section>
+      <PropertyHistory key={id} id={id} revision={row.risk.revision} />
+      <section
+        className="panel padded"
+        id="dossier-signals"
+        tabIndex={-1}
+        aria-labelledby="dossier-signals-title"
+      >
+        <h2 id="dossier-signals-title">Сигналы по объекту</h2>
+        <p>
+          Сигнал сохраняет снимок проверенных материалов и решений. Изменение
+          текущего досье не переписывает прежние версии и PDF.
+        </p>
+        <div className="dossier-actions">
+          <Button asChild variant="outline">
+            <Link href={`/signals?property_id=${row.id}`}>
+              Открыть версии сигналов
+            </Link>
+          </Button>
+          <CreateSignalButton property={row} onChange={detail.reload} />
+        </div>
+        <p className="muted">
+          Сигнал указывает на необходимость проверки и не является обвинением
+          или юридическим заключением.
+        </p>
+      </section>
     </>
   );
 }

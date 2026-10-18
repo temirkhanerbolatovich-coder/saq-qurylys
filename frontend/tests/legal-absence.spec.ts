@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./support";
+import { login, openDossierTools } from "./support";
 
 const mechanisms = [
   "Гарантия КЖК",
@@ -25,6 +25,7 @@ test("R1 requires three documented absence findings and a separate dated decisio
   );
   expect(initial.property.risk.score).toBe(0);
   await page.goto(`/properties/${property.id}`);
+  await openDossierTools(page);
   const panel = page.getByTestId("legal-absence-review");
   await panel
     .getByText("Проверить три механизма на дату", { exact: true })
@@ -139,6 +140,7 @@ test("R1 requires three documented absence findings and a separate dated decisio
   );
 
   await page.reload();
+  await openDossierTools(page);
   await expect(panel).toContainText("Текущий статус R1: Подтверждён");
   await panel
     .getByText("Проверить три механизма на дату", { exact: true })

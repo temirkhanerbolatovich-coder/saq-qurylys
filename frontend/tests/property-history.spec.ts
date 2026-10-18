@@ -20,9 +20,7 @@ test("dossier history reads real events with the recorded author and keeps the r
   ).json();
   expect(history.items.length).toBeGreaterThan(0);
   await page.goto(`/properties/${property.id}`);
-  await page
-    .getByRole("link", { name: "История объекта", exact: true })
-    .click();
+  await page.getByRole("link", { name: "История", exact: true }).click();
   const region = page.getByRole("region", {
     name: "История объекта",
     exact: true,

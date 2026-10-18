@@ -1,5 +1,50 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## B2/S3: семь разделов досье · 18.10.2026
+
+Локальная ветка codex/dossier-sections, база709a0be. Семь native секций доступны
+в обоих видах; обзор/следующий шаг, основания, реклама, R1–R6, доказательства,
+история и сигналы. Формы свернуты локально без remount; адресный переход
+раскрывает редактор и сохраняет фокус. Основания редактируются у документов;
+R2 остаётся у оригинальной публикации. UNKNOWN, область/даты/ограничения и
+backend score не скрываются. Существующие master1.4/tokens/primitives сохранены.
+
+Доказательства выбранного фактора/основания используют прежний read endpoint,
+источник/даты/исходник; ID дедуплицируются в показе, не в сохранённых данных.
+Реклама и версии сигналов открываются с текущим property_id. История остаётся
+серверно пагинированной; signal/PDF продолжает хранить исторический snapshot.
+
+Финальная production standalone проверка: **101passed/3.1m**, workers1/retries0,
+отдельная Linux DB/storage saq-sections-20261018 и frontend3197. Два новых кейса:
+семь keyboard anchors/фокус/сохранность File и причины/прямой hash/reload/mode/
+отсутствие POST и изменения risk; viewer presentation fixture с отсутствующими
+командами, выбранными evidence reads и responsive375/768/1024/1440. Fixture роли
+не доказывает backend authorization. Все прежние workflow regressions входят
+в этот прогон; исходные проверки решений и guards не ослаблялись.
+
+Первый targeted25PASS/5FAIL: четыре ожидания0 на повторно использованном стенде
+с R2=25 после прежнего PDF-пути; устранено созданием новой DB/storage, без reset.
+Один locator новой проверки совпал по одинаковой причине трёх DEMO-факторов;
+заменён на уникальный код. Промежуточный101PASS/3.0m — до последнего UI-уточнения;
+финальный101PASS/3.1m включает120px clearance для существующей sticky шапки,
+краткий доступ к основаниям и одинаковый перенос фокуса к доказательствам.
+
+Визуальный осмотр выявил перекрытие заголовка при исходном margin24px. На
+финальном source target находится ниже sticky header, на mobile margin24 при
+static header. Проверяется геометрия, а не только activeElement. Четыре ширины
+без page overflow; вручную просмотрены актуальные screenshots1440/375 и полный
+render desktop. Это просмотр captures реального Chromium, не интерактивный CUA,
+не screenreader/настоящий200%zoom и не независимая UX-приёмка.
+
+Typecheck/ESLint/Prettier/2Nodechecks/production build/start PASS. Отдельный
+новый ручной текст→analysis→human decisions→R2→signal→PDF PASS: version7,
+39206bytes, PDF200/%PDF-, оригинал в snapshot, UNKNOWN не дал R1.
+Полная backend suite и новая независимая OCR-оценка этим блоком не выполнялись.
+Артефакты ignored output/qa/dossier-sections-20261018 и .local/dossier-sections-20261018.
+
+B2/S3 закрыт в локальном source, публичный frontend не обновлён. B3 — группировка
+«Сверки» — ещё не выполнен; внешняя UX/предметная приёмка и KZ OCR fidelity OPEN.
+
 ## B0+B1: черновики досье и проверка регрессий · 18.10.2026
 
 Локальная ветка `codex/dossier-drafts`, база d3c1a6f, master1.4. Прежний F1

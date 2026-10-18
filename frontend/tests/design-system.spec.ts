@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./support";
+import { login, openDossierTools } from "./support";
 
 test("responsive workspace preserves navigation, account and readable data at all target widths", async ({
   page,
@@ -68,6 +68,7 @@ test("keyboard skip link, dossier anchors and R1 reason remain usable without co
   await page
     .getByRole("link", { name: "DEMO Бәйтерек · очередь 2", exact: true })
     .click();
+  await openDossierTools(page);
   const reason = page.getByLabel("Обоснование решения R1", { exact: true });
   await expect(reason).toBeVisible();
   await expect(reason).toHaveAttribute(
@@ -77,9 +78,7 @@ test("keyboard skip link, dossier anchors and R1 reason remain usable without co
   await reason.fill("DEMO unsaved interface-only draft");
   await page.getByRole("link", { name: "Основания", exact: true }).click();
   await expect(page.locator("#dossier-bases")).toBeFocused();
-  await page
-    .getByRole("link", { name: "Материалы и проверки", exact: true })
-    .click();
+  await page.getByRole("link", { name: "Проверить R1", exact: true }).click();
   await expect(reason).toHaveValue("DEMO unsaved interface-only draft");
   await expect(
     page.getByRole("button", { name: "Отклонить R1", exact: true }),

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login, testOrigin } from "./support";
+import { login, openDossierTools, testOrigin } from "./support";
 
 test("appeal document requires a separate R4 decision", async ({ page }) => {
   await login(page);
@@ -18,6 +18,7 @@ test("appeal document requires a separate R4 decision", async ({ page }) => {
     before.score - (before.confirmed_codes.includes("R4") ? 15 : 0);
   expect(withoutR4).toBeGreaterThan(0);
   await page.goto(`/properties/${id}`);
+  await openDossierTools(page);
   await page.getByLabel("Источник обращения").fill("DEMO browser appeal");
   await page.getByLabel("Документ обращения · TXT / PNG / JPEG").setInputFiles({
     name: "appeal.txt",
@@ -121,6 +122,7 @@ test("unknown stage and R5 display their own labels", async ({ page }) => {
     await route.fulfill({ response, json: body });
   });
   await page.goto(`/properties/${id}`);
+  await openDossierTools(page);
   await expect(
     page.locator("dt").filter({ hasText: "Стадия" }).locator("+ dd"),
   ).toHaveText("Не проверена");

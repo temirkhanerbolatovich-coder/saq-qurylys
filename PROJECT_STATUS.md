@@ -1,5 +1,74 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## B2/S3: семь разделов досье · 18.10.2026
+
+**IMPLEMENTED / LOCAL VERIFIED / NOT PUBLISHED.** Codex root, один исполнитель;
+ветка `codex/dossier-sections`, чистая база709a0be41c1d2f5af3c449c0af0a29f4b7f41a88.
+Пользователь «гоу», затем «продолжи от туда от куда остановился» разрешил
+продолжение названного этапа. Блок B0+B1 сохранён; повторной интеграции нет.
+
+Досье распределено на обзор, основания, рекламу, факторы риска, доказательства,
+историю и сигналы. Семь anchors доступны в обоих видах. Шапка, backend score,
+UNKNOWN и ограничения остаются видимыми. Матрица R1–R6 показывает сохранённое
+решение/дату/баллы/причину; отсутствующий фактор явно «Не зафиксирован».
+«Проверить R…» раскрывает нужный редактор и переводит фокус; R2 остаётся у
+публикации. Native disclosure форм постоянно mounted: ввод, File и retry state
+сохраняются. Создание основания рядом с основаниями; в кратком виде есть
+контекстная кнопка проверки/добавления. Доказательства читаются прежним
+EvidenceItem по выбранной группе, с дедупом IDs; предварительного запроса всех
+источников нет. История использует прежнюю пагинацию, сигналы — property_id URL
+и прежний CreateSignalButton, без изменения immutable snapshots.
+
+Исправлены две локальные детали: изменение identity UI mode setter не открывает
+редактор заново при переключении вида; якоря оставляют место для sticky desktop
+header. Проверяется не только activeElement, но и фактическое положение заголовка
+ниже шапки. Старые dossier section IDs и #dossier-materials сохранены.
+
+Финальные проверки source: frontend/ `npm run typecheck`, `npm run lint`,
+`npm run format:check`, `node --test scripts/test-*.mjs` (2PASS), production
+`npm run build` и standalone start — PASS. Полный `npm run test:e2e` на
+`saq-sections-20261018`, отдельной новой DB/storage, loopback8197/3197:
+**101passed / 3.1m**, exit0, workers1/retries0. Предыдущий101PASS/3.0m относится
+к source до финального anchor clearance; не заменяет финальную проверку.
+Два новых теста: настоящий analyst read-only сценарий с семью keyboard anchors,
+collapse/File/draft/deep hash/reload/mode и неизменным risk; viewer presentation
+fixture с отсутствующими командами, ленивыми evidence reads и четырьмя ширинами.
+Viewer fixture не является серверной проверкой авторизации; прежние server/role
+сценарии не менялись. Прежние R1–R6, 409/retry, queue, OCR, history и PDF — в101PASS.
+
+Первый targeted run на повторно использованной B0 DB:25PASS/5FAIL. Четыре
+ожидали0, но имели сохранённый после прежнего critical path R2=25; новая БД
+изолирует исходный seed без reset/удаления старых volumes. Пятый — новый locator
+по одинаковой DEMO-причине трёх факторов; уточнён по уникальному коду фактора.
+Guards/допуски/расчёт риска для зелёных тестов не ослаблялись.
+
+Непрерывный новый текст→analysis→human hypothesis→match→R2 capture/CONFIRM→
+сигнал/CONFIRM→PDF PASS: version7, 39206bytes,
+PDF200/%PDF-, новый Asset в snapshot, R2=25, R1 не подтверждён. Это текстовый путь;
+отдельную оценку OCR качества он не заменяет. Responsive375/768/1024/1440 без page
+overflow; фактическая видимость anchor target проверена. Вручную просмотрены
+актуальные Chromium screenshots1440/375 и полный desktop dossier. Интерактивный
+CUA/настоящий200%zoom/screenreader/внешний аналитик этим не подтверждаются.
+
+Изменены PropertyView/CSS, editor IDs ConstructionFactor, тестовый helper и
+соответствующие browser regressions; README/CHANGELOG/DESIGN_SYSTEM/UX_GUIDELINES/
+UI_COMPONENTS/UI_IMPLEMENTATION_PLAN/UI_AUDIT/этот статус. Новый ADR не нужен:
+презентационная группировка использует существующие primitives, API и runtime.
+Backend/contracts/миграции/dependencies/формула/роли не менялись, полная backend
+suite этим блоком не повторялась. Evidence ignored `.local/dossier-sections-20261018`
+и `output/qa/dossier-sections-20261018`; конфигурация содержит только локальные
+тестовые доступы и не включается в Git. Финальная самопроверка19изменённых/новых
+файлов: UTF-8/146локальных Markdown-ссылок/три приватных тестовых literals без
+совпадений PASS. `python scripts/check_repository_hygiene.py`, candidate path
+hygiene и `git diff --check` PASS; QA artifacts и приватная конфигурация исключены.
+
+Свой standalone frontend и Compose после QA остановлены с сохранением volumes;
+рабочие четыре SAQ контейнера восстановлены без пересборки/замены конфигурации.
+Локальный коммит — по прежней просьбе пользователя; push/merge/обновление
+публичного сайта не выполняются. B3: группировка инструментов «Сверки» —
+следующий отдельный срез. Независимая UX/предметная приёмка, второй ПК,
+KZ OCR fidelity и разрешённый C01 остаются открытыми перед защитой21октября.
+
 ## B0+B1: сохранность форм досье · 18.10.2026
 
 **IMPLEMENTED / LOCAL VERIFIED / NOT PUBLISHED.** Codex root, один исполнитель,

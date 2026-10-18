@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { login } from "./support";
+import { login, openDossierTools } from "./support";
 import type { Property } from "../lib/types";
 
 async function properties(page: Page) {
@@ -15,6 +15,7 @@ async function leaveAndReturn(page: Page, name: string) {
     .click();
   await page.getByRole("link", { name, exact: true }).first().click();
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
+  await openDossierTools(page);
 }
 
 test("dossier fields and files survive other objects and Back; reload explains missing files without commands", async ({
@@ -25,6 +26,7 @@ test("dossier fields and files survive other objects and Back; reload explains m
   const row = rows.find((item) => item.name.includes("Ертіс"))!;
   const other = rows.find((item) => item.name.includes("Нұрлы"))!;
   await page.goto(`/properties/${row.id}`);
+  await openDossierTools(page);
   await expect(page.locator("#appeal-reason")).toBeVisible();
   const commands: string[] = [];
   page.on("request", (request) => {
@@ -88,6 +90,7 @@ test("dossier fields and files survive other objects and Back; reload explains m
   await expect(page.locator("#appeal-reason")).toHaveValue("");
   await page.goBack();
   await page.goBack();
+  await openDossierTools(page);
   await expect(page).toHaveURL(new RegExp(`/properties/${row.id}`));
   for (const [id, value] of Object.entries(fields))
     await expect(page.locator(`#${id}`)).toHaveValue(value);
@@ -109,6 +112,7 @@ test("dossier fields and files survive other objects and Back; reload explains m
     return dialog.accept();
   });
   await page.reload();
+  await openDossierTools(page);
   expect(reloadWarned).toBe(true);
   for (const [id, value] of Object.entries(fields))
     await expect(page.locator(`#${id}`)).toHaveValue(value);
@@ -131,6 +135,7 @@ test("R4 conflict keeps input and retry key through navigation; successful decis
     item.name.includes("Самал"),
   )!;
   await page.goto(`/properties/${row.id}`);
+  await openDossierTools(page);
   await page.locator("#appeal-source").fill("DEMO draft conflict source");
   await page.locator("#appeal-file").setInputFiles({
     name: "appeal-draft.txt",
@@ -239,6 +244,7 @@ test("logout clears dossier text and in-memory selected files", async ({
     item.name.includes("Ертіс"),
   )!;
   await page.goto(`/properties/${row.id}`);
+  await openDossierTools(page);
   await page.locator("#appeal-reason").fill("DEMO private draft before logout");
   await page.locator("#appeal-file").setInputFiles({
     name: "logout-private.txt",
@@ -256,6 +262,7 @@ test("logout clears dossier text and in-memory selected files", async ({
   ).toEqual([]);
   await login(page);
   await page.goto(`/properties/${row.id}`);
+  await openDossierTools(page);
   await expect(page.locator("#appeal-reason")).toHaveValue("");
   expect(
     await page
@@ -284,6 +291,7 @@ test("legal basis decision restores its own reason and date after navigation and
     await route.fulfill({ response, json: detail });
   });
   await page.goto(`/properties/${row.id}`);
+  await openDossierTools(page);
   const reason = page
     .getByLabel("Обоснование проверки основания", { exact: true })
     .first();

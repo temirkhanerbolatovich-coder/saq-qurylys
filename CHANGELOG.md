@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased · Seven dossier sections
+
+- Organize the dossier into overview, legal bases, publications, risk factors, evidence, history and signals; keep all seven destinations available in both interface modes.
+- Open factor editors locally without unmounting forms, drafts or file inputs; retain deep editor links and keyboard focus.
+- Reuse existing evidence reads on selection and existing filtered publication/signal routes. Preserve backend risk, legal guards, roles and historical snapshots.
+
 ## Unreleased · Dossier draft protection
 
 - Preserve R1/R4/construction/legal-basis form input across object navigation, Back and reload with scoped tab drafts and explicit restore notices.

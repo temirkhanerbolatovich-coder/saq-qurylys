@@ -33,3 +33,11 @@ export async function login(page: Page, options: { detailed?: boolean } = {}) {
     page.getByRole("heading", { name: "Рабочий обзор", exact: true }),
   ).toBeVisible();
 }
+
+/** Opens the real mounted dossier editor disclosure without submitting any command. */
+export async function openDossierTools(page: Page) {
+  const tools = page.locator("#dossier-materials");
+  await expect(tools).toBeVisible();
+  if ((await tools.getAttribute("open")) === null)
+    await tools.locator(":scope > summary").click();
+}
