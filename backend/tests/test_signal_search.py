@@ -111,7 +111,10 @@ def test_current_and_frozen_names_search_across_all_pages(signed, search_signals
     ],
 )
 def test_search_status_version_and_literal_special_characters(signed, search_signals, query, index):
-    result = signed.get('/api/v1/signals', params={'q': query}).json()
+    result = signed.get(
+        '/api/v1/signals',
+        params={'q': query, 'property_id': str(search_signals['property'].id)},
+    ).json()
     assert result['total'] == 1 and result['items'][0]['id'] == str(search_signals['rows'][index].id)
 
 

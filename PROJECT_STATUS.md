@@ -2,6 +2,15 @@
 
 ## Публикация всех изменений ·18.10.2026 · IN PROGRESS
 
+Уточнение после первого чистого CI39145832806:890backend PASS/3FAIL и128browser
+PASS/2FAIL. Chooser precondition уже исправлен2f40242. Backend status-search
+ожидал глобально ровно1совпадение, хотя другие тесты сохраняют сигналы с тем же
+статусом; проверка теперь ограничена property_id своей fixture. Browser reset
+перезагружал страницу до завершения router.replace, поэтому проверка теперь
+дожидается q/city=null в URL. Runtime code/API/scoring не менялись. Повторённые
+4новыеbrowser tests×3 →12PASS/36.3s. Ruff test check/format PASS; backend focused
+и новый чистый CI проверяются перед окончательным отчётом публикации.
+
 Пользователь явно разрешил «опубликуй все изменения»: GitHub source и обновление
 рабочего сайта. Ветка codex/audit-workflow-fixes на входе875e288, clean;
 origin/main aefb72f является ancestor.14локальных коммитов/95изменённых путей
