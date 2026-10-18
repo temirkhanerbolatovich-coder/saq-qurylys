@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased · Local UI completion
+
+- Collapse dossier documents while preserving visible scope/dates/status and mounted decision drafts.
+- Search and page the full eligible registry when selecting a property for an advertisement; retain the selected ID through filters, errors and reload.
+- Add the existing exact-city filter and restore registry position, focus and selected map marker after dossier navigation.
+- Order overview objects by available work action and review age before server score, with explicit scope and no invented deadlines.
+- Keep the working public installation unchanged; these updates are local only.
+
 ## 2026-10-18 · B0–B3 frontend installation
 
 - Installed the reviewed dossier drafts, seven dossier sections and monitoring task layout on the working site; retained a rollback image and existing application data/configuration.

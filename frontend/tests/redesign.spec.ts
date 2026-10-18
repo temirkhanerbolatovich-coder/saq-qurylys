@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { login } from "./support";
+import { comparePropertyWork } from "../lib/property-priority";
 import type { Advertisement, Page as ResultPage, Property } from "../lib/types";
 
 test("dossier return retains registry search, page, and view after reload", async ({
@@ -26,9 +27,7 @@ test("dashboard scopes its priority list and displays the unchanged server score
   const registry: ResultPage<Property> = await (
     await page.request.get("/api/v1/properties?page_size=100")
   ).json();
-  const rows = [...registry.items]
-    .sort((a, b) => b.risk.score - a.risk.score)
-    .slice(0, 5);
+  const rows = [...registry.items].sort(comparePropertyWork).slice(0, 5);
   await expect(page.locator(".priority-list li")).toHaveCount(rows.length);
   for (const [index, row] of rows.entries()) {
     const item = page.locator(".priority-list li").nth(index);
@@ -197,10 +196,7 @@ test("review material selection is restored by Back and reload without starting 
     exact: true,
   });
   await queue.getByText("Выбрать другой материал", { exact: false }).click();
-  await queue
-    .locator(".review-queue-item")
-    .filter({ hasText: ads.items[1].source_label })
-    .click();
+  await queue.locator(`[data-advertisement-id="${ads.items[1].id}"]`).click();
   await expect(page).toHaveURL(
     new RegExp(`advertisement_id=${ads.items[1].id}`),
   );

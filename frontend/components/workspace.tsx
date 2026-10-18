@@ -49,6 +49,14 @@ import { clearReviewDrafts } from "@/lib/use-review-draft";
 import { clearDossierFormDrafts } from "@/lib/use-dossier-form-draft";
 import { statusLabel } from "@/lib/status-labels";
 import {
+  comparePropertyWork,
+  propertyNextAction,
+} from "@/lib/property-priority";
+import {
+  clearRegistryContext,
+  useRegistryContext,
+} from "@/lib/use-registry-context";
+import {
   factorLabels,
   propertyDossierUrl,
   zoneLabels,
@@ -207,6 +215,7 @@ export function Providers({ children }: { children: ReactNode }) {
       if (e instanceof ApiError && e.status === 401) {
         clearReviewDrafts();
         clearDossierFormDrafts();
+        clearRegistryContext();
       }
       if (!(e instanceof ApiError && e.status === 401))
         setError((e as Error).message);
@@ -298,6 +307,7 @@ export function Providers({ children }: { children: ReactNode }) {
                   await command("/auth/logout");
                   clearReviewDrafts();
                   clearDossierFormDrafts();
+                  clearRegistryContext();
                   await refresh();
                   router.replace("/login");
                 }}
@@ -613,6 +623,7 @@ function PropertyCards({
             <span>{legalLabels[row.legal_verification_status]}</span>
           </div>
           <p className="property-card-reason">
+            <strong>{propertyNextAction(row).label}. </strong>
             {row.risk.confirmed_codes.length
               ? row.risk.confirmed_codes
                   .map((code) => factorLabels[code] || code)
@@ -764,7 +775,9 @@ function SimpleDashboard({
               {registry.data.total > registry.data.items.length
                 ? ` среди первых ${registry.data.items.length} записей`
                 : ""}
-              . Балл не является правовым заключением.
+              . Балл не является правовым заключением. Сначала ожидающее
+              решение, затем неизвестное основание; внутри группы — давность
+              проверки и балл. Сроки задач не установлены.
             </p>
           </>
         )}
@@ -903,9 +916,7 @@ export function DashboardView() {
       ]
     : [];
   const priorityRows = registry.data
-    ? [...registry.data.items]
-        .sort((a, b) => b.risk.score - a.risk.score)
-        .slice(0, 5)
+    ? [...registry.data.items].sort(comparePropertyWork).slice(0, 5)
     : [];
   if (!detailed)
     return (
@@ -1075,7 +1086,9 @@ export function DashboardView() {
             <div>
               <h2>С чего начать проверку</h2>
               <p>
-                Балл отражает необходимость проверки, а не наличие нарушения.
+                Сначала решение по основанию, затем недостающие сведения. Внутри
+                группы — более давняя проверка, затем балл. Сроки задач не
+                установлены.
               </p>
             </div>
             <Link className="text-link" href="/properties">
@@ -1113,6 +1126,9 @@ export function DashboardView() {
                     </div>
                     <div className="priority-action">
                       <Zone risk={row.risk} />
+                      <p className="field-help">
+                        {propertyNextAction(row).label}
+                      </p>
                       <Link
                         className="text-link"
                         href={`/properties/${row.id}`}
@@ -1131,8 +1147,8 @@ export function DashboardView() {
                 Показано {priorityRows.length} из {registry.data.total}{" "}
                 объектов.{" "}
                 {registry.data.total > registry.data.items.length
-                  ? `По баллу среди первых ${registry.data.items.length} объектов реестра; это не глобальный рейтинг.`
-                  : "По убыванию серверного балла, без правовой оценки."}
+                  ? `По необходимому действию среди первых ${registry.data.items.length} объектов реестра; это не глобальный рейтинг.`
+                  : "По необходимому действию и давности проверки; балл используется при равенстве."}
               </p>
             </>
           ) : (
@@ -1183,12 +1199,13 @@ export function PropertiesView() {
   const query = apiParams.toString();
   const showMap = params.get("view") === "map";
   const searchInput = useRef<HTMLInputElement>(null);
-  const hasFilters = ["q", "zone", "legal_status"].some((name) =>
+  const hasFilters = ["q", "city", "zone", "legal_status"].some((name) =>
     params.get(name),
   );
   function clearFilters() {
     const next = new URLSearchParams(params);
-    for (const name of ["q", "zone", "legal_status", "page"]) next.delete(name);
+    for (const name of ["q", "city", "zone", "legal_status", "page"])
+      next.delete(name);
     router.replace(`/properties?${next.toString()}`, { scroll: false });
     requestAnimationFrame(() => searchInput.current?.focus());
   }
@@ -1272,6 +1289,15 @@ export function PropertiesView() {
             />
           </div>
           <label hidden={!detailed}>
+            Город · точное название
+            <input
+              aria-label="Фильтр по городу"
+              maxLength={300}
+              value={params.get("city") || ""}
+              onChange={(event) => filter("city", event.target.value)}
+            />
+          </label>
+          <label hidden={!detailed}>
             Зона
             <select
               aria-label="Фильтр по зоне"
@@ -1332,6 +1358,7 @@ export function PropertiesView() {
           <div className="active-filters" aria-label="Активные фильтры">
             <ListFilter size={16} aria-hidden="true" />
             {params.get("q") && <span>Поиск: {params.get("q")}</span>}
+            {params.get("city") && <span>Город: {params.get("city")}</span>}
             {params.get("zone") && (
               <span>
                 Зона:{" "}
@@ -1374,13 +1401,18 @@ function PropertyResults({
 }) {
   const { detailed } = useInterfaceMode();
   const registry = useData<Page<Property>>(`/properties?${query}`);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { user } = useContext(Auth);
+  const { selectedId, setSelectedId, remember } = useRegistryContext(
+    user?.id || "",
+    registryQuery,
+    !!registry.data,
+  );
   if (!registry.data)
     return <LoadState error={registry.error} retry={registry.reload} />;
   const data = registry.data;
   const pages = Math.max(1, Math.ceil(data.total / data.page_size));
   return (
-    <>
+    <div onClickCapture={remember}>
       <div className="list-caption" role="status" aria-live="polite">
         Найдено объектов: {data.total}
         <span>На странице: {data.items.length}</span>
@@ -1430,7 +1462,7 @@ function PropertyResults({
         />
       )}
       {registry.error && <Notice error={registry.error} />}
-    </>
+    </div>
   );
 }
 
@@ -1609,7 +1641,12 @@ export function PropertyView({ id }: { id: string }) {
   useEffect(() => {
     const reveal = () => {
       const target = window.location.hash.slice(1);
-      if (!/^dossier-(materials|editor-R[13456])$/.test(target)) return;
+      if (
+        !/^dossier-(materials|editor-R[13456]|document-[0-9a-f-]{36})$/.test(
+          target,
+        )
+      )
+        return;
       setDetailedRef.current(true);
       revealDossierTarget(target);
     };
@@ -1723,7 +1760,14 @@ export function PropertyView({ id }: { id: string }) {
           <DossierProgress
             detail={detail.data}
             writable={user?.role === "analyst"}
-            openTools={() => setDetailed(true)}
+            openTools={() => {
+              setDetailed(true);
+              const pending = detail.data?.legal_bases.find(
+                (basis) => basis.verification_status === "PENDING",
+              );
+              if (pending)
+                revealDossierTarget(`dossier-document-${pending.id}`);
+            }}
           />
         </div>
       </section>
@@ -1742,14 +1786,30 @@ export function PropertyView({ id }: { id: string }) {
         )}
         {detail.data.legal_bases.length ? (
           detail.data.legal_bases.map((basis) => (
-            <div className="document" key={basis.id}>
-              <Demo value={basis.is_demo} />
-              <h3>
-                {basis.document_number || "Номер не указан"} ·{" "}
-                {basis.document_date || "Дата не установлена"}
-              </h3>
-              <p>{basis.issuer}</p>
-              <p>Охват: {basis.scope_description}</p>
+            <details
+              className="document dossier-document"
+              key={basis.id}
+              id={`dossier-document-${basis.id}`}
+              tabIndex={-1}
+            >
+              <summary>
+                <Demo value={basis.is_demo} />
+                <h3>
+                  {basis.document_number || "Номер не указан"} ·{" "}
+                  {basis.document_date || "Дата не установлена"}
+                </h3>
+                <span>
+                  {mechanismLabels[basis.mechanism] || basis.mechanism} ·{" "}
+                  {legalLabels[basis.verification_status] ||
+                    basis.verification_status}
+                </span>
+                <span>Охват: {basis.scope_description}</span>
+                <span>
+                  Период: {date(basis.applies_from)} —{" "}
+                  {date(basis.applies_until)}
+                </span>
+              </summary>
+              <p>Источник: {basis.issuer}</p>
               <LegalBasisDecision
                 key={`${basis.id}:${basis.revision}`}
                 basis={basis}
@@ -1764,7 +1824,7 @@ export function PropertyView({ id }: { id: string }) {
               >
                 Открыть сохранённый материал <ArrowRight size={14} />
               </a>
-            </div>
+            </details>
           ))
         ) : (
           <p className="muted">

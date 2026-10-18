@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { PropertyHistory } from "@/components/property-history";
 import { RemainingReviewQueue } from "@/components/review-queue";
+import { PropertyPicker } from "@/components/property-picker";
 import {
   Auth,
   Demo,
@@ -353,6 +354,7 @@ function ProcessingReviewQueue() {
                     <button
                       type="button"
                       className="review-queue-item"
+                      data-advertisement-id={ad.id}
                       aria-current={id === ad.id ? "true" : undefined}
                       onClick={() => navigate("advertisement_id", ad.id)}
                     >
@@ -1038,39 +1040,11 @@ function ReviewMaterial({
           </div>
           {writable && (
             <div className="review-form">
-              <label htmlFor="match-property">
-                ЖК / очередь · можно выбрать вручную
-              </label>
-              <select
-                id="match-property"
+              <PropertyPicker
                 value={propertyId}
-                onChange={(e) => setPropertyId(e.target.value)}
-              >
-                <option value="">Выберите точный объект</option>
-                {registry.data?.items
-                  .filter((p) => p.is_demo === ad.is_demo)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} · {p.address}
-                    </option>
-                  ))}
-              </select>
-              <p className="field-help">
-                Ручной выбор ограничен первыми 100 объектами реестра.
-                {registry.data
-                  ? ` Загружено ${registry.data.items.length} из ${registry.data.total}.`
-                  : " Загружаем варианты…"}{" "}
-                Это не поиск по всему набору; проверьте точный ЖК и очередь в
-                разделе «Объекты».
-              </p>
-              {registry.error && (
-                <>
-                  <Notice error={registry.error} />
-                  <Button variant="outline" onClick={registry.reload}>
-                    Повторить загрузку объектов
-                  </Button>
-                </>
-              )}
+                onChange={setPropertyId}
+                isDemo={ad.is_demo}
+              />
               <label htmlFor="match-reason">
                 Обоснование выбора / отклонения
               </label>

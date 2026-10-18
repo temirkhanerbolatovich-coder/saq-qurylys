@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { login } from "./support";
+import { comparePropertyWork } from "../lib/property-priority";
 import type { Page as ResultPage, Property } from "../lib/types";
 
 test("workspace has five permanent destinations and uses real scores at all screen widths", async ({
@@ -9,9 +10,7 @@ test("workspace has five permanent destinations and uses real scores at all scre
   const registry: ResultPage<Property> = await (
     await page.request.get("/api/v1/properties?page_size=100")
   ).json();
-  const rows = [...registry.items]
-    .sort((a, b) => b.risk.score - a.risk.score)
-    .slice(0, 3);
+  const rows = [...registry.items].sort(comparePropertyWork).slice(0, 3);
   const nav = page.getByRole("navigation", { name: "Основная навигация" });
   await expect(nav.getByRole("link")).toHaveCount(5);
   const accountContrast = await page

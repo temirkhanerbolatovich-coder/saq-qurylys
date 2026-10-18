@@ -1,5 +1,22 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Локальная доработка после аудита · 18.10.2026
+
+- PropertyPicker: существующие Button/Pagination/LoadState и native search/select.
+  Результаты keyed по полному запросу; старые страницы не показываются при новом
+  поиске/ошибке. Выбранный ID независим от страницы, PropertyDetail читается
+  с AbortController; поздний ответ не подменяет новую выбранную запись.
+  После поиска/перехода страницы фокус переходит к загруженному select;
+  начальное открытие материала фокус не перехватывает.
+- .dossier-document: native details с видимой сводкой и прежним LegalBasisDecision.
+  ID #dossier-document-UUID участвует в существующем revealDossierTarget.
+- useRegistryContext: один optional sessionStorage record с user/query/TTL,
+  позицией и ссылкой фокуса, без содержимого документов/команд. Отдельный effect
+  ожидает commit восстановленного selectedId перед фокусом; одинаковый href таблицы не подменяет
+  источник перехода с карты. clearRegistryContext вызывается на logout/401.
+- propertyNextAction/comparePropertyWork: порядок доступных действий обзора,
+  не risk calculation и не имитация server-wide sort.
+
 ## Группировка monitoring · B3 · 18.10.2026
 
 `MonitoringView` сохраняет queue/detail/incident/snapshot hooks и прежние команды.

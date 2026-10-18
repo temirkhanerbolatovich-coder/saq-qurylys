@@ -60,6 +60,7 @@ test("legal document stays pending until a dated human review, rejection never c
     .locator(".document")
     .filter({ has: page.getByRole("heading", { name: new RegExp(number) }) });
   await expect(card).toContainText("На проверке");
+  await card.locator(":scope > summary").click();
   await card
     .getByLabel("Обоснование проверки основания")
     .fill("Применимость к корпусу Б и дате подтверждена по оригиналу");
@@ -75,6 +76,7 @@ test("legal document stays pending until a dated human review, rejection never c
   expect(detail.property.risk.confirmed_codes).not.toContain("R1");
   await page.reload();
   await expect(card).toContainText("Документ подтверждён");
+  await card.locator(":scope > summary").click();
   await card
     .getByLabel("Обоснование проверки основания")
     .fill("Учебная повторная проверка: документ отклонён");

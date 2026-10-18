@@ -92,6 +92,7 @@ test("supporting PDF preserves original bytes and stays pending until human revi
     .locator(".document")
     .filter({ has: page.getByRole("heading", { name: new RegExp(number) }) });
   await expect(card).toContainText("На проверке");
+  await card.locator(":scope > summary").click();
   expect((await risk()).score).toBe(before.score);
   expect((await risk()).confirmed_codes).toEqual(before.confirmed_codes);
 
@@ -110,6 +111,7 @@ test("supporting PDF preserves original bytes and stays pending until human revi
 
   await page.reload();
   await expect(card).toContainText("На проверке");
+  await card.locator(":scope > summary").click();
   await expect(original).toHaveAttribute("href", originalUrl);
   expect(await (await page.request.get(originalUrl)).body()).toEqual(pdf);
   await card

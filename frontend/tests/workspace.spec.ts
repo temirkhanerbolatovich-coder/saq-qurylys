@@ -91,7 +91,7 @@ test("dashboard and evidence come from authenticated API", async ({ page }) => {
     newQueue.getByRole("link", { name: "Открыть новые материалы" }),
   ).toHaveAttribute("href", "/advertisements?status=NEW");
   await expect(
-    page.getByRole("link", { name: "DEMO Бәйтерек · очередь 2", exact: true }),
+    page.getByRole("link", { name: "Открыть очередь решений", exact: true }),
   ).toBeVisible();
   await mkdir("../output/qa", { recursive: true });
   await page.screenshot({ path: "../output/qa/dashboard.png", fullPage: true });

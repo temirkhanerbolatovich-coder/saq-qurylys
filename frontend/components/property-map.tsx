@@ -157,7 +157,7 @@ export function PropertyMap({
       element.classList.toggle("is-selected", isSelected);
       element.setAttribute("aria-pressed", String(isSelected));
     }
-    if (selectedId) card.current?.focus();
+    if (selectedId) card.current?.focus({ preventScroll: true });
   }, [selectedId]);
 
   if (!rows.length) return null;

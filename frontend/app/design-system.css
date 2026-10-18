@@ -1183,6 +1183,38 @@ input[type="checkbox"] {
 .dossier-section {
   margin-bottom: var(--space-6);
 }
+
+.dossier-document > summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: var(--space-3);
+  overflow-wrap: anywhere;
+}
+.dossier-document > summary h3 {
+  display: inline;
+  font-size: inherit;
+}
+.dossier-document > summary > span:not(.demo-badge) {
+  display: block;
+  margin-top: var(--space-2);
+}
+.dossier-document[open] > summary {
+  border-bottom: 1px solid var(--color-border);
+}
+.property-picker {
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+.property-picker-search {
+  display: grid;
+  gap: var(--space-2);
+}
+.property-picker select {
+  width: 100%;
+  min-width: 0;
+}
 .dossier-section > h2 {
   margin-bottom: var(--space-4);
 }

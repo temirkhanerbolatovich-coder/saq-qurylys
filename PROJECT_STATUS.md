@@ -1,5 +1,80 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Локальная доработка UI после аудита · 18.10.2026
+
+**IMPLEMENTED / LOCAL VERIFIED / NOT DEPLOYED.** Пользователь разрешил
+доработку при сохранении локально. Codex root, один исполнитель, ветка
+codex/ui-stabilization-20261018, база b24531b. Входной diff предыдущего аудита
+в PROJECT_STATUS/UI_AUDIT сохранён. Рабочий сайт остаётся на e2dfefd.
+
+Сделано: native disclosure документов с видимыми номером/датой/статусом/областью/
+периодом и mounted решениями; переход к ожидающему документу и document hash;
+PropertyPicker с q/name/address, server pagination25 и DEMO/REAL filter; сохранение
+выбранного ID вне страницы/при ошибке/reload; keyboard focus после поиска и
+pagination; точный city filter; восстановление query/page/view/scroll/focus/marker
+при возврате из досье; порядок обзора по доступному действию/давности, затем score.
+Это порядок внутри загруженных100, без выдуманной срочности или глобального sort.
+Backend/API/contracts/риск/роли/модели/миграции/dependencies не изменены.
+
+Проверки: frontend typecheck/lint/format:check/build PASS; Node tests2PASS;
+npm audit --audit-level=high:0vulnerabilities. Целевой набор26PASS; исправленный
+возврат4повтора PASS. Финальный полный npm run test:e2e: **107passed/2.9m**,
+workers1/retries0. Backend ../.venv/Scripts/python.exe -X utf8 -m pytest -q -rs:
+**810passed/18skipped/329.07s** на Windows, собственной случайной schema отдельной
+QA БД; skips — Linux resource/PDF. ruff check/format86files PASS. Browser suite
+использует реальный Linux API/worker OCR/PDF; >100 picker dataset и error cases —
+presentation fixtures, реальный новый текст→анализ→human hypothesis/match/R2→
+CONFIRMED signal v7→PDF **39309bytes** проверен отдельно; original включён,
+R1 не подтверждён. Это не независимая оценка качества OCR.
+
+Responsive:13страниц×2вида×6ширин360/390/768/1024/1440/1920 =156наблюдений,
+page overflow0/pageerrors0/business writes0; reduced-motion включён. Это
+автоматическая матрица, не настоящий browser zoom200% и не внешняя UX-приёмка.
+Скриншоты/JSON/PDF/logs — ignored output/qa/ux-stabilization-20261018 и
+.local/ux-stabilization-20261018. Изначальный диагностический QA проект остановлен,
+volumes сохранены. Итоговый отдельный saq-ux-final-20261018 и production host UI
+на http://localhost:3207 оставлены для локального просмотра; backend8208/DB55648
+слушают loopback. Доступ в private credentials.txt этого QA каталога, не в Git.
+
+В первом полном прогоне105PASS/2FAIL тесты ожидали открытую новую disclosure и
+прежний risk-first Dashboard; тесты обновлены. Следующий106PASS/1FAIL выявил
+реальную гонку focus restoration; вместо ожидания нескольких кадров восстановление
+теперь привязано к commit selectedId. Отдельные4повтора и финальные107PASS зелёные.
+Начальные focused failures также выявили неуникальный source_label в старом тесте
+и неверное предположение о наличии extraction у seed REVIEWED; выбор по ID и
+реальный setup анализа сделали сценарии воспроизводимыми. Отказы не скрыты retry.
+
+Пути:7production UI/helper/CSS,7tests и8существующих документов (README/CHANGELOG/
+DESIGN_SYSTEM/UX_GUIDELINES/UI_COMPONENTS/UI_IMPLEMENTATION_PLAN/UI_AUDIT/статус).
+Новый ADR не требуется: применены существующие компоненты/контракт. Локальный
+commit разрешён ранее; push/PR/merge/deploy не выполняются. Рабочие Docker image
+ui-b0-b3-e2dfefd/API/worker/DB и tunnel не заменены. Следующий шаг — внешний
+аналитик/второй ПК/настоящий200%zoom, официальная freeze/сдаваемая версия;
+KZ OCR fidelity и разрешённый коммерческий C01 остаются OPEN. Семь anchors
+сохранены по согласованному плану; новый API search/sort и P2 — backlog.
+
+
+## Аудит соответствия UI/UX ТЗ · 18.10.2026
+
+Codex root, база b24531b, установленный UI e2dfefd. По повторному вложению
+проверены ТЗ, код, документация, сохранённые public evidence и официальные
+материалы Kompra. Матрица и источники — начало docs/UI_AUDIT.md.
+Фазы0–1 выполнены; S0–S2/B0–B3 работают в ранее проверенном объёме;
+полная приёмка редизайна/стабилизация остаётся открытой.
+Конкретные остатки: длинный список legal_bases; семь anchors вместо tab panels;
+выбор ЖК в review ограничен100; city filter/global sort/расширенный поиск;
+priorityRows сортирует по score вместо действия/срочности; точный scroll/marker
+при возврате и единая итоговая матрица размеров/200%zoom/независимый UX.
+Kompra.kz и официальные статьи использованы как IA-референс; содержательный
+аудит kompra.group и закрытого рабочего кабинета не подтверждён.
+Свежие проверки: Git clean на входе, текущий код/тесты и public report прочитаны,
+два сохранённых desktop capture просмотрены, CUA показал login, четыре Docker
+сервиса работают.103E2E/44public observations — прежние результаты этой версии,
+не новые прогоны. Код приложения/данные не менялись; commit/push/deploy нет.
+Изменены только UI_AUDIT и этот статус. Следующий шаг — согласованный небольшой
+срез документов/приоритета, затем итоговая приёмка; новые функции не начаты.
+
+
 ## B0–B3 установлены в рабочий frontend · 18.10.2026
 
 **DEPLOYED / PUBLIC HTTPS VERIFIED; GITHUB NOT UPDATED.** Пользователь

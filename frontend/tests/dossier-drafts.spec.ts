@@ -292,6 +292,7 @@ test("legal basis decision restores its own reason and date after navigation and
   });
   await page.goto(`/properties/${row.id}`);
   await openDossierTools(page);
+  await page.locator(".dossier-document > summary").first().click();
   const reason = page
     .getByLabel("Обоснование проверки основания", { exact: true })
     .first();
@@ -306,6 +307,7 @@ test("legal basis decision restores its own reason and date after navigation and
   });
   revision = 2;
   await leaveAndReturn(page, row.name);
+  await page.locator(".dossier-document > summary").first().click();
   await expect(reason).toHaveValue(
     "DEMO basis review stays a draft after revision change",
   );
