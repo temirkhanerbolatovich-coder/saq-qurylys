@@ -1,5 +1,10 @@
 # Аудит интерфейса SAQ QURYLYS
 
+Итог публикации: [PR №4](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/4),
+code e690378, [чистый CI](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39146844077)
+893backend/130browser PASS и frontend job success. После этого — только Markdown
+фиксация результатов. Внешняя UX/предметная приёмка от CI не закрывается.
+
 ## Публичная установка всех изменений ·18.10.2026
 
 Пользователь разрешил публикацию. Runtime875e288 установлен на рабочий

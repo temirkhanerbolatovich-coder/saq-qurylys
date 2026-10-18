@@ -1,6 +1,15 @@
 # SAQ QURYLYS — PROJECT STATUS
 
-## Все изменения опубликованы ·18.10.2026 · HTTPS VERIFIED / CI FINALIZING
+## Все изменения опубликованы ·18.10.2026 · HTTPS VERIFIED / GITHUB PUBLISHED
+
+Финальная проверка кода e690378: push CI
+[39146844077](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39146844077)
+success во всех3jobs: backend893PASS217.19s, browser130PASS3.8m, frontend checks/
+build/audit PASS;74tooling tests выполнены. [PR №4](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/4)
+создан и прикреплён к чату; его CI39146897325 также имеет success во всех3jobs.
+Последующее изменение фиксирует только результаты в Markdown, без runtime/tests/
+контракта/данных; повторное функциональное тестирование для этой записи не нужно.
+Заключительный docs commit отправляется в ту же ветку, main без merge.
 
 Разрешение пользователя: «опубликуй все изменения». Один Codex; ветка
 codex/audit-workflow-fixes, main aefb72f не объединялся. Все исходные14локальных
@@ -44,20 +53,20 @@ build/typecheck/lint/format PASS. CI39145832806 выявил890backend PASS/3FAI
 от прошлых кандидатов/версий, reload выполнялся до URL reset. Исправлены тестовые
 предусловия/ожидания; runtime неизменён. После test-only fixes4tests×3=12PASS36.3s,
 backend signal/signals/PDF/exports/contract57PASS/1Windows Pango SKIP52.92s;
-Ruff test check/format PASS, frontend typecheck/lint/format повторяются перед push.
+Ruff test check/format PASS, frontend typecheck/lint/format повторно PASS перед push.
 Run4b8a665 дополнительно выявил формат длинной строки нового ожидания; Prettier
-исправлен до текущей публикации. Итоговые CI/PR результаты фиксируются отдельно
-после завершения; не считать промежуточные красные проверки успешными.
+исправлен до текущей публикации. Итоговые зелёные CI/PR результаты указаны выше;
+промежуточные красные проверки сохранены в GitHub и не считаются успешными.
 
 Source publication preflight: ancestor/remote SHA, git diff --check, history
-262new blobs prohibited paths/known-private-literals/token patterns PASS;
+262new blobs на входе/274после исправлений prohibited paths/known-private-literals/token patterns PASS;
 repository hygiene PASS. Secrets/env/DB/storage/images/logs в Git не отправляются.
 Private evidence .local/publish-all-20261018 (preflight,before,build,apply,
 pre/post-tunnel/post-smoke-invariants,public-smoke,GitHub logs); PNG
 output/qa/publish-all-20261018. Docs README/CHANGELOG/DEPLOYMENT/UI_AUDIT/
 сверка/этот статус обновлены, старые local-only записи ниже исторические.
-Следующий шаг: дождаться чистого CI текущего head, создать/проверить PR и remote SHA.
-Main merge отдельно не выполняется. Следующая разработка остаётся UX-14/15,
+Публикация завершена: исходники/документация в PR, runtime на HTTPS, код проверен,
+backup/rollback сохранены. Main merge отдельно не выполняется. Следующая разработка — UX-14/15,
 clean DEMO/независимая приёмка; source C-01/holdout/второйПК остаются OPEN.
 
 ## Публикация всех изменений ·18.10.2026 · IN PROGRESS

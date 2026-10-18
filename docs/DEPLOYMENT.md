@@ -43,7 +43,10 @@ signals фактически вернули21308/19477/25381bytes с PDF signatu
 Первый чистый CI выявил fixture/race ошибки тестов, исправленные2f40242/4b8a665:
 собственный DEMO-кандидат/typed snapshot в chooser, property scope status-search,
 ожидание URL reset до reload. Runtime code не менялся. Финальный результат CI
-и PR записывается в PROJECT_STATUS; публичный smoke не заменяет записывающий E2E.
+e690378: [CI39146844077](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39146844077)
+success во всех3jobs,893backend PASS217.19s и130browser PASS3.8m;
+[PR №4](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/4) создан,
+не объединён. Публичный smoke не заменяет записывающий E2E.
 Локально до публикации full browser130PASS; после test-only fixes12PASS repeated,
 backend57PASS/1Windows native-Pango SKIP52.92s; Linux PDF подтверждён выше.
 

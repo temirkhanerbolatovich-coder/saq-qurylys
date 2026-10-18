@@ -1,5 +1,15 @@
 # SAQ QURYLYS — внедрение и поддержка UI/UX
 
+## Публикация готовых блоков ·18.10
+
+Пользователь разрешил «опубликуй все изменения». API/worker/frontend875e288
+установлены на HTTPS, исходники с test-only исправлениями опубликованы в
+[PR №4](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/4), без merge.
+Runtime код e690378 идентичен875e288; CI893backend/130browser PASS, frontend PASS.
+Public smoke44наблюдения и сохранность DB/storage/PDF — [DEPLOYMENT](DEPLOYMENT.md).
+Оставшаяся матрица10/5/5 и следующий UX-14/15/DEMO/внешняя приёмка прежние.
+Датированные local-only границы ниже относятся к этапам до разрешения публикации.
+
 ## Шестой блок после аудита18.10: локальная стабилизация
 
 Пользователь «гоу гоу», базаa3afdf0, codex/audit-workflow-fixes, один Codex.

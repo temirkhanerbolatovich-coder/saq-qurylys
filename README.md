@@ -5,7 +5,9 @@
 Вкладки досье/мониторинга, PDF, поиск по всему набору, глобальный приоритет и
 последняя стабилизация UI доступны публично после входа.44read-only browser
 наблюдения и исходные/исторические PDF проверены; данные/DB/storage сохранены.
-Код опубликован в `codex/audit-workflow-fixes`, main не объединялся.
+Код и документация опубликованы в [PR №4](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/4)
+из `codex/audit-workflow-fixes`, main не объединялся. Чистый CI кода:
+893backend/130browser PASS, все три jobs success.
 Фактическая установка/backup/CI и границы — [DEPLOYMENT](docs/DEPLOYMENT.md),
 [PROJECT_STATUS](PROJECT_STATUS.md). Адрес временный, требует работающего ПК/Docker.
 Следующие датированные блоки описывают историю до этой публикации; их прежние

@@ -1,5 +1,11 @@
 # SAQ QURYLYS — что ещё сделать
 
+Дополнение18.10: по запросу «опубликуй все изменения» накопленные блоки установлены
+на рабочий HTTPS сайт и опубликованы в [PR №4](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/4).
+Чистый CI кода893backend/130browser PASS;44public read-only observations PASS.
+Незакрытые пункты ниже сохраняются; «local only» обозначает прежнюю границу до
+этого разрешения, а не текущую установку. Факты — [DEPLOYMENT](DEPLOYMENT.md).
+
 ## Текущая сверка UI/UX ·18.10.2026 · local only
 
 [Все20 замечаний и пользовательские требования](audits/SAQ_QURYLYS_UI_UX_RECONCILIATION_2026-10-18.md):
