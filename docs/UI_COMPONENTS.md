@@ -1,5 +1,17 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Поиск / signal picker ·18.10
+
+- PropertyPicker: прежний match по умолчанию, filter mode для сигналов,
+  optional isDemo (match call передаёт прежнюю категорию), native select ref
+  для фокуса reset, IDs signal-property/match-property. Выбранная запись
+  читается отдельно, не зависит от текущей search page.
+- SignalsView: filter picker25 вместо select первых100; initial registry100
+  остаётся источником total/ранее загруженных имён, не пределом выбора.
+- useSignalPropertyNames: только отсутствующие имена текущих25сигналов,
+  dedup/abort/local cache и error+retry; не влияет на сохранённый snapshot.
+- PropertiesView: актуальный label/placeholder расширенного серверного поиска.
+
 ## Первый блок аудита18.10
 
 - ReviewQueuePanel: существующий review-queue module, общий native disclosure

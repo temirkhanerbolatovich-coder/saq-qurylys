@@ -27,6 +27,8 @@ test("document archive searches, filters and pages mounted forms; legacy documen
     id: `10000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
     document_number: `DEMO №${index + 1} Әділет`,
     verification_status: "PENDING",
+    // This presentation-only decision form needs an evidence reference, even on a clean seed.
+    evidence_ids: ["20000000-0000-4000-8000-000000000001"],
     revision: 1,
   }));
   // Large-archive presentation fixture; no evidence or business command is created.

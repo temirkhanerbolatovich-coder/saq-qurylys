@@ -1,5 +1,71 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Поиск реестра и выбор объекта сигнала · 18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
+
+Продолжение согласованного аудита, пользователь «продолжи работу». Codex root,
+один исполнитель, ветка codex/audit-workflow-fixes отcd10b84; на входе Git clean.
+Сохранён запрет push/publish/deploy. Не создавались новые агентские задачи.
+
+UX-02: существующий server q ищет literal case-insensitive substring по имени,
+адресу, отдельным aliases, Developer.name/bin. Коррелированные EXISTS сохраняют
+одну строку объекта; спецсимволы escaped, фильтры/order/pages прежние. Пустой q
+в dashboard нормализован, не исключает публикации без привязки. Контракт0.15.0-mvp
+явно фиксирует новые semantics q на properties и dashboard; маршруты/схемы прежние.
+
+UX-05: общий PropertyPicker(mode=filter), page_size25 по всему разрешённому
+реестру, выбранныйID вне search page/error/empty и после reload/Back. Match mode
+сохраняет required isDemo и прежнюю отдельную human-привязку. Names текущих
+сигналов вне initial100 дочитываются по ID с dedup/abort/cache/error/retry;
+первоначальная страница100 больше не ограничивает выбор или названия очереди.
+Server risk/роли/auth/решения/snapshot/миграции/dependencies не менялись.
+
+Проверки: focused backend search/dashboard/API/contract **40PASS/40.42s**
+(своя случайная schema существующей изолированной QA DB). Ruff check/format91files
+PASS; frontend lint/typecheck/format:check/build PASS. Targeted browser13PASS,
+первый full **115PASS/3.6m** до финального blank-q уточнения; окончательный full
+на пересобранном runtime **115PASS/3.8m**. Retries0/workers1. Не запускалась вся
+backend suite: серверное изменение ограничено read-only q; полный browser suite
+проверяет прежний реальный Linux OCR/PDF/review, а новые backend tests — поиск.
+Последующий full114PASS/1FAIL: historical-R2 test исчерпал свободные DEMO-объекты
+без R2 после повторных прогонов; отказ предусловия до UI. Существующие факторы
+не перезаписывались: подготовлены отдельная случайная schema/новый storage для
+чистого финального набора. Это не исправление или обход продуктовых guards.
+Чистый full112PASS/3FAIL дополнительно выявил зависимости старых audit/document
+tests от ранее созданных candidate/signal/evidence. Теперь первые2теста создают
+собственные записи через API, archive presentation явно задаёт evidence reference
+без серверной команды. Повтор затронутых7PASS/14.5s. Эти правки только в tests.
+Historical-R2 fixture после многих запусков всё ещё требует свежего QA namespace;
+перезаписывать существующий фактор для её подготовки запрещено.
+Финальные git diff --check, repository hygiene и changed-file UTF8/local-links/
+private-literal scan PASS. Наблюдения и результаты не являются независимой
+security/предметной приёмкой.
+
+Fresh36наблюдений3экрана(registry search/signals filter/review picker)×2фактических
+режима×6размеров360/390/768/1024/1440/1920: overflow/errors/business commands0.
+Вручную просмотрены registry1440,signal picker1440/390,match picker390. Исправлены
+унаследованные padding/margin только внутри picker; capture matrix повторена.
+Внешняя UX-приёмка/secondPC/новый200%zoom/масштабная нагрузка не выполнялись.
+101-й объект — browser presentation fixture, реальный server developer search
+и PostgreSQL alias/BIN/special-character cases проверены отдельно. Имя-retry
+также проверено503fixture. Новый общий поиск сигналов не добавлен (UX-06).
+
+Локальный preview3227, изолированный QA saq-tabs-pdf-20261018 API8227/DB55667.
+QA api/worker image saq-search-api:local-20261018, конфиг
+.local/tabs-pdf-20261018/search-final.compose.json; отдельная qa_search_* schema
+и новый acceptance_search_storage. Прежние QA schema/storage и credentials
+сохранены, секреты не печатались. Working public services/tunnel не заменены.
+Логи search-backend-tests.log/search-full.log и captures
+output/qa/search-picker-20261018; helpers/private env ignored.
+
+Docs: README/CHANGELOG/REQUIREMENTS/ARCHITECTURE/DESIGN_SYSTEM/UX_GUIDELINES/
+UI_COMPONENTS/UI_IMPLEMENTATION_PLAN/UI_AUDIT, контракт. Нового ADR нет:
+расширен существующий read-only query и переиспользован picker без нового слоя.
+Открыто: UX-03 global priority,UX-04 связи очередей,UX-06 server signal q,
+UX-16 масштабная SQL-оптимизация и внешняя приёмка. Следующий связный UI-блок —
+явная навигация между реальными parent/phase/building, затем global priority
+с отдельным измеримым контрактом. Официальный freeze21октября остаётся OPEN.
+Ревизия проверки cd10b84+diff; окончательный local SHA — git log -1 этой ветки.
+
 ## Первый блок исправлений аудита · 18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
 
 Пользователь согласовал начало исправлений после полного UI/UX-аудита.

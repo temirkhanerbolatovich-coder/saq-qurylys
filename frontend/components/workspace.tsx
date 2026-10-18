@@ -1240,14 +1240,14 @@ export function PropertiesView() {
           <div className="search">
             <Search size={17} aria-hidden="true" />
             <label className="sr-only" htmlFor="search">
-              Поиск ЖК или адреса
+              Поиск ЖК или адреса, застройщика или БИН
             </label>
             <input
               id="search"
               ref={searchInput}
               type="search"
               maxLength={300}
-              placeholder="Название ЖК или адрес"
+              placeholder="ЖК, адрес, застройщик или БИН"
               value={params.get("q") || ""}
               onChange={(e) => filter("q", e.target.value)}
             />

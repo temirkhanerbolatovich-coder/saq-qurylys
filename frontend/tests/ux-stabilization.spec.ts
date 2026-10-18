@@ -156,7 +156,7 @@ test("picker reaches the 101st object, preserves selection through searches, err
     .getByLabel("Обоснование выбора / отклонения")
     .fill("DEMO незавершённый выбор 101");
   await picker
-    .getByLabel("Найти ЖК по названию или адресу")
+    .getByLabel("Найти ЖК, застройщика или БИН")
     .fill("нет совпадений");
   await picker.getByRole("button", { name: "Найти ЖК", exact: true }).click();
   await expect(
@@ -164,7 +164,7 @@ test("picker reaches the 101st object, preserves selection through searches, err
   ).toBeVisible();
   await expect(picker.locator("#match-property")).toHaveValue(target.id);
   broken = true;
-  await picker.getByLabel("Найти ЖК по названию или адресу").fill("ошибка");
+  await picker.getByLabel("Найти ЖК, застройщика или БИН").fill("ошибка");
   await picker.getByRole("button", { name: "Найти ЖК", exact: true }).click();
   await expect(picker.getByRole("alert")).toContainText("недоступен");
   await expect(picker.locator("#match-property")).toHaveValue(target.id);

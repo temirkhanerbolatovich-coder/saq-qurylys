@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.14.0-mvp",
+    "version": "0.15.0-mvp",
     "description": "SAQ QURYLYS contract. Registry/OCR, dated legal review, manual R1-R6, immutable signals/human decisions/PDF export and passive supporting PDF upload implemented. Commercial advertising collector remains planned. JSON is valid YAML 1.2. Manual monitoring candidates, immutable DEMO registry snapshots, comparisons and preliminary incident decisions are additive; the closed customer registry remains unavailable. Explicit licensed Primeminister.kz information import is implemented through leased jobs. Operator-provided KHC public PDF versions and page-text search preserve provenance and never establish legal applicability or modify risk. Authenticated read-only exports return exact saved PDFs or bounded derived copies; signal exports retain frozen snapshots."
   },
   "servers": [
@@ -403,7 +403,7 @@
               "type": "string",
               "maxLength": 300
             },
-            "description": ""
+            "description": "Case-insensitive literal substring in property name, address, each saved alias, developer name or BIN. Outer whitespace is trimmed. Percent, underscore and backslash are literal characters, not wildcards. Search does not confirm identity or legal applicability."
           },
           {
             "name": "is_demo",
@@ -442,7 +442,7 @@
       "get": {
         "operationId": "listProperties",
         "summary": "List properties and exact phases",
-        "description": "List properties and exact phases",
+        "description": "List exact properties and phases; q searches saved names, addresses, aliases and developer identifiers before existing filters and pagination. It does not confirm a match or legal status.",
         "x-origin": "CODEX_TZ",
         "responses": {
           "200": {
@@ -550,7 +550,7 @@
               "type": "string",
               "maxLength": 300
             },
-            "description": ""
+            "description": "Case-insensitive literal substring in property name, address, each saved alias, developer name or BIN. Outer whitespace is trimmed. Percent, underscore and backslash are literal characters, not wildcards. Search does not confirm identity or legal applicability."
           },
           {
             "name": "is_demo",

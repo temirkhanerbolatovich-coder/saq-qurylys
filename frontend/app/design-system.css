@@ -1294,6 +1294,11 @@ input[type="checkbox"] {
 .property-picker-search {
   display: grid;
   gap: var(--space-2);
+  padding: 0;
+}
+.property-picker-search > label,
+.property-picker-search > input {
+  margin-bottom: 0;
 }
 .property-picker select {
   width: 100%;

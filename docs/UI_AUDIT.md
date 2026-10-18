@@ -1,5 +1,53 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Поиск и объекты сигналов ·18.10.2026 · LOCAL VERIFIED
+
+Второй согласованный блок, базаcd10b84, codex/audit-workflow-fixes, один Codex.
+
+| Пункт | Фактический результат |
+|---|---|
+| UX-02 | Server q расширен на сохранённые aliases/застройщика/БИН; старые name/address/filter/order/page сохранены. Не fuzzy и не автоматическое совпадение |
+| UX-05 | Signal filter использует paged25 picker; 101-й объект доступен и selectedID сохраняется на пустом/ошибочном поиске/reload; missing names текущей страницы дочитываются |
+| UX-03/04/06/16 | Не закрыты: global priority/связи очередей/server signal q/большая SQL-нагрузка остаются отдельными задачами |
+
+Backend focused40PASS/40.42s: PostgreSQL RU/KZ,case/trim/alias/developer/BIN,
+literal%_backslash,JSON boundaries,duplicate aliases,filters/page,unchanged state,
+dashboard blank q и live/manual contract. Контракт0.15.0-mvp; новые endpoints,
+миграции,авторизация,риск,решения и snapshots не добавлялись/не менялись.
+Весь backend suite не повторялся. Ruff91files PASS. Frontend lint/types/format/
+production build PASS; targeted13PASS и первый full115PASS/3.6m. Финальный full
+после blank-q/spacing refinement и fixture repairs — **115PASS/3.8m**, workers1/retries0. Не было функциональных failures;
+локальные format/import warnings исправлены до финальных проверок.
+Прогон после визуального уточнения114PASS/1FAIL завершился на предусловии
+historical-R2: после нескольких прогонов в QA все8объектов уже получили R2.
+Вместо удаления/перезаписи факторов созданы отдельная qa_search_* schema и новый
+QA storage; исходные данные сохранены. Повторная приёмка использует этот отдельный
+QA namespace; тестовые записи внутри него накапливаются обычным образом.
+Первый чистый full112PASS/3FAIL выявил fixtures предыдущих этапов: отсутствовали
+candidate/signal, у seed legal basis не было evidence для формы решения.
+Audit workflow tests теперь сами создают candidate/version/signal через API;
+archive test явно задаёт evidence ID только в своей presentation fixture, без
+подмены серверного evidence-validation. Связанные7PASS/14.5s после правок.
+Historical-R2 по-прежнему требует DEMO-объект без R2: после многих full runs
+нужен новый QA namespace. Существующие факторы нельзя удалять ради теста.
+
+Новые browser tests различают presentation101/503 и настоящий developer search.
+Поиск/пагинация/выбор не отправляют POST; legacy match drafts/DEMO guards и
+signal reset-focus проверяются общим regression. Names lookup ограничен разными
+propertyIDs текущих25сигналов, cache локален компоненту; при ошибке — ID и retry,
+не ложный нулевой результат. Поиск signal list остаётся локален странице25.
+
+Fresh36наблюдений:3реальных экрана×2режима×6ширин360/390/768/1024/1440/1920,
+actualDetailed записан в JSON, overflow/pageerrors/business writes0. Матрица
+затрагивает существующую DEMO-компанию из QA API в реестре и обоих picker; исходники
+не создавались. Captures в output/qa/search-picker-20261018. Это геометрия и
+visual sampling, не независимая UX/правовая/WCAGAA-приёмка или large-data benchmark.
+Вручную просмотрены registry1440,signal picker1440/390 и match picker390;
+не все12PNG объявляются вручную проверенными. После визуального просмотра убраны
+только inherited form padding/input margin внутри общего picker; матрица повторена.
+Новый200%zoom/secondPC/latency10k не выполнялись. QA API/worker обновлены только
+в собственном проекте saq-tabs-pdf-20261018, рабочий public runtime не заменён.
+
 ## Первый блок после полного аудита · 18.10.2026 · LOCAL VERIFIED
 
 Согласован пользователем после [baseline860e033](audits/SAQ_QURYLYS_UI_UX_AUDIT_2026-10-18.md).

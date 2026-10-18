@@ -18,6 +18,7 @@ import type {
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
+import { PropertyPicker } from "@/components/property-picker";
 import { mechanismLabels } from "@/components/legal-basis-review";
 import {
   Auth,
@@ -35,6 +36,47 @@ const stateLabels: Record<Signal["state"], string> = {
   CONFIRMED: "Подтверждён аналитиком",
   RETURNED: "Возвращён на доработку",
 };
+
+/** Resolve only names absent from the initial registry page, bounded by the signal page. */
+function useSignalPropertyNames(signals: Signal[], registry: Property[]) {
+  const [names, setNames] = useState<Record<string, string>>({});
+  const [failure, setFailure] = useState({ ids: "", message: "" });
+  const [attempt, setAttempt] = useState(0);
+  const ids = [...new Set(signals.map((signal) => signal.property_id))]
+    .filter((id) => !names[id] && !registry.some((row) => row.id === id))
+    .sort()
+    .join(",");
+  useEffect(() => {
+    if (!ids) return;
+    const controller = new AbortController();
+    Promise.all(
+      ids.split(",").map((id) =>
+        api<PropertyDetail>(`/properties/${id}`, {
+          signal: controller.signal,
+        }),
+      ),
+    )
+      .then((rows) => {
+        if (!controller.signal.aborted)
+          setNames((previous) => ({
+            ...previous,
+            ...Object.fromEntries(
+              rows.map((row) => [row.property.id, row.property.name]),
+            ),
+          }));
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted)
+          setFailure({ ids, message: error.message });
+      });
+    return () => controller.abort();
+  }, [ids, attempt]);
+  return {
+    names,
+    error: failure.ids === ids ? failure.message : "",
+    retry: () => setAttempt((value) => value + 1),
+  };
+}
 const pdfLabels: Record<Signal["pdf_state"], string> = {
   NOT_REQUESTED: "PDF ещё не запрошен",
   QUEUED: "PDF готовится",
@@ -170,6 +212,18 @@ export function SignalsView() {
   const queueData =
     queue.resolvedPath === queuePath && !queueError ? queue.data : null;
 
+  const propertyNames = useSignalPropertyNames(
+    queueData?.items ?? [],
+    registry.data?.items ?? [],
+  );
+  function propertyName(id: string) {
+    return (
+      registry.data?.items.find((row) => row.id === id)?.name ||
+      propertyNames.names[id] ||
+      `Объект ${id}`
+    );
+  }
+
   const [queueSearch, setQueueSearch] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(Boolean(stale || propertyId));
 
@@ -181,13 +235,8 @@ export function SignalsView() {
 
   // Поиск работает по загруженной странице сигналов.
   const filteredQueueItems = (queueData?.items ?? []).filter((signal) => {
-    const propertyName =
-      registry.data?.items.find(
-        (property) => property.id === signal.property_id,
-      )?.name ?? "";
-
     const searchValue = [
-      propertyName,
+      propertyName(signal.property_id),
       signal.id,
       `версия ${signal.version}`,
       stateLabels[signal.state],
@@ -411,24 +460,12 @@ export function SignalsView() {
                 </summary>
 
                 <div className="signals-extra-filters__content">
-                  <label htmlFor="signal-property">Объект сигнала</label>
-
-                  <select
-                    id="signal-property"
-                    ref={firstFilter}
+                  <PropertyPicker
+                    mode="filter"
+                    selectRef={firstFilter}
                     value={propertyId}
-                    onChange={(event) =>
-                      filter("property_id", event.target.value)
-                    }
-                  >
-                    <option value="">Все объекты</option>
-
-                    {registry.data?.items.map((property) => (
-                      <option key={property.id} value={property.id}>
-                        {property.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => filter("property_id", value)}
+                  />
 
                   <label htmlFor="signal-stale">Актуальность сигнала</label>
 
@@ -453,6 +490,16 @@ export function SignalsView() {
           </div>
 
           {registry.error && <Notice error={registry.error} />}
+          {propertyNames.error && (
+            <div>
+              <p className="notice" role="alert">
+                Часть названий объектов не загружена: {propertyNames.error}
+              </p>
+              <Button variant="outline" onClick={propertyNames.retry}>
+                Повторить загрузку названий
+              </Button>
+            </div>
+          )}
 
           {queueError && <LoadState error={queueError} retry={queue.reload} />}
 
@@ -462,11 +509,6 @@ export function SignalsView() {
                 filteredQueueItems.length > 0 ? (
                   <div className="candidate-list" aria-label="Очередь сигналов">
                     {filteredQueueItems.map((signal) => {
-                      const propertyName =
-                        registry.data?.items.find(
-                          (property) => property.id === signal.property_id,
-                        )?.name || "Объект";
-
                       return (
                         <article
                           className={`candidate signal-queue-item${
@@ -484,7 +526,7 @@ export function SignalsView() {
                             <Demo value={signal.is_demo} />
                           </div>
 
-                          <h3>{propertyName}</h3>
+                          <h3>{propertyName(signal.property_id)}</h3>
 
                           <div className="signal-queue-meta">
                             <Zone risk={signal.risk_snapshot} />

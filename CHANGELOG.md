@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased · Registry search and signal property selection
+
+- Extend existing registry/dashboard q search to individual saved aliases, developer name and BIN;
+  retain literal escaping, filters, ordering and pagination. Contract0.15.0-mvp.
+- Treat blank dashboard search as no query so unlinked materials remain counted.
+- Reuse the paged PropertyPicker in signal filters with preserved selection and focus;
+  fetch missing property names beyond the initial100 with explicit retry on failure.
+- Keep risk, human decisions and historical snapshots unchanged. Local QA only.
+
 ## Unreleased · Audit workflow fixes
 
 - Expose registry filters and map in both interface modes; remove the large map introduction.

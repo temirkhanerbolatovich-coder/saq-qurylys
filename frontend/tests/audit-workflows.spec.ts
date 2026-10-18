@@ -1,5 +1,20 @@
-import { expect, test } from "@playwright/test";
-import { login } from "./support";
+import { expect, test, type Page } from "@playwright/test";
+import { login, testOrigin } from "./support";
+
+async function createRecord(page: Page, path: string, data: unknown) {
+  const csrf = (await (await page.request.get("/api/v1/auth/csrf")).json())
+    .csrf_token;
+  const response = await page.request.post(`/api/v1${path}`, {
+    headers: {
+      Origin: testOrigin,
+      "X-CSRF-Token": csrf,
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+    data,
+  });
+  expect(response.status()).toBe(201);
+  return response.json();
+}
 
 test.beforeEach(async ({ page }) => {
   await page.route("https://tile.openstreetmap.org/**", (route) =>
@@ -74,11 +89,27 @@ test("monitoring shortcuts select the actual panel without clearing the candidat
   page,
 }) => {
   await login(page);
-  const candidates = await (
-    await page.request.get("/api/v1/monitoring/candidates?page_size=1")
+  const advertisements = await (
+    await page.request.get("/api/v1/advertisements?is_demo=true&page_size=1")
   ).json();
-  expect(candidates.items.length).toBeGreaterThan(0);
-  const candidate = candidates.items[0];
+  const candidate = await createRecord(page, "/monitoring/candidates", {
+    advertisement_id: advertisements.items[0].id,
+    name: `DEMO audit navigation ${crypto.randomUUID()}`,
+    city: "Өскемен",
+    reason: "DEMO independent navigation test setup",
+  });
+  const now = Date.now();
+  const snapshot = await createRecord(page, "/monitoring/registry-snapshots", {
+    label: `DEMO audit version ${crypto.randomUUID()}`,
+    city: "Өскемен",
+    is_demo: true,
+    coverage_from: new Date(now - 3600_000).toISOString(),
+    coverage_until: new Date(now).toISOString(),
+    expires_at: new Date(now + 86400_000).toISOString(),
+    complete: false,
+    entries: [],
+    reason: "DEMO independent version selection test setup",
+  });
   await page.goto(`/monitoring?candidate_id=${candidate.id}`);
   await page
     .getByRole("button", { name: "Открыть источники", exact: true })
@@ -98,9 +129,6 @@ test("monitoring shortcuts select the actual panel without clearing the candidat
   await expect(
     page.getByRole("heading", { name: "Версии DEMO-реестра", exact: true }),
   ).toBeVisible();
-  const versions = await (
-    await page.request.get("/api/v1/monitoring/registry-snapshots?page_size=10")
-  ).json();
   await page
     .getByRole("button", {
       name: "Выбрать DEMO-версию для сверки",
@@ -115,7 +143,7 @@ test("monitoring shortcuts select the actual panel without clearing the candidat
     page.getByLabel("ID DEMO-версии реестра (пусто — реестр недоступен)", {
       exact: true,
     }),
-  ).toHaveValue(versions.items[0].id);
+  ).toHaveValue(snapshot.id);
   await expect(reason).toHaveValue("DEMO несохранённый комментарий");
   expect(new URL(page.url()).searchParams.get("candidate_id")).toBe(
     candidate.id,
@@ -126,11 +154,22 @@ test("signal copy and archived PDF actions explain different effects", async ({
   page,
 }) => {
   await login(page);
-  const rows = await (
-    await page.request.get("/api/v1/signals?page_size=1")
+  const registry = await (
+    await page.request.get("/api/v1/properties?page_size=1")
   ).json();
+  const property = registry.items[0];
+  const previous = await (
+    await page.request.get(
+      `/api/v1/signals?property_id=${property.id}&page_size=1`,
+    )
+  ).json();
+  const signal = await createRecord(page, "/signals", {
+    property_id: property.id,
+    expected_risk_revision: property.risk.revision,
+    ...(previous.items[0] ? { previous_signal_id: previous.items[0].id } : {}),
+  });
   const detail = await (
-    await page.request.get(`/api/v1/signals/${rows.items[0].id}`)
+    await page.request.get(`/api/v1/signals/${signal.id}`)
   ).json();
   detail.signal.pdf_state = "NOT_REQUESTED";
   await page.route(`**/api/v1/signals/${detail.signal.id}`, (route) =>

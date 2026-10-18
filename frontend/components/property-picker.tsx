@@ -1,22 +1,33 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type RefObject,
+} from "react";
 import { api } from "@/lib/api";
 import type { Page, Property, PropertyDetail } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { LoadState, useData } from "@/components/workspace";
 
+type PropertyPickerProps = {
+  value: string;
+  onChange: (id: string) => void;
+  selectRef?: RefObject<HTMLSelectElement | null>;
+} & ({ mode?: "match"; isDemo: boolean } | { mode: "filter"; isDemo?: never });
+
 /** Searches the server registry; a page change never changes the analyst's selection. */
 export function PropertyPicker({
   value,
   onChange,
   isDemo,
-}: {
-  value: string;
-  onChange: (id: string) => void;
-  isDemo: boolean;
-}) {
+  mode = "match",
+  selectRef,
+}: PropertyPickerProps) {
+  const id = mode === "filter" ? "signal-property" : "match-property";
   const [input, setInput] = useState("");
   const [search, setSearch] = useState({ q: "", page: 1, focus: false });
   const [selected, setSelected] = useState<Property | null>(null);
@@ -39,8 +50,8 @@ export function PropertyPicker({
     q: search.q,
     page: String(search.page),
     page_size: "25",
-    is_demo: String(isDemo),
   });
+  if (isDemo !== undefined) query.set("is_demo", String(isDemo));
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSearch({ q: input.trim(), page: 1, focus: true });
@@ -48,14 +59,16 @@ export function PropertyPicker({
   return (
     <section
       className="property-picker"
-      aria-label="Поиск объекта для привязки"
+      aria-label={
+        mode === "filter"
+          ? "Выбор объекта сигнала"
+          : "Поиск объекта для привязки"
+      }
     >
       <form onSubmit={submit} className="property-picker-search">
-        <label htmlFor="match-property-search">
-          Найти ЖК по названию или адресу
-        </label>
+        <label htmlFor={`${id}-search`}>Найти ЖК, застройщика или БИН</label>
         <input
-          id="match-property-search"
+          id={`${id}-search`}
           type="search"
           maxLength={300}
           value={input}
@@ -66,12 +79,20 @@ export function PropertyPicker({
         </Button>
       </form>
       <p className="field-help">
-        Поиск по всему реестру, только {isDemo ? "DEMO" : "реальные"} объекты.
-        Связь с ЖК подтверждается отдельно.
+        Поиск по всему реестру: название, адрес, альтернативное название,
+        застройщик или БИН.
+        {isDemo !== undefined &&
+          ` Только ${isDemo ? "DEMO" : "реальные"} объекты.`}
+        {mode === "match"
+          ? " Связь с ЖК подтверждается отдельно."
+          : " Выбор фильтрует сигналы; решения не изменяются."}
       </p>
       <PropertyOptions
         key={query.toString()}
         query={query.toString()}
+        id={id}
+        mode={mode}
+        selectRef={selectRef}
         value={value}
         selected={selected?.id === value ? selected : null}
         focusOnLoad={search.focus}
@@ -95,6 +116,9 @@ function PropertyOptions({
   focusOnLoad,
   onChange,
   onPage,
+  id,
+  mode,
+  selectRef,
 }: {
   query: string;
   value: string;
@@ -102,26 +126,34 @@ function PropertyOptions({
   focusOnLoad: boolean;
   onChange: (id: string) => void;
   onPage: (page: number) => void;
+  id: string;
+  mode: "match" | "filter";
+  selectRef?: RefObject<HTMLSelectElement | null>;
 }) {
   const registry = useData<Page<Property>>(`/properties?${query}`);
   const data = registry.data;
-  const select = useRef<HTMLSelectElement>(null);
+  const localSelect = useRef<HTMLSelectElement>(null);
+  const select = selectRef || localSelect;
   useEffect(() => {
     if (data && focusOnLoad) select.current?.focus();
   }, [data, focusOnLoad]);
   const outsidePage = value && !data?.items.some((row) => row.id === value);
   return (
     <>
-      <label htmlFor="match-property">
-        ЖК / очередь · можно выбрать вручную
+      <label htmlFor={id}>
+        {mode === "filter"
+          ? "Объект сигнала"
+          : "ЖК / очередь · можно выбрать вручную"}
       </label>
       <select
-        id="match-property"
+        id={id}
         ref={select}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
-        <option value="">Выберите точный объект</option>
+        <option value="">
+          {mode === "filter" ? "Все объекты" : "Выберите точный объект"}
+        </option>
         {outsidePage && (
           <option value={value}>
             {selected ? `${selected.name} · ${selected.address}` : value} ·
@@ -143,7 +175,7 @@ function PropertyOptions({
           </p>
           {!data.items.length && (
             <p className="empty">
-              Объекты не найдены. Измените название или адрес; текущий выбор
+              Объекты не найдены. Измените поисковый запрос; текущий выбор
               сохранён.
             </p>
           )}

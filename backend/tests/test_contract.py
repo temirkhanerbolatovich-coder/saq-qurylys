@@ -12,6 +12,16 @@ def test_contract_is_valid_openapi():
     validate(json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8')))
 
 
+def test_registry_search_description_matches_live_parameters(client):
+    spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
+    live = client.app.openapi()
+    for path in ['/api/v1/properties', '/api/v1/dashboard/summary']:
+        documented = next(item for item in spec['paths'][path]['get']['parameters'] if item['name'] == 'q')
+        actual = next(item for item in live['paths'][path]['get']['parameters'] if item['name'] == 'q')
+        assert documented['description'] == actual['description']
+        assert documented['schema']['maxLength'] == actual['schema']['anyOf'][0]['maxLength'] == 300
+
+
 def test_live_responses_match_approved_contract(signed):
     spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
     spec['$schema'] = 'https://json-schema.org/draft/2020-12/schema'

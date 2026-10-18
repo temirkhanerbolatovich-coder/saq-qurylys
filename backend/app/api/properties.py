@@ -2,17 +2,23 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query
-from sqlalchemy import func, or_, select
+from sqlalchemy import String, column, func, or_, select
 from sqlalchemy.dialects.postgresql import distinct_on
 from starlette.exceptions import HTTPException
 
 from app import dto
 from app.dependencies import DB, Actor, get_property
-from app.models import Advertisement, ExtractionResult, Property, Signal, utcnow
+from app.models import Advertisement, Developer, ExtractionResult, Property, Signal, utcnow
 from app.signals import signal_view
 from app.views import factor_views, legal_views, property_view, unknown_information
 
 router = APIRouter()
+
+PROPERTY_SEARCH_DESCRIPTION = (
+    'Case-insensitive literal substring in property name, address, each saved alias, developer name or BIN. '
+    'Outer whitespace is trimmed. Percent, underscore and backslash are literal characters, not wildcards. '
+    'Search does not confirm identity or legal applicability.'
+)
 
 
 def filtered_properties(db, city=None, zone=None, legal_status=None, q=None, is_demo=None):
@@ -21,12 +27,30 @@ def filtered_properties(db, city=None, zone=None, legal_status=None, q=None, is_
         query = query.where(Property.city == city)
     if is_demo is not None:
         query = query.where(Property.is_demo == is_demo)
-    if q:
-        escaped = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+    if q and q.strip():
+        escaped = q.strip().replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        pattern = f'%{escaped}%'
+        # EXISTS preserves one row per property when several aliases match.
+        aliases = (
+            func.json_array_elements_text(Property.aliases)
+            .table_valued(column('value', String))
+            .render_derived(name='property_alias')
+        )
+        alias_match = (
+            select(1)
+            .select_from(aliases)
+            .where(aliases.c.value.ilike(pattern, escape='\\'))
+            .correlate(Property)
+            .exists()
+        )
         query = query.where(
             or_(
-                Property.name.ilike(f'%{escaped}%', escape='\\'),
-                Property.address.ilike(f'%{escaped}%', escape='\\'),
+                Property.name.ilike(pattern, escape='\\'),
+                Property.address.ilike(pattern, escape='\\'),
+                alias_match,
+                Property.developer.has(
+                    or_(Developer.name.ilike(pattern, escape='\\'), Developer.bin.ilike(pattern, escape='\\'))
+                ),
             )
         )
     result = [property_view(row, factor_views(db, row.id)) for row in db.scalars(query)]
@@ -47,7 +71,7 @@ def properties(
     city: str | None = None,
     zone: dto.RiskZone | None = None,
     legal_status: dto.LegalStatus | None = None,
-    q: str | None = Query(None, max_length=300),
+    q: str | None = Query(None, max_length=300, description=PROPERTY_SEARCH_DESCRIPTION),
     is_demo: bool | None = None,
 ):
     rows = filtered_properties(db, city, zone, legal_status, q, is_demo)
@@ -91,11 +115,12 @@ def dashboard(
     city: str | None = None,
     zone: dto.RiskZone | None = None,
     legal_status: dto.LegalStatus | None = None,
-    q: str | None = Query(None, max_length=300),
+    q: str | None = Query(None, max_length=300, description=PROPERTY_SEARCH_DESCRIPTION),
     is_demo: bool | None = None,
     date_from: Annotated[dto.AwareDatetime | None, Query(alias='from')] = None,
     date_to: Annotated[dto.AwareDatetime | None, Query(alias='to')] = None,
 ):
+    q = (q or '').strip() or None
     rows = filtered_properties(db, city, zone, legal_status, q, is_demo)
     query = select(Advertisement.id)
     if any(value is not None for value in [city, zone, legal_status, q]):

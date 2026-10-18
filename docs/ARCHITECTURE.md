@@ -1,5 +1,25 @@
 # SAQ QURYLYS — архитектура MVP
 
+18.10.2026, локальный контракт0.15.0-mvp: существующий properties/dashboard q
+ищет literal case-insensitive substring по имени, адресу, каждому aliases,
+Developer.name/bin. Aliases раскрываются PostgreSQL json_array_elements_text
+в коррелированном EXISTS; текст JSON не используется как поисковое поле.
+Developer читается через relationship EXISTS. Один объект остаётся одной строкой
+при нескольких совпадениях. Прежние фильтры/сортировка/pagination и server risk
+сохранены; q.trim пустой не фильтрует dashboard по привязанным объектам.
+
+Signal filter переиспользует PropertyPicker с page_size25 и без is_demo guard
+привязки: это чтение разрешённых объектов обеих категорий. Match picker сохраняет
+обязательное текущее ограничение DEMO/REAL по материалу. Для имён текущей страницы
+сигналов, отсутствующих в initial100, используются существующие property-detail
+GET (не более25 разных ID на страницу), abort/локальный cache/error+retry.
+Нет новых endpoint/service/dependency/миграции; авторизация и snapshot не меняются.
+Масштабная SQL-оптимизация deferred: прежний filtered_properties всё ещё строит
+представления совпадающих объектов до Python pagination, latency при10k не измерена.
+Использованы существующие возможности
+[PostgreSQL JSON functions](https://www.postgresql.org/docs/17/functions-json.html)
+и [SQLAlchemy table-valued functions](https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#table-valued-functions).
+
 17.10.2026: интерфейс подключает существующие review-queue и comparison API;
 processing список сохранён отдельным режимом. Dashboard использует точный
 material total из очереди, исторический R2 отправляет прежние команды для
