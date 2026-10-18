@@ -57,7 +57,9 @@ export function useRegistryContext(
       ).find(
         (element) =>
           element.getAttribute("href") === saved.href &&
-          element.getAttribute("aria-label") === saved.label,
+          element.getAttribute("aria-label") === saved.label &&
+          // The brief registry has a table on desktop and cards on phones.
+          element.getClientRects().length > 0,
       );
       link?.focus({ preventScroll: true });
       window.scrollTo({ top: Math.max(0, saved.y), behavior: "instant" });

@@ -82,6 +82,9 @@ for (const boundary of ["logout", "401"] as const) {
     expect(
       await page.evaluate(() => sessionStorage.getItem("saq-ad-draft")),
     ).toBeNull();
+    // End the anonymous document before replacing the synthetic session;
+    // its pending login redirect must not race the next account's navigation.
+    await page.goto("about:blank");
     fixture.setActor({
       ...fixtureUser,
       id: "60000000-0000-4000-8000-000000000099",

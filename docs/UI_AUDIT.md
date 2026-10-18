@@ -1,5 +1,36 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Перенос согласованной композиции ·19.10 · LOCAL VERIFIED / PRESENTATION
+
+База a473941. Обзор/реестр/досье используют согласованную плотную композицию,
+master1.5 и существующие компоненты. API/auth/риск/исторические снимки прежние.
+Краткий и подробный обзор используют общую очередь до аналитики; реестр —
+desktop table и brief phone cards; досье — underline tabs и действие первым.
+
+Фактические проверки:
+
+- npm run build/typecheck/lint/format:check PASS.
+- Playwright tests/analyst-composition.spec.ts + tests/functional-safety.spec.ts:
+  dev18 PASS31.6s; финальная production-сборка19 PASS20.4s (8 новых +11 прежних).
+- 24 screenshot observations:2 режима ×3 экрана ×375/768/1024/1440, RU/KZ,
+  длинные названия/адреса, отсутствие page overflow. При1440 все шесть столбцов
+  помещаются; более узкая таблица прокручивается внутри region. Отдельно все
+  шесть подтверждённых кодов и mobile карточка без потери причины/даты/основания.
+- Home/End/focus, query/filter/pagination/map, visible focus после возврата и
+  reload на375/1440, независимые error/retry/empty, read-only viewer.
+  Прежние scoped drafts/logout/401/409/success и точные редакторы R1/R3–R6 PASS.
+- Account contrast ≥4.5:1, native navigation target ≥44px и focus outline ≥2px.
+  Визуально просмотрены примеры всех четырёх ширин, исправлены широкая строка
+  и наложение ссылки на риск на375px; assertions не дают повторить наложение.
+
+Скриншоты: output/qa/analyst-composition-20261019 (локальные ignored artifacts).
+Это реальное приложение с синтетическими HTTP-ответами, без рабочей БД/OCR/PDF.
+Полный backend/browser suite и независимая UX/предметная приёмка не выполнялись;
+Docker engine недоступен. Ранние прогоны выявили ошибки тестовых ожиданий
+selector/StrictMode и гонку смены fixture-сессии; финальный production run чистый.
+Обновлены зависимые presentation selectors; полный API-dependent набор не заявлен.
+Ничего не опубликовано. F-02 monitoring/F-08/09/C-01 и внешняя приёмка OPEN.
+
 ## Функциональный блок A ·19.10.2026 · LOCAL VERIFIED / PRESENTATION
 
 База1b6b4af. F-01: новый материал сохраняет черновик через существующий

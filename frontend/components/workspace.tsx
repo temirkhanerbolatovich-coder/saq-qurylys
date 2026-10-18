@@ -643,12 +643,9 @@ function PropertyCards({
 }) {
   return (
     <div className="property-cards">
-      {rows.map((row, index) => (
+      {rows.map((row) => (
         <article className="property-card" key={row.id}>
           <div className="property-card-top">
-            <span className="catalog-number" aria-hidden="true">
-              {String(index + 1).padStart(2, "0")}
-            </span>
             <Demo value={row.is_demo} />
           </div>
           <div className="property-card-name">
@@ -659,6 +656,7 @@ function PropertyCards({
               </Link>
             </h2>
             <p>{row.address}</p>
+            <p>{row.developer.name}</p>
           </div>
           <div className="property-card-state">
             <PropertyRisk row={row} />
@@ -670,7 +668,7 @@ function PropertyCards({
             <strong>{propertyNextAction(row).label}. </strong>
             {row.risk.confirmed_codes.length
               ? row.risk.confirmed_codes
-                  .map((code) => factorLabels[code] || code)
+                  .map((code) => `${code} · ${factorLabels[code] || code}`)
                   .join(" · ")
               : "Подтверждённых факторов нет. Полнота данных требует проверки."}
           </p>
@@ -692,13 +690,21 @@ function PropertyCards({
 function DashboardHeading() {
   const { user } = useContext(Auth);
   return (
-    <>
+    <div className="dashboard-heading">
       <PageTitle
         eyebrow="РАБОЧЕЕ ПРОСТРАНСТВО"
         title="Рабочий обзор"
         description="Продолжите проверку материалов, разберите ошибки или откройте сохранённые сигналы."
+        action={false}
       />
       <div className="overview-links">
+        {user?.role === "analyst" && (
+          <Button asChild>
+            <Link href="/advertisements/new">
+              <Plus size={16} aria-hidden="true" /> Добавить публикацию
+            </Link>
+          </Button>
+        )}
         <Link className="text-link" href="/properties">
           Найти объект <ArrowRight size={15} aria-hidden="true" />
         </Link>
@@ -708,7 +714,7 @@ function DashboardHeading() {
           </Link>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -759,12 +765,25 @@ function DashboardQueues({
   ];
   return (
     <div className="action-queues" role="group" aria-label="Следующие действия">
-      {queues.map((queue) => (
+      {queues.map((queue, index) => (
         <section className="panel action-queue" key={queue.href}>
-          <h2>{queue.title}</h2>
-          <p className="rail-number">
-            {queue.resource.error ? "—" : (queue.count ?? "—")}
-          </p>
+          <Link
+            className="queue-stat"
+            href={queue.href}
+            aria-label={queue.action}
+            aria-describedby={`dashboard-queue-count-${index}`}
+          >
+            <div className="queue-stat-heading">
+              <h2>{queue.title}</h2>
+              <ArrowRight size={16} aria-hidden="true" />
+            </div>
+            <strong
+              className="rail-number"
+              id={`dashboard-queue-count-${index}`}
+            >
+              {queue.resource.error ? "—" : (queue.count ?? "—")}
+            </strong>
+          </Link>
           <details className="queue-explanation">
             <summary>Что учитывается</summary>
             <p className="muted">{queue.note}</p>
@@ -779,53 +798,116 @@ function DashboardQueues({
               Загрузка количества…
             </p>
           ) : null}
-          <Link className="text-link" href={queue.href}>
-            {queue.action} <ArrowRight size={15} aria-hidden="true" />
-          </Link>
         </section>
       ))}
     </div>
   );
 }
 
-function SimpleDashboard({
+function DashboardPriority({
   registry,
   rows,
+  limit,
 }: {
   registry: ReturnType<typeof useData<Page<Property>>>;
   rows: Property[];
+  limit: number;
 }) {
   return (
-    <div className="simple-home">
-      <section className="home-collection" aria-labelledby="home-objects">
-        <div className="collection-heading">
+    <div className="dashboard-workspace">
+      <section className="panel priority-panel">
+        <div className="panel-heading">
           <div>
-            <p className="eyebrow">ОБЪЕКТЫ</p>
-            <h2 id="home-objects">Требуют внимания</h2>
+            <h2>С чего начать проверку</h2>
+            <p>
+              Сначала решение по основанию, затем недостающие сведения. Внутри
+              группы — отсутствие даты, более давняя проверка, затем балл. Сроки
+              задач не установлены.
+            </p>
           </div>
           <Link className="text-link" href="/properties">
-            Все объекты <ArrowRight size={18} aria-hidden="true" />
+            Весь реестр <ArrowRight size={15} />
           </Link>
         </div>
-        {registry.error || !registry.data ? (
-          <LoadState error={registry.error} retry={registry.reload} />
-        ) : (
+        {registry.data && !registry.error ? (
           <>
-            {rows.length ? (
-              <PropertyCards rows={rows.slice(0, 3)} />
-            ) : (
-              <p className="empty">Объектов пока нет.</p>
+            <ol className="priority-list">
+              {rows.slice(0, limit).map((row) => (
+                <li key={row.id}>
+                  <div className="priority-object">
+                    <Link
+                      href={`/properties/${row.id}`}
+                      className="object-name"
+                    >
+                      {row.name}
+                    </Link>
+                    <small>
+                      {row.city} · {row.address} <Demo value={row.is_demo} />
+                    </small>
+                    <p>
+                      {row.risk.confirmed_codes.length
+                        ? row.risk.confirmed_codes
+                            .map(
+                              (code) =>
+                                `${code} · ${factorLabels[code] || code}`,
+                            )
+                            .join("; ")
+                        : "Подтверждённых факторов нет. Проверьте полноту материалов."}
+                    </p>
+                  </div>
+                  <div className="priority-action">
+                    <PropertyRisk row={row} />
+                    <p className="field-help">
+                      {propertyNextAction(row).label}
+                    </p>
+                    <Link className="text-link" href={`/properties/${row.id}`}>
+                      Открыть досье <ArrowRight size={14} aria-hidden="true" />
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            {!rows.length && (
+              <p className="empty">В реестре пока нет объектов.</p>
             )}
-            <p className="collection-note">
-              Показано {Math.min(rows.length, 3)} из {registry.data.total}{" "}
-              объектов по приоритету проверки по всему доступному реестру. Балл
-              не является правовым заключением. Сначала ожидающее решение, затем
-              неизвестное основание; внутри группы — отсутствие даты, более
-              давняя проверка и балл. Сроки задач не установлены.
+            <p className="queue-scope">
+              Показано {Math.min(rows.length, limit)} из {registry.data.total}{" "}
+              объектов. Порядок рассчитан по всему доступному реестру:
+              необходимое действие и давность проверки; балл используется при
+              равенстве.
             </p>
           </>
+        ) : (
+          <LoadState error={registry.error} retry={registry.reload} />
         )}
       </section>
+      <aside className="dashboard-rail" aria-label="Продолжить работу">
+        <nav className="workflow-links" aria-label="Основные рабочие сценарии">
+          <Link href="/review?queue=actions">
+            <span>
+              Проверить факты <ArrowRight size={15} aria-hidden="true" />
+            </span>
+            <small>Оригинал, гипотезы и точная очередь</small>
+          </Link>
+          <Link href="/signals">
+            <span>
+              Сигналы и PDF <ArrowRight size={15} aria-hidden="true" />
+            </span>
+            <small>Сохранённые версии и решения</small>
+          </Link>
+          <Link href="/properties?view=map" aria-label="Открыть карту">
+            <span>
+              Открыть карту <MapPin size={15} aria-hidden="true" />
+            </span>
+            <small>Расположение объектов реестра</small>
+          </Link>
+        </nav>
+        <p className="rail-note">
+          <ShieldCheck size={18} aria-hidden="true" />
+          Гипотеза помогает найти факт. Окончательное решение принимает
+          аналитик.
+        </p>
+      </aside>
     </div>
   );
 }
@@ -967,7 +1049,7 @@ export function DashboardView() {
       <>
         <DashboardHeading />
         <DashboardQueues summary={summary} />
-        <SimpleDashboard registry={registry} rows={priorityRows} />
+        <DashboardPriority registry={registry} rows={priorityRows} limit={3} />
         <DashboardPublicationOverview />
       </>
     );
@@ -975,6 +1057,7 @@ export function DashboardView() {
     <>
       <DashboardHeading />
       <DashboardQueues summary={summary} />
+      <DashboardPriority registry={registry} rows={priorityRows} limit={5} />
       <div className="context-line">
         <span className="live-dot" /> Сведения реестра <span>·</span>{" "}
         {summary.data
@@ -1124,111 +1207,6 @@ export function DashboardView() {
         </section>
       </div>
       <DashboardPublicationOverview />
-      <div className="dashboard-workspace">
-        <section className="panel priority-panel">
-          <div className="panel-heading">
-            <div>
-              <h2>С чего начать проверку</h2>
-              <p>
-                Сначала решение по основанию, затем недостающие сведения. Внутри
-                группы — отсутствие даты, более давняя проверка, затем балл.
-                Сроки задач не установлены.
-              </p>
-            </div>
-            <Link className="text-link" href="/properties">
-              Весь реестр <ArrowRight size={15} />
-            </Link>
-          </div>
-          {registry.data && !registry.error ? (
-            <>
-              <ol className="priority-list">
-                {priorityRows.map((row, index) => (
-                  <li key={row.id}>
-                    <span className="priority-order" aria-hidden="true">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <div className="priority-object">
-                      <Link
-                        href={`/properties/${row.id}`}
-                        className="object-name"
-                      >
-                        {row.name}
-                      </Link>
-                      <small>
-                        {row.city} · {row.address} <Demo value={row.is_demo} />
-                      </small>
-                      <p>
-                        {row.risk.confirmed_codes.length
-                          ? row.risk.confirmed_codes
-                              .map(
-                                (code) =>
-                                  `${code} · ${factorLabels[code] || code}`,
-                              )
-                              .join("; ")
-                          : "Подтверждённых факторов нет. Проверьте полноту материалов."}
-                      </p>
-                    </div>
-                    <div className="priority-action">
-                      <PropertyRisk row={row} />
-                      <p className="field-help">
-                        {propertyNextAction(row).label}
-                      </p>
-                      <Link
-                        className="text-link"
-                        href={`/properties/${row.id}`}
-                      >
-                        Открыть досье{" "}
-                        <ArrowRight size={14} aria-hidden="true" />
-                      </Link>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-              {!priorityRows.length && (
-                <p className="empty">В реестре пока нет объектов.</p>
-              )}
-              <p className="queue-scope">
-                Показано {priorityRows.length} из {registry.data.total}{" "}
-                объектов. Порядок рассчитан по всему доступному реестру:
-                необходимое действие и давность проверки; балл используется при
-                равенстве.
-              </p>
-            </>
-          ) : (
-            <LoadState error={registry.error} retry={registry.reload} />
-          )}
-        </section>
-        <aside className="dashboard-rail" aria-label="Продолжить работу">
-          <nav
-            className="workflow-links"
-            aria-label="Основные рабочие сценарии"
-          >
-            <Link href="/review?queue=actions">
-              <span>
-                01 · Проверить факты <ArrowRight size={15} aria-hidden="true" />
-              </span>
-              <small>Оригинал, гипотезы и точная очередь</small>
-            </Link>
-            <Link href="/signals">
-              <span>
-                02 · Сигналы и PDF <ArrowRight size={15} aria-hidden="true" />
-              </span>
-              <small>Сохранённые версии и решения</small>
-            </Link>
-            <Link href="/properties?view=map" aria-label="Открыть карту">
-              <span>
-                03 · Открыть карту <MapPin size={15} aria-hidden="true" />
-              </span>
-              <small>Расположение объектов реестра</small>
-            </Link>
-          </nav>
-          <p className="rail-note">
-            <ShieldCheck size={18} aria-hidden="true" />
-            Гипотеза помогает найти факт. Окончательное решение принимает
-            аналитик.
-          </p>
-        </aside>
-      </div>
     </>
   );
 }
@@ -1478,16 +1456,21 @@ function PropertyResults({
         </div>
       )}
       <div id="property-list" tabIndex={-1} aria-label="Список объектов">
-        {detailed ? (
+        <div className={detailed ? undefined : "registry-desktop-table"}>
           <PropertyTable
             rows={data.items}
             registryQuery={registryQuery}
             selectedId={selectedId}
           />
-        ) : data.items.length ? (
-          <PropertyCards rows={data.items} registryQuery={registryQuery} />
-        ) : (
-          <p className="empty">Объекты по выбранным фильтрам не найдены.</p>
+        </div>
+        {!detailed && (
+          <div className="registry-phone-cards">
+            {data.items.length ? (
+              <PropertyCards rows={data.items} registryQuery={registryQuery} />
+            ) : (
+              <p className="empty">Объекты по выбранным фильтрам не найдены.</p>
+            )}
+          </div>
         )}
       </div>
       {(pages > 1 || data.page > 1) && (
@@ -1604,34 +1587,12 @@ function DossierProgress({
     ["R1", "R3", "R4", "R5", "R6"].includes(factor.code),
   );
   return (
-    <section className="panel padded" aria-labelledby="dossier-progress-title">
+    <section
+      className="panel padded dossier-next-action"
+      aria-labelledby="dossier-progress-title"
+    >
       <h2 id="dossier-progress-title">Ход проверки</h2>
       <dl className="dossier-progress">
-        <dt>Что найдено</dt>
-        <dd>
-          Связанные публикации: {detail.advertisement_ids.length}. Документы:{" "}
-          {detail.legal_bases.length}. Их наличие ещё не означает подтверждение.
-        </dd>
-        <dt>Что подтверждено</dt>
-        <dd>
-          Факторы:{" "}
-          {row.risk.confirmed_codes.length
-            ? row.risk.confirmed_codes.join(", ")
-            : "пока нет"}
-          . Проверенные документы: {confirmedDocuments.length}. Оценка на{" "}
-          {date(row.risk.as_of)}.
-        </dd>
-        <dt>Чего не хватает</dt>
-        <dd>
-          {!hasMaterials && "Нужна публикация для проверки. "}
-          {pendingDocuments.length > 0 &&
-            `Ожидают решения документы: ${pendingDocuments.length}. `}
-          {pendingFactors.length > 0 &&
-            `Ожидают решения факторы: ${pendingFactors.length}. `}
-          {row.risk.unknown_codes.length > 0
-            ? `Не установлены: ${row.risk.unknown_codes.join(", ")}. Неизвестность не подтверждает нарушение.`
-            : "Все факторы имеют сохранённое решение. Даты и область документов проверяются отдельно."}
-        </dd>
         <dt>Что сделать дальше</dt>
         <dd>
           {!writable ? (
@@ -1668,6 +1629,31 @@ function DossierProgress({
               Проверьте связанные публикации и даты источников
             </Link>
           )}
+        </dd>
+        <dt>Что найдено</dt>
+        <dd>
+          Связанные публикации: {detail.advertisement_ids.length}. Документы:{" "}
+          {detail.legal_bases.length}. Их наличие ещё не означает подтверждение.
+        </dd>
+        <dt>Что подтверждено</dt>
+        <dd>
+          Факторы:{" "}
+          {row.risk.confirmed_codes.length
+            ? row.risk.confirmed_codes.join(", ")
+            : "пока нет"}
+          . Проверенные документы: {confirmedDocuments.length}. Оценка на{" "}
+          {date(row.risk.as_of)}.
+        </dd>
+        <dt>Чего не хватает</dt>
+        <dd>
+          {!hasMaterials && "Нужна публикация для проверки. "}
+          {pendingDocuments.length > 0 &&
+            `Ожидают решения документы: ${pendingDocuments.length}. `}
+          {pendingFactors.length > 0 &&
+            `Ожидают решения факторы: ${pendingFactors.length}. `}
+          {row.risk.unknown_codes.length > 0
+            ? `Не установлены: ${row.risk.unknown_codes.join(", ")}. Неизвестность не подтверждает нарушение.`
+            : "Все факторы имеют сохранённое решение. Даты и область документов проверяются отдельно."}
         </dd>
       </dl>
     </section>
@@ -1874,38 +1860,6 @@ export function PropertyView({ id }: { id: string }) {
         >
           <h2 id="dossier-summary-title">Обзор</h2>
           <div className="detail-grid dossier-overview">
-            <section className="panel padded">
-              <h2>Сведения об объекте</h2>
-              <dl>
-                <dt>БИН</dt>
-                <dd>{row.developer.bin || "Не указан · DEMO"}</dd>
-                <dt>Стадия</dt>
-                <dd>{stageLabels[row.stage] || "Не проверена"}</dd>
-                <dt>Готовность</dt>
-                <dd>
-                  {row.progress_percent === null
-                    ? "Не проверена"
-                    : `${row.progress_percent}% · DEMO`}
-                </dd>
-                <dt>Правовой статус</dt>
-                <dd>{legalLabels[row.legal_verification_status]}</dd>
-                <dt>Проверено</dt>
-                <dd>{date(row.last_reviewed_at)}</dd>
-                {row.legal_absence_as_of && (
-                  <>
-                    <dt>Отсутствие документировано на дату</dt>
-                    <dd>{date(row.legal_absence_as_of)} · решение R1</dd>
-                  </>
-                )}
-              </dl>
-              <Link
-                className="text-link"
-                href={`/advertisements?property_id=${row.id}`}
-              >
-                Связанные публикации: {detail.data.advertisement_ids.length}{" "}
-                <ArrowRight size={14} />
-              </Link>
-            </section>
             <DossierProgress
               detail={detail.data}
               writable={user?.role === "analyst"}
@@ -1919,6 +1873,48 @@ export function PropertyView({ id }: { id: string }) {
                   openTarget("documents", `dossier-document-${pending.id}`);
               }}
             />
+            <section className="panel padded dossier-object-facts">
+              <h2>Сведения об объекте</h2>
+              <dl className="dossier-facts">
+                <div>
+                  <dt>БИН</dt>
+                  <dd>{row.developer.bin || "Не указан · DEMO"}</dd>
+                </div>
+                <div>
+                  <dt>Стадия</dt>
+                  <dd>{stageLabels[row.stage] || "Не проверена"}</dd>
+                </div>
+                <div>
+                  <dt>Готовность</dt>
+                  <dd>
+                    {row.progress_percent === null
+                      ? "Не проверена"
+                      : `${row.progress_percent}% · DEMO`}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Правовой статус</dt>
+                  <dd>{legalLabels[row.legal_verification_status]}</dd>
+                </div>
+                <div>
+                  <dt>Проверено</dt>
+                  <dd>{date(row.last_reviewed_at)}</dd>
+                </div>
+                {row.legal_absence_as_of && (
+                  <div>
+                    <dt>Отсутствие документировано на дату</dt>
+                    <dd>{date(row.legal_absence_as_of)} · решение R1</dd>
+                  </div>
+                )}
+              </dl>
+              <Link
+                className="text-link"
+                href={`/advertisements?property_id=${row.id}`}
+              >
+                Связанные публикации: {detail.data.advertisement_ids.length}{" "}
+                <ArrowRight size={14} />
+              </Link>
+            </section>
           </div>
         </section>
       </WorkspacePanel>

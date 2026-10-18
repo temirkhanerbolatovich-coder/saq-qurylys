@@ -36,12 +36,8 @@ for (const detailed of [false, true]) {
       });
     });
     await page.reload();
-    const panel = page.locator(
-      detailed ? ".priority-panel" : ".home-collection",
-    );
-    const names = panel.locator(
-      detailed ? ".object-name" : ".property-card-name h2 a",
-    );
+    const panel = page.locator(".priority-panel");
+    const names = panel.locator(".object-name");
     const count = detailed ? 5 : 3;
     await expect(names).toHaveText(
       supplied.slice(0, count).map((row) => row.name),
@@ -80,9 +76,7 @@ for (const detailed of [false, true]) {
             }),
     );
     await page.reload();
-    const panel = page.locator(
-      detailed ? ".priority-panel" : ".home-collection",
-    );
+    const panel = page.locator(".priority-panel");
     await expect(panel.getByRole("alert")).toContainText(
       "очередь объектов временно недоступна",
     );
@@ -123,9 +117,7 @@ test("real dashboard priority remains readable across responsive widths", async 
       await page.setViewportSize({ width, height: 900 });
       await page.reload();
       await expect(toggle).toHaveAttribute("aria-pressed", String(detailed));
-      const panel = page.locator(
-        detailed ? ".priority-panel" : ".home-collection",
-      );
+      const panel = page.locator(".priority-panel");
       await expect(panel).toContainText("по всему доступному реестру");
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - window.innerWidth,

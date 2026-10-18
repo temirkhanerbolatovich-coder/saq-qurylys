@@ -1,5 +1,17 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Согласованная композиция ·19.10
+
+- DashboardPriority заменяет два представления очереди одним: серверные rows,
+  limit3/5, LoadState/empty, те же ссылки в досье. До аналитических блоков.
+- DashboardQueues: queue-stat Link с прежним accessible action name и описанием
+  числа; пояснение details и retry — соседние controls, без вложенных кнопок.
+- PropertyResults: прежние useData/TableRegion/PropertyCards/Pagination/Map;
+  CSS выбирает desktop table или brief phone cards. Один GET, не два реестра.
+- useRegistryContext при возврате исключает ссылки без rendered rectangles.
+- DossierProgress: прежние callbacks/решения, действие первым; dossier-facts
+  группирует dt/dd, локальные underline tabs используют прежний WorkspaceTabs.
+
 ## Стабилизация после аудита ·18.10
 
 - GlobalSearch: одна mounted search form, mobile toggle с aria-expanded/controls,

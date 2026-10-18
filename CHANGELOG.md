@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased ·19.10.2026 · Approved analyst composition
+
+- Move the shared server-ordered3/5 property queue ahead of secondary analytics;
+  compact independent action counters and restore deep-green task navigation.
+- Use the existing registry table on desktop in both modes; retain full phone
+  cards, all reasons/dates/legal context and visible focus after dossier return.
+- Put the exact next action first in dossier progress with grouped facts and
+  accessible underline tabs; keep editors mounted and drafts intact.
+- Add8 isolated presentation scenarios, update existing layout selectors and
+  stabilize the synthetic account-switch test.19 production scenarios pass.
+- Preserve backend/contracts/risk/roles/snapshots; local only, no deployment.
+
 ## Unreleased ·19.10.2026 · Draft safety and precise next actions
 
 - Scope new publication drafts by user/session and clear the unscoped legacy key

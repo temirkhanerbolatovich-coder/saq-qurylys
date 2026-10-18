@@ -35,10 +35,10 @@ test("workspace has five permanent destinations and uses real scores at all scre
     });
   expect(accountContrast).toBeGreaterThanOrEqual(4.5);
   await expect(page.locator(".metrics")).toHaveCount(0);
-  await expect(page.locator(".property-card")).toHaveCount(rows.length);
+  await expect(page.locator(".priority-list li")).toHaveCount(rows.length);
   for (const [index, row] of rows.entries()) {
-    const card = page.locator(".property-card").nth(index);
-    await expect(card.getByRole("heading")).toHaveText(row.name);
+    const card = page.locator(".priority-list li").nth(index);
+    await expect(card.locator(".object-name")).toHaveText(row.name);
     await expect(card.locator(".zone strong")).toHaveText(
       String(row.risk.score),
     );
@@ -68,8 +68,10 @@ test("catalog search, dossier and context return work without expert controls", 
   ).toBeVisible();
   await expect(page.getByLabel("Фильтр по основанию")).toBeVisible();
   await page.getByLabel("Поиск ЖК или адреса").fill("Бәйтерек");
-  await expect(page.locator(".property-card")).toHaveCount(1);
-  const name = await page.locator(".property-card h2").innerText();
+  await expect(page.locator(".registry-desktop-table tbody tr")).toHaveCount(1);
+  const name = await page
+    .locator(".registry-desktop-table .object-name")
+    .innerText();
   await page.getByRole("link", { name, exact: true }).click();
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
   await page
@@ -91,7 +93,7 @@ test("catalog search, dossier and context return work without expert controls", 
   await page.getByRole("link", { name: "К реестру", exact: true }).click();
   await expect(page.getByLabel("Поиск ЖК или адреса")).toHaveValue("Бәйтерек");
   await page.reload();
-  await expect(page.locator(".property-card")).toHaveCount(1);
+  await expect(page.locator(".registry-desktop-table tbody tr")).toHaveCount(1);
   for (const width of [375, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     expect(
@@ -189,7 +191,7 @@ test("simple dossier keeps expert drafts and file selection across mode changes"
 }) => {
   await login(page, { detailed: false });
   await page.goto("/properties");
-  await expect(page.locator(".property-card")).toHaveCount(8);
+  await expect(page.locator(".registry-desktop-table tbody tr")).toHaveCount(8);
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("link", { name: "Перейти к содержимому", exact: true }),
@@ -285,5 +287,5 @@ test("simple home explains request failure and keeps viewer actions read-only", 
   await page
     .getByRole("button", { name: "Повторить загрузку", exact: true })
     .click();
-  await expect(page.locator(".property-card")).toHaveCount(3);
+  await expect(page.locator(".priority-list li")).toHaveCount(3);
 });
