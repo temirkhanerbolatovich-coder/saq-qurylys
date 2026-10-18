@@ -53,7 +53,7 @@ import { PdfDownload } from "@/components/pdf-download";
 import { ObjectRecords } from "@/components/object-records";
 import { PropertyHistory } from "@/components/property-history";
 import { PropertyStructure } from "@/components/property-structure";
-import { clearReviewDrafts } from "@/lib/use-review-draft";
+import { clearReviewDrafts, useReviewDraft } from "@/lib/use-review-draft";
 import { clearDossierFormDrafts } from "@/lib/use-dossier-form-draft";
 import { statusLabel } from "@/lib/status-labels";
 import { propertyNextAction } from "@/lib/property-priority";
@@ -1580,10 +1580,12 @@ function DossierProgress({
   detail,
   writable,
   openTools,
+  openFactor,
 }: {
   detail: PropertyDetail;
   writable: boolean;
   openTools: () => void;
+  openFactor: (code: string) => void;
 }) {
   const row = detail.property;
   const pendingFactors = detail.factors.filter(
@@ -1598,6 +1600,9 @@ function DossierProgress({
   const hasMaterials = detail.advertisement_ids.length > 0;
   const needsDecision =
     pendingFactors.length > 0 || pendingDocuments.length > 0;
+  const pendingEditor = pendingFactors.find((factor) =>
+    ["R1", "R3", "R4", "R5", "R6"].includes(factor.code),
+  );
   return (
     <section className="panel padded" aria-labelledby="dossier-progress-title">
       <h2 id="dossier-progress-title">Ход проверки</h2>
@@ -1633,14 +1638,21 @@ function DossierProgress({
             <Link className="text-link" href="#dossier-factors">
               Изучите решения и доказательства
             </Link>
-          ) : !hasMaterials ? (
-            <Link className="text-link" href="/advertisements/new">
-              Добавьте публикацию, затем подтвердите её связь с объектом
-            </Link>
           ) : pendingDocuments.length > 0 ? (
             <Button variant="outline" onClick={openTools}>
               Проверьте ожидающие решения документы
             </Button>
+          ) : pendingEditor ? (
+            <Button
+              variant="outline"
+              onClick={() => openFactor(pendingEditor.code)}
+            >
+              Проверить {pendingEditor.code}: {factorLabels[pendingEditor.code]}
+            </Button>
+          ) : !hasMaterials ? (
+            <Link className="text-link" href="/advertisements/new">
+              Добавьте публикацию, затем подтвердите её связь с объектом
+            </Link>
           ) : needsDecision ? (
             <Link
               className="text-link"
@@ -1897,6 +1909,7 @@ export function PropertyView({ id }: { id: string }) {
             <DossierProgress
               detail={detail.data}
               writable={user?.role === "analyst"}
+              openFactor={openEditor}
               openTools={() => {
                 setDetailed(true);
                 const pending = detail.data?.legal_bases.find(
@@ -2636,36 +2649,26 @@ export function AdvertisementView({ id }: { id: string }) {
 
 export function NewAdvertisementView() {
   const { detailed } = useInterfaceMode();
+  const { user } = useContext(Auth);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState<Advertisement | null>(null);
   const savedPanel = useRef<HTMLElement>(null);
-  const [draft, setDraft] = useState({
+  const formDraft = useReviewDraft(user?.id || "", "new-advertisement", {
     text: "",
     source_label: "",
     source_url: "",
     published_at: "",
     is_demo: true,
   });
+  const draft = formDraft.values;
   const key = useRef<string | null>(null);
   const router = useRouter();
   useEffect(() => {
     if (saved) savedPanel.current?.focus();
   }, [saved]);
-  useEffect(() => {
-    const value = sessionStorage.getItem("saq-ad-draft");
-    if (value) {
-      try {
-        setDraft(JSON.parse(value));
-      } catch {
-        sessionStorage.removeItem("saq-ad-draft");
-      }
-    }
-  }, []);
-  function update(name: string, value: string | boolean) {
-    const next = { ...draft, [name]: value };
-    setDraft(next);
-    sessionStorage.setItem("saq-ad-draft", JSON.stringify(next));
+  function update(name: keyof typeof draft, value: string | boolean) {
+    formDraft.update({ [name]: value });
     key.current = null;
   }
   async function submit(event: FormEvent) {
@@ -2686,7 +2689,7 @@ export function NewAdvertisementView() {
         key.current,
       );
       setSaved(value);
-      sessionStorage.removeItem("saq-ad-draft");
+      formDraft.saved();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -2753,6 +2756,17 @@ export function NewAdvertisementView() {
           className="intake-advertisement-form new-advertisement-form"
           onSubmit={submit}
         >
+          {formDraft.restored && (
+            <p className="notice" role="status">
+              Черновик публикации восстановлен для вашего пользователя.
+              Публикация ещё не сохранена.
+            </p>
+          )}
+          {formDraft.storageError && (
+            <p className="notice" role="status">
+              {formDraft.storageError}
+            </p>
+          )}
           <div className="form-section-heading">
             <span className="section-index" aria-hidden="true">
               01
@@ -2856,7 +2870,9 @@ export function NewAdvertisementView() {
               {busy ? "Сохранение…" : "Сохранить публикацию"}
               <ArrowRight size={16} />
             </Button>
-            <span>Черновик сохраняется в этой вкладке до отправки.</span>
+            <span>
+              Черновик сохраняется для вас в этой вкладке до отправки.
+            </span>
           </div>
         </form>
       </section>

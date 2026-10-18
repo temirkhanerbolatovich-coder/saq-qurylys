@@ -1,5 +1,40 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Функциональный блок A и три макета ·19.10.2026 · LOCAL VERIFIED
+
+Пользователь «окей гоу» согласовал начало исправлений. Один Codex; база1b6b4af,
+codex/audit-workflow-fixes, на входе clean. F-01: новый материал использует
+существующий useReviewDraft, user/session/TTL12h; legacy saq-ad-draft не
+восстанавливается и очищается на logout/401. F-02 частично: причина SignalCard
+привязана к signal_id, сохраняется на переходах/reload/409, очищается после
+success; часть monitoring остаётся OPEN. F-03: DossierProgress открывает точный
+pending-документ или R1/R3–R6 с focus, в том числе без публикаций; R2 прежний.
+
+Код: workspace.tsx/signals-workspace.tsx/use-review-draft.ts; новые
+functional-safety.fixture.ts/spec.ts.11 self-contained presentation tests:
+dev13.8s PASS, production build9.9s PASS. Пять редакторов×четыре ширины без
+page overflow, focus/keyboard target; legacy/logout/401, Storage fallback,
+перерывы/версии/409/success и viewer. API ответы синтетические: рабочая БД,
+бизнес-команды, OCR/PDF и внешние уведомления не затрагивались. Первый прогон
+9PASS/2FAIL исправлен ожиданием URL commit перед Back; первый lint выявил одну
+неиспользуемую test variable, исправлено. TypeScript/build/lint/format PASS.
+Прежний полный backend/browser suite и внешняя приёмка заново не выполнялись.
+
+[Макет трёх экранов](docs/prototypes/README.md): отдельный standalone HTML,
+проектные tokens, DEMO, без API. Браузер375/768/1024/1440:12 наблюдений,
+исправлен первоначальный overflow таблицы обзора; поиск/переходы/стрелки
+вкладок и имитация решения проверены. Композиция ещё не перенесена в приложение.
+Локальный просмотр: http://127.0.0.1:8137/prototype; файл открывается и без сервера.
+Preview helper: node .local/functional-safety-20261019/preview.mjs, только
+loopback/один HTML, без API. Изображения: output/qa/functional-safety-20261019.
+
+Документация: README/CHANGELOG/UX_GUIDELINES/UI_AUDIT/UI_IMPLEMENTATION_PLAN,
+функциональный аудит и prototypes/README. Master1.4/API0.18/auth/риск/снимки/
+данные прежние; новых dependencies/ADR нет. Repository hygiene/diff check PASS.
+Только локальный commit, без
+push/deploy. Следующий шаг: согласование макетов, затем presentation-блок и
+F-08/09; F-02 monitoring, поиск материалов, C-01 и внешние приёмки остаются OPEN.
+
 ## Аудит функционала ·19.10.2026 · LOCAL AUDIT / NO APP CHANGES
 
 Пользователь попросил оценить функционал и продумать его удобство. Исполнитель:

@@ -11,6 +11,8 @@ const memoryDrafts = new Map<string, string>();
 export function clearReviewDrafts() {
   memoryDrafts.clear();
   try {
+    // The previous publication form had no author boundary; never carry it across login.
+    sessionStorage.removeItem("saq-ad-draft");
     for (const key of Object.keys(sessionStorage))
       if (key.startsWith(PREFIX)) sessionStorage.removeItem(key);
   } catch {

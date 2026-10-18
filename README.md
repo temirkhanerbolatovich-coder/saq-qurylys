@@ -1,5 +1,11 @@
 # SAQ QURYLYS
 
+19.10.2026: локально исправлены изоляция черновика публикации, сохранение причины
+решения сигнала и переход к конкретному pending-фактору.11 новых presentation
+browser tests, build/typecheck/lint/format PASS; публичный сайт не обновлялся.
+[Три кликабельных макета](docs/prototypes/README.md) подготовлены отдельно для
+согласования композиции. Фактические границы — [PROJECT_STATUS](PROJECT_STATUS.md).
+
 18.10.2026: все накопленные изменения установлены на
 [рабочий сайт SAQ QURYLYS](https://voice-cultures-brandon-independence.trycloudflare.com).
 Вкладки досье/мониторинга, PDF, поиск по всему набору, глобальный приоритет и

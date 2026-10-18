@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased ·19.10.2026 · Draft safety and precise next actions
+
+- Scope new publication drafts by user/session and clear the unscoped legacy key
+  at logout/401; restore input without submitting and explain storage fallback.
+- Preserve signal decision reasons per version across navigation/reload/conflict;
+  clear only after a successful decision.
+- Open the pending document or R1/R3–R6 editor from dossier progress, including
+  objects without publications, while preserving roles and separate decisions.
+- Add11 presentation regressions and standalone DEMO review mockups for three screens.
+- No backend/contract/risk/dependency changes or public deployment.
+
 ## Published ·18.10.2026 · Analyst workflow updates
 
 - Publish the accumulated dossier/monitoring tabs, read-only PDF, whole-registry

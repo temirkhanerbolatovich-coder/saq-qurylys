@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { PropertyPicker } from "@/components/property-picker";
 import { mechanismLabels } from "@/components/legal-basis-review";
+import { useReviewDraft } from "@/lib/use-review-draft";
 import {
   Auth,
   Demo,
@@ -648,7 +649,10 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
       ? `/signals?property_id=${signal.property_id}&page_size=100`
       : "/signals?page_size=1",
   );
-  const [reason, setReason] = useState("");
+  const draft = useReviewDraft(user?.id || "", `signal-decision:${id}`, {
+    reason: "",
+  });
+  const { reason } = draft.values;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -687,12 +691,14 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
       action,
       reason: reason.trim(),
     });
-    if (result)
+    if (result) {
+      draft.saved();
       setMessage(
         action === "CONFIRM"
           ? "Сигнал подтверждён аналитиком. Решение сохранено."
           : "Сигнал возвращён на доработку. Для новых фактов создайте новую версию.",
       );
+    }
   }
   async function nextVersion() {
     if (!signal) return;
@@ -1148,16 +1154,27 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
               id="signal-reason"
               maxLength={2000}
               value={reason}
-              onChange={(event) => setReason(event.target.value)}
+              onChange={(event) => draft.update({ reason: event.target.value })}
               rows={4}
               aria-describedby="signal-reason-help"
             />
 
             <p id="signal-reason-help">
               Кратко укажите, какие материалы проверены и почему выбрано это
-              решение. Причина сохраняется при обновлении и конфликте версий.
-              При изменении фактов нужен новый снимок.
+              решение. Черновик привязан к вашему пользователю и этой версии
+              сигнала, сохраняется при переходах, перезагрузке и конфликте. При
+              изменении фактов нужен новый снимок.
             </p>
+            {draft.restored && (
+              <p className="notice" role="status">
+                Черновик причины восстановлен. Решение ещё не отправлено.
+              </p>
+            )}
+            {draft.storageError && (
+              <p className="notice" role="status">
+                {draft.storageError}
+              </p>
+            )}
 
             <div className="review-actions">
               <Button
