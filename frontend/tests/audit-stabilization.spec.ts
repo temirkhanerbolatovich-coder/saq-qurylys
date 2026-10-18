@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { login } from "./support";
+import { login, testOrigin } from "./support";
 import type { RegistrySnapshot } from "../lib/monitoring-types";
 
 test("registry coalesces text filters without losing either field or Enter/reset context", async ({
@@ -97,23 +97,45 @@ test("version chooser pages complete registry and retains readable selection, re
   page,
 }) => {
   await login(page);
-  const candidates = (
+  const advertisements = (
     await (
-      await page.request.get("/api/v1/monitoring/candidates?page_size=1")
+      await page.request.get("/api/v1/advertisements?is_demo=true&page_size=1")
     ).json()
   ).items;
-  expect(candidates.length).toBeGreaterThan(0);
-  const snapshots = (
-    await (
-      await page.request.get(
-        "/api/v1/monitoring/registry-snapshots?page_size=1",
-      )
-    ).json()
-  ).items;
-  expect(snapshots.length).toBeGreaterThan(0);
+  expect(advertisements.length).toBeGreaterThan(0);
+  const csrf = (await (await page.request.get("/api/v1/auth/csrf")).json())
+    .csrf_token;
+  const created = await page.request.post("/api/v1/monitoring/candidates", {
+    headers: {
+      Origin: testOrigin,
+      "X-CSRF-Token": csrf,
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+    data: {
+      advertisement_id: advertisements[0].id,
+      name: `DEMO выбор версии ${Date.now()}`,
+      city: "Өскемен",
+      address: null,
+      phase: null,
+      reason: "DEMO isolated chooser acceptance",
+    },
+  });
+  expect(created.status()).toBe(201);
+  const candidate = await created.json();
+  // This presentation fixture must work before other monitoring tests create versions.
   const target: RegistrySnapshot = {
-    ...snapshots[0],
+    id: crypto.randomUUID(),
     label: "DEMO Өскемен · проверенная учебная версия",
+    city: "Өскемен",
+    is_demo: true,
+    coverage_from: "2026-10-17T00:00:00Z",
+    coverage_until: "2026-10-19T00:00:00Z",
+    expires_at: "2026-10-25T00:00:00Z",
+    complete: false,
+    entries: [],
+    created_at: "2026-10-18T00:00:00Z",
+    created_by: "70000000-0000-4000-8000-000000000001",
+    sha256: "0".repeat(64),
   };
   const items = [
     ...Array.from({ length: 100 }, (_, index) => ({
@@ -146,9 +168,7 @@ test("version chooser pages complete registry and retains readable selection, re
   page.on("request", (request) => {
     if (request.method() === "POST") commands.push(request.url());
   });
-  await page.goto(
-    `/monitoring?candidate_id=${candidates[0].id}&snapshot_page=11`,
-  );
+  await page.goto(`/monitoring?candidate_id=${candidate.id}&snapshot_page=11`);
   const chooser = page.getByRole("region", {
     name: "Выбор версии реестра",
     exact: true,

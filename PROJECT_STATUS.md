@@ -1,5 +1,32 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Публикация всех изменений ·18.10.2026 · IN PROGRESS
+
+Пользователь явно разрешил «опубликуй все изменения»: GitHub source и обновление
+рабочего сайта. Ветка codex/audit-workflow-fixes на входе875e288, clean;
+origin/main aefb72f является ancestor.14локальных коммитов/95изменённых путей
+отправлены отдельной веткой, remote SHA875e288 подтверждён. Main не объединялся.
+Preflight:262новых history blobs, prohibited-path/known-private-literal/token
+patterns PASS; source hygiene/diff PASS. Значения приватной конфигурации не выводились.
+
+Рабочие db/api/frontend и tunnel были остановлены; worker работал. Запущена
+прежняя DB без замены volume. Создана копия
+.local/backups/20261018T163635Z-9b3940c63f384e0196f0b92e3a34b6c8;
+backup create/verify PASS, отдельный restore report
+.local/restore-checks/20261018T163742Z-f85441f9bf254c92bf3a437402236233/result.json.
+Candidate API/worker/frontend images publish-875e288 собраны, rollback-before-875e288
+tags сохранены; установка/HTTPS smoke ещё впереди. Env/storage/DB не подменялись.
+
+При подготовке чистого CI обнаружена зависимость chooser test от кандидата/
+версии предыдущих monitoring tests, которых нет в seed. Test теперь создаёт
+собственного DEMO-кандидата существующим API и использует полный typed snapshot
+presentation fixture; listener команд начинается после setup. Никакого сравнения/
+изменения риска при выборе не выполняется. Связанные4tests PASS14.8s на QA;
+typecheck/lint PASS. Runtime source не менялся. Чистый GitHub CI ещё выполняется.
+Следующий шаг: установить candidate services с прежними mounts/БД, восстановить
+HTTPS helper, проверить public read-only UI/API/PDF и fingerprints; завершить
+docs, отправить final commit и создать PR без автоматического merge.
+
 ## Сверка ТЗ и стабилизация UI ·18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
 
 Пользователь «гоу гоу», Codex root, один исполнитель; codex/audit-workflow-fixes,
