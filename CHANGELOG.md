@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased · Monitoring task layout
+
+- Put candidate queue, selected comparison and preliminary incidents before auxiliary tools; group KHC reference search, Threads preview and DEMO registry versions in mounted native disclosures.
+- Preserve existing deep links, query context, forms, file selection and explicit commands; keep REAL/DEMO limits visible and prevent sticky headers from obscuring anchor targets.
+
 ## Unreleased · Seven dossier sections
 
 - Organize the dossier into overview, legal bases, publications, risk factors, evidence, history and signals; keep all seven destinations available in both interface modes.

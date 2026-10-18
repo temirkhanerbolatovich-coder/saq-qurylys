@@ -1,5 +1,21 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Группировка monitoring · B3 · 18.10.2026
+
+`MonitoringView` сохраняет queue/detail/incident/snapshot hooks и прежние команды.
+Изменены порядок JSX и локальная навигация. `revealMonitoringTarget` открывает
+native details ancestors и сразу фокусирует/прокручивает прежний target.
+Навигация сохраняет hash history; matching hashchange после клика не переносит
+фокус повторно поверх следующего нажатия. Modified click сохраняет native поведение.
+Обработчик ограничен шестью известными section IDs. Выбор кандидата сохраняет
+прежний candidate_id URL/focus и теперь явно прокручивает начало карточки.
+
+OpenRegistry, ThreadsSearch и блок DEMO-версий обёрнуты `.monitoring-tool`, но
+постоянно mounted: их state/refs/File inputs не копируются и не дублируются.
+Данные загружаются прежними hooks, включая чтение при закрытом disclosure;
+это не новый lazy-loading/network контракт. Формы и source components не менялись.
+Scoped monitoring.css задаёт навигацию44px, header clearance и mobile wrapping.
+
 ## Локальные секции досье · B2/S3 · 18.10.2026
 
 `PropertyView` сохраняет существующий компонент/роут, семь native anchors и

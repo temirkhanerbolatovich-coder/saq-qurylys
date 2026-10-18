@@ -1,5 +1,41 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## B3: группировка инструментов «Сверки» · 18.10.2026
+
+Локальная ветка codex/monitoring-tools, базаf7e8358, master1.4. Основная работа
+расположена раньше справочников: кандидаты → сверка → предварительные инциденты.
+КЖК/Threads/DEMO-версии — native disclosures ниже, с постоянно mounted формами.
+Все прежние endpoints/IDs/query и ограничения REAL/DEMO сохранены; навигация не
+создаёт команд и не подтверждает R1. Сверка остаётся ручной/DEMO.
+
+Целевой набор17PASS/25.2s, полный Chromium **103PASS/3.0m**, workers1/retries0,
+production frontend3197 и отдельная Linux DB/storage. Новые проверки:
+создание DEMO-кандидата через настоящий API, локальная сохранность причины/
+snapshot ID/Threads query/DEMO draft/File при раскрытиях, отсутствие POST и
+неизменные score/zone/revision/confirmed/unknown/rules_version; viewer role fixture
+и503 источника с рабочей очередью, URL/hash/reload/Back и keyboard. Fixture не
+доказывает backend authorization/реальное соединение Threads или доступ к реестру.
+Прежний настоящий comparison/immutable version/incident/retry workflow прошёл.
+
+Первый targeted15PASS/2FAIL: исправлен реальный duplicate-focus по click/hashchange;
+тест сравнения риска перестал считать динамический as_of изменением решения.
+Ни guards, ни баллы, ни допуски проверки не ослаблялись. Повторный17PASS и
+полный103PASS выполнены после исправлений. Typecheck/ESLint/Prettier/2Nodechecks/
+production build/start PASS. Новый текст→human decisions→R2→signal→PDF PASS:
+version4, 37742bytes, новый Asset в snapshot,
+UNKNOWN не дал R1. Полная backend suite/новая независимая OCR-оценка не выполнялись.
+
+На375/768/1024/1440px проверены шесть keyboard targets (24наблюдения), фактический
+focus ниже sticky header, без page overflow. Native nav links≥44px, TableRegion
+сохраняет все столбцы с внутренней прокруткой. Captures queue1440/375 просмотрены
+вручную. Это browser captures, не интерактивный CUA/настоящий200%zoom/screenreader
+или независимая UX-приёмка. Evidence ignored output/qa/monitoring-tools-20261018.
+
+B3 закрыт в локальном source; публичная версия не обновлена. Следующий этап —
+стабилизация, независимая UX/предметная приёмка и второй ПК. KZ OCR fidelity и
+коммерческий C01 остаются OPEN. Сохранность форм B3 относится к текущей странице;
+новое хранение monitoring drafts после полного reload не добавлялось.
+
 ## B2/S3: семь разделов досье · 18.10.2026
 
 Локальная ветка codex/dossier-sections, база709a0be. Семь native секций доступны

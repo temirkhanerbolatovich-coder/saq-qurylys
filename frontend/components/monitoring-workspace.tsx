@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   type FormEvent,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import { api, command, date } from "@/lib/api";
@@ -123,8 +124,58 @@ function useMonitoringCommand() {
   };
 }
 
+const monitoringTargets = [
+  "monitoring-candidates",
+  "monitoring-detail",
+  "monitoring-incidents",
+  "open-register-title",
+  "monitoring-threads",
+  "monitoring-registry",
+];
+
+function revealMonitoringTarget(targetId: string) {
+  const target = document.getElementById(targetId);
+  // Opening a reference tool must preserve its existing forms, files and result state.
+  for (let node = target; node; node = node.parentElement)
+    if (node instanceof HTMLDetailsElement) node.open = true;
+  target?.focus();
+  target?.scrollIntoView({ block: "start" });
+}
+
 export function MonitoringView() {
   const { user } = useContext(Auth);
+  const clickedTarget = useRef("");
+  useEffect(() => {
+    const reveal = () => {
+      const target = window.location.hash.slice(1);
+      // A click already moved focus; its delayed hashchange must not steal the next keypress.
+      if (clickedTarget.current === target) {
+        clickedTarget.current = "";
+        return;
+      }
+      if (monitoringTargets.includes(target)) revealMonitoringTarget(target);
+    };
+    reveal();
+    window.addEventListener("hashchange", reveal);
+    return () => window.removeEventListener("hashchange", reveal);
+  }, []);
+  function navigateSection(event: MouseEvent<HTMLAnchorElement>) {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    event.preventDefault();
+    const target = event.currentTarget.hash.slice(1);
+    if (window.location.hash !== `#${target}`) {
+      clickedTarget.current = target;
+      window.location.hash = target;
+    }
+    revealMonitoringTarget(target);
+  }
   const params = useSearchParams();
   const router = useRouter();
   const q = params.get("q") || "";
@@ -173,6 +224,7 @@ export function MonitoringView() {
   useEffect(() => {
     if (focusSelection.current) {
       detailHeading.current?.focus();
+      detailHeading.current?.scrollIntoView({ block: "start" });
       focusSelection.current = false;
     }
   }, [candidateId]);
@@ -209,16 +261,25 @@ export function MonitoringView() {
         </p>
       </div>
       <nav className="monitoring-local-nav" aria-label="Разделы мониторинга">
-        <a href="#open-register-title">Открытый документ КЖК</a>
-        <a href="#monitoring-threads">Поиск Threads</a>
-        <a href="#monitoring-candidates">Кандидаты объектов</a>
-        <a href="#monitoring-detail">Сверка кандидата</a>
-        <a href="#monitoring-registry">Версии DEMO-реестра</a>
-        <a href="#monitoring-incidents">Предварительные инциденты</a>
+        <a href="#monitoring-candidates" onClick={navigateSection}>
+          Кандидаты объектов
+        </a>
+        <a href="#monitoring-detail" onClick={navigateSection}>
+          Сверка кандидата
+        </a>
+        <a href="#monitoring-incidents" onClick={navigateSection}>
+          Предварительные инциденты
+        </a>
+        <a href="#open-register-title" onClick={navigateSection}>
+          Открытый документ КЖК
+        </a>
+        <a href="#monitoring-threads" onClick={navigateSection}>
+          Поиск Threads
+        </a>
+        <a href="#monitoring-registry" onClick={navigateSection}>
+          Версии DEMO-реестра
+        </a>
       </nav>
-
-      <OpenRegistry />
-      <ThreadsSearch />
 
       <section
         className="panel"
@@ -391,67 +452,6 @@ export function MonitoringView() {
 
       <section
         className="panel"
-        id="monitoring-registry"
-        tabIndex={-1}
-        aria-labelledby="monitoring-registry-title"
-      >
-        <div className="panel-heading">
-          <div>
-            <h2 id="monitoring-registry-title">Версии DEMO-реестра</h2>
-            <p>
-              Учебные списки. Сохранённая версия неизменяема; исправления
-              сохраняются новой версией. Это не государственный реестр.
-            </p>
-          </div>
-          <Button variant="outline" onClick={snapshots.reload}>
-            Обновить версии
-          </Button>
-        </div>
-        <div className="padded">
-          {!snapshotData ? (
-            <LoadState error={snapshotError} retry={snapshots.reload} />
-          ) : (
-            <>
-              <p>Всего версий: {snapshotData.total}</p>
-              {snapshotData.items.length ? (
-                snapshotData.items.map((snapshot) => (
-                  <RegistryVersion
-                    key={snapshot.id}
-                    snapshot={snapshot}
-                    selected={snapshot.id === snapshotId}
-                    onSelect={() => setSnapshotId(snapshot.id)}
-                  />
-                ))
-              ) : (
-                <p className="empty">
-                  DEMO-версий пока нет. Создайте учебный список.
-                </p>
-              )}
-              <Pagination
-                label="Страницы версий DEMO-реестра"
-                page={snapshotData.page}
-                pageSize={snapshotData.page_size}
-                total={snapshotData.total}
-                onPageChange={(next) => update({ snapshot_page: String(next) })}
-              />
-            </>
-          )}
-          {user?.role === "analyst" && (
-            <details>
-              <summary>Создать версию DEMO-реестра</summary>
-              <SnapshotCreate
-                onCreated={(snapshot) => {
-                  setSnapshotId(snapshot.id);
-                  snapshots.reload();
-                }}
-              />
-            </details>
-          )}
-        </div>
-      </section>
-
-      <section
-        className="panel"
         id="monitoring-incidents"
         tabIndex={-1}
         aria-labelledby="monitoring-incidents-title"
@@ -530,6 +530,100 @@ export function MonitoringView() {
             </>
           )}
         </div>
+      </section>
+      <section
+        className="monitoring-tools"
+        aria-labelledby="monitoring-tools-title"
+      >
+        <h2 id="monitoring-tools-title">Справочные источники и настройки</h2>
+        <p className="muted">
+          Откройте нужный инструмент. Поиск по документу и предварительные
+          находки не устанавливают правовой статус объекта.
+        </p>
+        <details className="monitoring-tool">
+          <summary>
+            Справочный документ КЖК
+            <span>Поиск по страницам · применимость проверяется отдельно</span>
+          </summary>
+          <OpenRegistry />
+        </details>
+        <details className="monitoring-tool">
+          <summary>
+            Дополнительный поиск Threads
+            <span>
+              Состояние подключения и ограниченный просмотр найденных публикаций
+            </span>
+          </summary>
+          <ThreadsSearch />
+        </details>
+        <details className="monitoring-tool">
+          <summary>
+            Учебные версии реестра
+            <span>Только DEMO · это не государственный реестр</span>
+          </summary>
+          <section
+            className="panel"
+            id="monitoring-registry"
+            tabIndex={-1}
+            aria-labelledby="monitoring-registry-title"
+          >
+            <div className="panel-heading">
+              <div>
+                <h2 id="monitoring-registry-title">Версии DEMO-реестра</h2>
+                <p>
+                  Учебные списки. Сохранённая версия неизменяема; исправления
+                  сохраняются новой версией. Это не государственный реестр.
+                </p>
+              </div>
+              <Button variant="outline" onClick={snapshots.reload}>
+                Обновить версии
+              </Button>
+            </div>
+            <div className="padded">
+              {!snapshotData ? (
+                <LoadState error={snapshotError} retry={snapshots.reload} />
+              ) : (
+                <>
+                  <p>Всего версий: {snapshotData.total}</p>
+                  {snapshotData.items.length ? (
+                    snapshotData.items.map((snapshot) => (
+                      <RegistryVersion
+                        key={snapshot.id}
+                        snapshot={snapshot}
+                        selected={snapshot.id === snapshotId}
+                        onSelect={() => setSnapshotId(snapshot.id)}
+                      />
+                    ))
+                  ) : (
+                    <p className="empty">
+                      DEMO-версий пока нет. Создайте учебный список.
+                    </p>
+                  )}
+                  <Pagination
+                    label="Страницы версий DEMO-реестра"
+                    page={snapshotData.page}
+                    pageSize={snapshotData.page_size}
+                    total={snapshotData.total}
+                    onPageChange={(next) =>
+                      update({ snapshot_page: String(next) })
+                    }
+                  />
+                </>
+              )}
+              {user?.role === "analyst" && (
+                <details>
+                  <summary>Создать версию DEMO-реестра</summary>
+                  <SnapshotCreate
+                    onCreated={(snapshot) => {
+                      setSnapshotId(snapshot.id);
+                      snapshots.reload();
+                    }}
+                  />
+                </details>
+              )}
+            </div>
+          </section>
+        </details>
       </section>
     </div>
   );

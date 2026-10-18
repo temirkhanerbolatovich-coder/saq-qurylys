@@ -119,6 +119,10 @@ test("manual DEMO monitoring preserves registry versions, deduplicates the preli
   expect(keys[1]).toBe(keys[0]);
   await page.unroute(`**/api/v1/monitoring/candidates/${candidateId}/compare`);
 
+  await page
+    .getByRole("navigation", { name: "Разделы мониторинга" })
+    .getByRole("link", { name: "Версии DEMO-реестра", exact: true })
+    .click();
   await page.getByText("Создать версию DEMO-реестра", { exact: true }).click();
   const snapshot = page.getByRole("form", {
     name: "Новая версия DEMO-реестра",

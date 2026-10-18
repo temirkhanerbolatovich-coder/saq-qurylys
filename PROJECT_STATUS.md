@@ -1,5 +1,67 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## B3: рабочий путь в «Сверке» · 18.10.2026
+
+**IMPLEMENTED / LOCAL VERIFIED / NOT PUBLISHED.** Codex root, один исполнитель,
+ветка `codex/monitoring-tools`, чистая базаf7e83581525819e5c97951efecbb63c263adabf9.
+Пользователь «гоу» согласовал названный следующий блок; B0–B2 сохранены.
+
+Порядок `/monitoring`: кандидаты → выбранная сверка → предварительные инциденты.
+КЖК/Threads/DEMO-версии перенесены ниже в три native disclosure. Компоненты
+постоянно mounted в одном экземпляре; причина сверки, snapshot ID, запрос Threads,
+черновик DEMO-версии и выбранный File сохраняются при перемещении между блоками.
+Это не новое восстановление monitoring-форм после полного reload. Старые IDs,
+query filters/pages/candidate_id, права и ограничения REAL/DEMO сохранены.
+Открытие источника не выполняет search/import/compare/review; прежние read hooks
+продолжают работать и при закрытом disclosure. Ограничения реестра остаются над
+очередью. Hash открывает нужный инструмент и фокусирует target; matching событие
+после клика не перехватывает следующую клавишу. Modified click сохраняет native
+поведение; header clearance120px desktop/24px mobile проверен геометрически.
+
+Фактические проверки: frontend/ `npm run typecheck`, `npm run lint`,
+`npm run format:check`, `node --test scripts/test-*.mjs` (2PASS), production
+`npm run build` и standalone start PASS. Целевой E2E **17passed/25.2s**;
+полный `npm run test:e2e` **103passed/3.0m**, exit0, workers1/retries0.
+Отдельный Compose `saq-monitoring-tools-20261018`, новые DB/storage, loopback8197/
+3197, внешние collectors/Threads/Telegram/LLM отключены. Два новых кейса:
+настоящий DEMO-кандидат через API и сохранность локальных полей/File без команд;
+viewer presentation fixture с HTTP503 справочного источника, deep hash/reload/
+Back/keyboard,24target-проверки на375/768/1024/1440 и отсутствие page overflow.
+Fixture роли/ошибки не доказывает серверную авторизацию или доступность источника.
+Прежний настоящий workflow сравнения/версий/инцидента/идемпотентности/неизменного
+риска прошёл, вместе с остальными R1–R6/OCR/history/queue/PDF regressions.
+
+Первый targeted15PASS/2FAIL: двойной перенос фокуса по click+hashchange мешал
+следующему Enter; устранено дублирование и ненужный отложенный focus. Второй тест
+сравнивал динамический as_of для объектов без факторов; теперь сравнивает id/
+score/zone/revision/confirmed/unknown/rules_version. Backend/guards не менялись.
+Ранний Prettier check потребовал форматирования нового теста; итоговый PASS.
+
+Новый непрерывный текст→analysis→human hypothesis→match→R2 capture/CONFIRM→
+signal/CONFIRM→PDF PASS: version4, 37742bytes,
+PDF200/%PDF-, новый оригинальный Asset в snapshot, R2=25, R1 не подтверждён.
+Это не независимая OCR-оценка. Вручную просмотрены текущие Chromium captures1440/
+375; таблица прокручивается внутри TableRegion. Интерактивный CUA, настоящий200%
+zoom, screenreader и внешняя UX/предметная приёмка этим не подтверждаются.
+
+Изменены monitoring-workspace.tsx/monitoring.css, три прежних browser tests и
+новый monitoring-tools.spec.ts; README/CHANGELOG/DESIGN_SYSTEM/UX_GUIDELINES/
+UI_COMPONENTS/UI_IMPLEMENTATION_PLAN/UI_AUDIT/этот статус. API/backend/contracts/
+миграции/dependencies/расчёт риска/роли/immutable snapshots не менялись; полная
+backend suite не повторялась. ADR не нужен: переставлены существующие primitives
+и компоненты без новой архитектуры. Evidence ignored `.local/monitoring-tools-20261018`
+и `output/qa/monitoring-tools-20261018`; приватная конфигурация не входит в Git.
+Самопроверка14изменённых/новых файлов: UTF-8/147локальных Markdown-ссылок/три
+приватных тестовых literals без совпадений PASS. Candidate path hygiene,
+`python scripts/check_repository_hygiene.py` и `git diff --check` PASS.
+
+После QA свой frontend/Compose остановлены с сохранением volumes; рабочие четыре
+SAQ контейнера не пересобирались и оставлены работающими. Локальный коммит — по
+прежней просьбе пользователя; push/merge/deploy/обновление публичного сайта не
+выполняются. Следующий приоритет: стабилизация сдаваемой версии к21октября,
+независимый аналитик/второй ПК, KZ OCR fidelity и разрешённый C01;103PASS не
+закрывает эти задачи и не является полной внешней приёмкой MVP.
+
 ## B2/S3: семь разделов досье · 18.10.2026
 
 **IMPLEMENTED / LOCAL VERIFIED / NOT PUBLISHED.** Codex root, один исполнитель;

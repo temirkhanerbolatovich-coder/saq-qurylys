@@ -431,6 +431,10 @@ test("public register explains page matches, unknown absence and viewer access",
     },
   );
   await page.goto("/monitoring");
+  await page
+    .getByRole("navigation", { name: "Разделы мониторинга" })
+    .getByRole("link", { name: "Открытый документ КЖК", exact: true })
+    .click();
   const panel = page.getByRole("region", {
     name: "Открытый реестр гарантий КЖК",
     exact: true,

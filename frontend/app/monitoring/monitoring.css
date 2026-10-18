@@ -134,3 +134,57 @@
     padding: var(--space-4);
   }
 }
+
+/* Match the existing sticky header clearance without hiding a focused section. */
+.monitoring-workspace [id^="monitoring-"],
+.monitoring-workspace #open-register-title {
+  scroll-margin-top: 120px;
+}
+.monitoring-local-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  text-decoration: none;
+}
+.monitoring-local-nav a:hover {
+  background: var(--color-brand-soft);
+}
+.monitoring-tools {
+  margin-top: var(--space-8);
+}
+.monitoring-tool {
+  margin: var(--space-4) 0;
+  padding: 0 var(--space-6);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+.monitoring-tool > summary {
+  min-height: 44px;
+}
+.monitoring-tool > summary span {
+  display: block;
+  margin-left: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  font-weight: 400;
+}
+.monitoring-tool > .panel {
+  margin-bottom: var(--space-4);
+  box-shadow: none;
+}
+@media (max-width: 1023px) {
+  .monitoring-workspace [id^="monitoring-"],
+  .monitoring-workspace #open-register-title {
+    scroll-margin-top: var(--space-6);
+  }
+}
+@media (max-width: 767px) {
+  .monitoring-tool {
+    padding-inline: var(--space-3);
+  }
+}
