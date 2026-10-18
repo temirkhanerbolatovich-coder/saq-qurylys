@@ -35,6 +35,15 @@ def test_property_order_contract_matches_live_parameter(client):
     assert documented == actual
 
 
+def test_signal_search_contract_matches_live_parameter(client):
+    spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
+    documented = next(item for item in spec['paths']['/api/v1/signals']['get']['parameters'] if item['name'] == 'q')
+    actual = next(
+        item for item in client.app.openapi()['paths']['/api/v1/signals']['get']['parameters'] if item['name'] == 'q'
+    )
+    assert documented == actual
+
+
 def test_live_responses_match_approved_contract(signed):
     spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
     spec['$schema'] = 'https://json-schema.org/draft/2020-12/schema'

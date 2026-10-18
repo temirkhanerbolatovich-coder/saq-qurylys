@@ -3543,6 +3543,18 @@ body {
   gap: 9px;
   margin-bottom: 14px;
 }
+.signals-queue-search {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+}
+.signals-queue-search input {
+  margin: 0;
+}
+.signals-queue-search :is(input, button) {
+  min-height: 44px;
+}
 
 .signals-primary-filters label,
 .signals-extra-filters__content label {

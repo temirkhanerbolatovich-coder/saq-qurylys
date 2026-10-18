@@ -1,5 +1,86 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Поиск всей очереди сигналов ·18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
+
+Пользователь «гоу», Codex root, один исполнитель; codex/audit-workflow-fixes,
+база0bd2dfd, clean на входе. Новые агентские задачи не создавались.
+Разрешён локальный блок/commit; запрет push/publish/deploy сохранён.
+
+UX-06: optional q≤300 в существующем GET signals (контракт0.18.0-mvp).
+SQL literal case-insensitive substring в current/frozen Property.name, signalUUID,
+метке версии и state code/RU label; %,_,backslash literal, trim. Query/state/
+property_id до signal_view, is_stale до pagination. Default ordering created_at DESC/
+ID, роли/auth/response прежние. Поиск не читает произвольный JSON, PDF/evidence,
+не создаёт и не переписывает snapshots/решения/риск/audit.
+
+UI: native form label «Поиск по всем сигналам», запуск Button/Enter вместо client
+фильтра25. q/page/filters в URL, submit сбрасывает page и фиксирует текущий
+signal_id; pagination сохраняет выбранный снимок. Reload/Back восстанавливают q.
+Pending/error/empty не подменяются прежней очередью и не закрывают выбранный
+historical snapshot. Reset прежним сценарием очищает q/filters/page/selection
+и фокусирует selector объекта. Draft ввода до submit локален; counts DRAFT/stale
+подписаны текущей страницей, total всей server выборкой. Scoped form padding0/
+input margin0 и targets≥44px; существующие tokens/Button/LoadState/Pagination.
+Нет новых routes/DTO/dependencies/migrations/seed правок/архитектурного слоя/ADR.
+
+Файлы: backend api/signals,test_signal_search,test_contract; contracts/openapi.yaml;
+frontend signals-workspace,design-system.css,signal-search/ux-flow tests.
+Docs: FEATURE_SIGNAL_SEARCH,README,CHANGELOG,REQUIREMENTS,ARCHITECTURE,
+DESIGN_SYSTEM,UX_GUIDELINES,UI_COMPONENTS,UI_IMPLEMENTATION_PLAN,UI_AUDIT/этот статус.
+
+Проверки: .venv python .local/tabs-pdf-20261018/signal-search-backend-tests.py →
+**57PASS/1SKIP/46.80s** (search/signals/signalPDF/document exports/contract,
+собственная случайная test schema QA PostgreSQL).30версий, ID вне25, current/frozen
+RU/KZ/trim/case, literal%_backslash/SQL/JSON/length422, status/version, filters/stale/
+total/pages/auth/viewer/unchanged snapshot/decisions/audit. Native Pango PDF skip
+на Windows не считается Linux PDF-приёмкой; реальная генерация есть в browser suite.
+Полная backend suite/нагрузка не повторялись. Ruff check/format94files PASS.
+npm run build/typecheck/lint/format:check PASS. Первый browser10PASS/1FAIL показал
+40px вместо44px у новой кнопки; scoped min-height44 исправлен. После пересборки
+связанные11tests PASS34.1s. Первый full125PASS/1FAIL4.0m: исторический R2 test
+отказал до действий, потому что в накопленной QA не осталось seed-объекта без R2.
+Факторы не удалялись/не перезаписывались. Отдельная qa_signal_search_* schema и
+новый acceptance_signal_search_storage подготовлены для чистого финального прогона;
+прежняя qa_search_* и все исходные schema/storage сохранены. Уточнена подпись
+пустой страницы с total>0, added regression; финальная сборка/typecheck/lint/format
+PASS. Окончательный full на новой схеме **126PASS/3.6m**, workers1/retries0,
+на финальной сборке с empty-page refinement. Реальный Linux OCR/PDF/review сохранён.
+Матрица14наблюдений повторена в этом full, overflow/errors/businesscommands0.
+Финальные diff/hygiene/UTF8/local-links/private-literal scan PASS.
+
+Операционные ограничения: на входе daemon Docker и localpreview оказались
+остановлены. Desktop запущен, image saq-signal-search-api:local-20261018 собран;
+QA DB сначала не стартовала из-за Windows excluded ports55663–55762. Только QA
+host mapping перенесён55667→57667; container db5432, volume/данные/qa_search_*
+schema/storage/credentials сохранены. API8227 и preview3227 прежние. Конфиг
+.local/tabs-pdf-20261018/signal-search-final.compose.json; имя схемы — ignored
+signal-search-final-schema.txt. Public images/tunnel не заменены,
+host exclusions не менялись, старые QA namespace/storage не удалялись.
+Первый helper указал отсутствующий test_record_pdf.py: тесты не запускались;
+исправлен на существующий test_document_exports.py. Попытка до запуска DB дала
+7PASS/1SKIP/50setup errors подключения; после восстановления пройдены57 выше.
+При чтении конфигурации один приватный QA compose ошибочно попал в технический
+вывод инструмента; пользователь уведомлён. Конфиги/credentials не включаются в Git.
+
+Fresh responsive14наблюдений реального ID-search:2режима×360/375/390/768/1024/
+1440/1920, actual mode проверен, overflow/pageerror/businesscommands0, reduced-motion,
+button≥44px. Вручную просмотреныform crops detailed1440/simple390 и2полных кадра;
+остальные snapshots — автоматическая матрица. Presentation51 отдельно проверяет
+страницу3/query/selected/error/pending/retry/Back/reload/reset/noPOST, не заявляется
+реальной51записью проекта. Новые200%zoom/secondPC/независимая UX/предметная/масштабная
+приёмка не выполнялись. Логи signal-search-backend-tests.log,signal-search-targeted.log,
+signal-search-full.log,signal-search-exhausted-full.log,signal-search-db-unavailable.log
+и captures output/qa/signal-search-20261018 ignored.
+
+Открыто: UX-16 прежний stale/view all-match/N+1 в памяти, panel history100,
+historical-R2 fixture требует fresh QA после повторных full и не должна
+перезаписывать существующие факторы ради предусловия,
+подтверждённое наполнение parent_id и независимая приёмка. Следующий этап —
+финальная сверка оставшегося audit backlog с исходным ТЗ и стабилизация MVP к21октября:
+отдельно обязательные blockers, качество демонстрационного наполнения и deferred
+SQL-scale. Не выдавать технические regression за юридическую/пользовательскую приёмку.
+Перед локальным commit — self-review/актуальные проверки и итог full, база0bd2dfd.
+
 ## Приоритет всего реестра ·18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
 
 Пользователь «гоу», Codex root, один исполнитель; codex/audit-workflow-fixes,

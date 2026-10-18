@@ -1,5 +1,57 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Поиск по всей очереди сигналов ·18.10.2026 · локальный блок
+
+UX-06, база0bd2dfd, codex/audit-workflow-fixes; согласование «гоу», один Codex.
+Existing listSignals q≤300: current/frozen имя объекта, signalUUID, version label,
+state code/RU label. Literal case-insensitive substring/trim/escape; SQL predicate
+до signal_view, stale фильтр и pagination прежние. Native submit вместо client
+filter текущих25, URL q/page/filter, pin signal_id при search/pagination.
+Пустой/ошибочный/ожидаемый результат не скрывает открытый historical snapshot.
+Подписи counts страницы остаются честными, global total учитывает q.
+
+Backend **57PASS/1SKIP/46.80s**: signal search/signals/PDF/document exports/contract,
+отдельная случайная test schema QA PostgreSQL.30версий, ID за25страницей, current/
+frozen RU/KZ/case/trim, state/version/literal%_backslash, filters/stale/pages,
+empty/auth/viewer/length422, unchanged snapshot/decisions/audit и полный live q.
+Windows skip — native Pango PDF; реальный Linux PDF остаётся в browser regression.
+Полная backend suite/нагрузка заново не выполнялись. Ruff check/format94files PASS.
+
+Операционный сбой до тестов: Docker daemon был остановлен; после запуска Desktop
+QA DB не поднялась из-за Windows reserved range55663–55762, куда попал55667.
+Только QA host mapping перенесён на57667, том/БД/qa_search_* namespace сохранены,
+API8227 и preview3227 прежние. Не менялись host exclusions, public images или
+данные ради тестов. Прогон на недоступной DB:7PASS/1SKIP/50setup errors; это
+инфраструктурный сбой, не проверка поиска. Более ранний helper имел ошибочное имя
+test_record_pdf.py — тесты не запускались; исправлен на существующий document_exports.
+
+Первый browser related10PASS/1FAIL выявил40px height новой кнопки вместо44px.
+Scoped input/button min-height44 исправлен, production build/typecheck/lint/format
+PASS; повтор related **11PASS/34.1s**. Ввод без submit не посылает search запрос,
+presentation51 подтверждает page3/pin/back/reload/reset/pending/error/retry/noPOST,
+реальный API по UUID и14responsive наблюдений2режима×360/375/390/768/1024/1440/1920
+подтверждают overflow/pageerror/businesscommands0, controls≥44px, reduced-motion.
+Вручную просмотрены2form crops (detailed1440/simple390) и2полных кадра тех же
+страниц. Остальные snapshots — автоматическая матрица; новых200%zoom/secondPC/
+независимой UX/предметной/масштабной приёмки нет.
+
+Контракт0.18.0-mvp: только q в существующем endpoint, response/auth/роли/снимки/
+решения/риск прежние. Нет migration/dependency/seed правок. Имя в очереди текущее,
+по frozen имени ищется historical версия; старое имя видно в её снимке.
+UX-16 stale/views/N+1 остаётся OPEN, история панели100 не заменялась этим блоком.
+Первый full **125PASS/1FAIL/4.0m**: единственный отказ — предусловие historical-R2,
+в накопленной qa_search_* уже не было DEMO-объекта без R2. Факторы не переписывались.
+Подготовлена отдельная qa_signal_search_* schema и новый acceptance_signal_search_storage;
+прежние schema/storage сохранены, QA api/worker переведены на новую схему.
+При финальном review уточнён текст empty page с total>0: возврат на предыдущую
+страницу вместо false no matches. Добавлена browser regression проверка, сборка/
+typecheck/lint/format повторно PASS. Окончательный full на чистом QA с финальным
+empty-page refinement: **126PASS/3.6m**, workers1/retries0, реальный Linux OCR/PDF/
+review и historical-R2. Новая матрица14наблюдений в этом full — overflow/errors/
+businesscommands0. Финальные diff/hygiene/UTF8/local-links/private-literal scan PASS.
+Логи signal-search-full.log/предыдущий exhausted log сохранены локально, ignored.
+Публикация не выполнялась; сохраняется открытая SQL-scale/внешняя приёмка.
+
 ## Глобальный приоритет обзора ·18.10.2026 · локальный блок
 
 UX-03, базаbd78bba, codex/audit-workflow-fixes; пользователь «гоу», один Codex.

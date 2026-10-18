@@ -4,7 +4,14 @@ import { PdfDownload } from "@/components/pdf-download";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { ApiError, api, command, date } from "@/lib/api";
 import { statusLabel } from "@/lib/status-labels";
 import { factorLabels } from "@/lib/presentation";
@@ -184,6 +191,7 @@ export function SignalsView() {
   const state = params.get("state") || "";
   const stale = params.get("is_stale") || "";
   const propertyId = params.get("property_id") || "";
+  const search = params.get("q") || "";
 
   const requestedPage = Number(params.get("page") || 1);
 
@@ -202,6 +210,7 @@ export function SignalsView() {
   if (state) query.set("state", state);
   if (stale) query.set("is_stale", stale);
   if (propertyId) query.set("property_id", propertyId);
+  if (search.trim()) query.set("q", search.trim());
 
   const queuePath = `/signals?${query}`;
   const queue = useData<Page<Signal>>(queuePath);
@@ -224,7 +233,8 @@ export function SignalsView() {
     );
   }
 
-  const [queueSearch, setQueueSearch] = useState("");
+  const [queueSearch, setQueueSearch] = useState(search);
+  useEffect(() => setQueueSearch(search), [search]);
   const [filtersOpen, setFiltersOpen] = useState(Boolean(stale || propertyId));
 
   const firstFilter = useRef<HTMLSelectElement>(null);
@@ -233,21 +243,20 @@ export function SignalsView() {
 
   const activeFilterCount = [state, stale, propertyId].filter(Boolean).length;
 
-  // Поиск работает по загруженной странице сигналов.
-  const filteredQueueItems = (queueData?.items ?? []).filter((signal) => {
-    const searchValue = [
-      propertyName(signal.property_id),
-      signal.id,
-      `версия ${signal.version}`,
-      stateLabels[signal.state],
-    ]
-      .join(" ")
-      .toLocaleLowerCase("ru");
-
-    return searchValue.includes(queueSearch.trim().toLocaleLowerCase("ru"));
-  });
-
   const id = params.get("signal_id") || queueData?.items[0]?.id;
+
+  function searchQueue(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const next = new URLSearchParams(params);
+    const value = queueSearch.trim();
+    if (value) next.set("q", value);
+    else next.delete("q");
+    next.delete("page");
+    // Keep the open historical version independent of the search result.
+    if (id) next.set("signal_id", id);
+    setQueueSearch(value);
+    router.push(`/signals?${next.toString()}`, { scroll: false });
+  }
 
   const focusDetail = useCallback(() => {
     detailPanel.current?.focus({ preventScroll: true });
@@ -273,7 +282,8 @@ export function SignalsView() {
 
     if (name !== "page") next.delete("page");
 
-    next.delete("signal_id");
+    if (name === "page" && id) next.set("signal_id", id);
+    else next.delete("signal_id");
 
     router.push(`/signals?${next.toString()}`, { scroll: false });
   }
@@ -287,6 +297,7 @@ export function SignalsView() {
       "property_id",
       "page",
       "signal_id",
+      "q",
     ]) {
       next.delete(name);
     }
@@ -411,21 +422,25 @@ export function SignalsView() {
             className="signals-primary-filters"
             aria-label="Поиск и основные фильтры"
           >
-            <label htmlFor="signal-search">
-              Поиск на текущей странице сигналов
-            </label>
-
-            <input
-              id="signal-search"
-              type="search"
-              value={queueSearch}
-              onChange={(event) => setQueueSearch(event.target.value)}
-              placeholder="Название объекта, версия или статус"
-              autoComplete="off"
-              aria-describedby="signal-search-help"
-            />
+            <form className="signals-queue-search" onSubmit={searchQueue}>
+              <label htmlFor="signal-search">Поиск по всем сигналам</label>
+              <input
+                id="signal-search"
+                type="search"
+                maxLength={300}
+                value={queueSearch}
+                onChange={(event) => setQueueSearch(event.target.value)}
+                placeholder="Объект, ID сигнала, версия или статус"
+                autoComplete="off"
+                aria-describedby="signal-search-help"
+              />
+              <Button type="submit" variant="outline">
+                Найти сигналы
+              </Button>
+            </form>
             <p id="signal-search-help" className="field-help">
-              Поиск только по загруженной странице. Фильтры ниже применяются ко
+              По текущему и сохранённому названию объекта, ID, версии и статусу.
+              Нажмите «Найти сигналы» или Enter. Поиск и фильтры применяются ко
               всей очереди; выбранный снимок остаётся открытым.
             </p>
 
@@ -481,7 +496,7 @@ export function SignalsView() {
                 </div>
               </details>
 
-              {(activeFilterCount > 0 || queueSearch) && (
+              {(activeFilterCount > 0 || search || queueSearch) && (
                 <Button variant="ghost" type="button" onClick={resetFilters}>
                   Сбросить фильтры сигналов
                 </Button>
@@ -506,72 +521,66 @@ export function SignalsView() {
           {queueData ? (
             <>
               {queueData.items.length > 0 ? (
-                filteredQueueItems.length > 0 ? (
-                  <div className="candidate-list" aria-label="Очередь сигналов">
-                    {filteredQueueItems.map((signal) => {
-                      return (
-                        <article
-                          className={`candidate signal-queue-item${
-                            id === signal.id ? " is-selected" : ""
-                          }`}
-                          key={signal.id}
-                        >
-                          <div className="signal-queue-topline">
-                            <span
-                              className={`signal-state ${signal.state.toLowerCase()}`}
-                            >
-                              {stateLabels[signal.state]}
-                            </span>
-
-                            <Demo value={signal.is_demo} />
-                          </div>
-
-                          <h3>{propertyName(signal.property_id)}</h3>
-
-                          <div className="signal-queue-meta">
-                            <Zone risk={signal.risk_snapshot} />
-                            <span>Версия {signal.version}</span>
-
-                            {signal.is_stale && <span>Устарела</span>}
-                          </div>
-
-                          <small>Создан: {date(signal.created_at)}</small>
-
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              focusRequested.current = true;
-
-                              router.push(
-                                signalVersionUrl(params.toString(), signal.id),
-                                { scroll: false },
-                              );
-
-                              if (id === signal.id) {
-                                requestAnimationFrame(focusDetail);
-                                focusRequested.current = false;
-                              }
-                            }}
-                            aria-pressed={id === signal.id}
+                <div className="candidate-list" aria-label="Очередь сигналов">
+                  {queueData.items.map((signal) => {
+                    return (
+                      <article
+                        className={`candidate signal-queue-item${
+                          id === signal.id ? " is-selected" : ""
+                        }`}
+                        key={signal.id}
+                      >
+                        <div className="signal-queue-topline">
+                          <span
+                            className={`signal-state ${signal.state.toLowerCase()}`}
                           >
-                            Открыть версию {signal.version}
-                          </Button>
-                        </article>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="notice" role="status">
-                    {queueSearch.trim()
-                      ? "По вашему запросу ничего не найдено на этой странице."
-                      : "Сигналов на этой странице нет."}{" "}
-                    Измените поиск или фильтры.
-                  </p>
-                )
+                            {stateLabels[signal.state]}
+                          </span>
+
+                          <Demo value={signal.is_demo} />
+                        </div>
+
+                        <h3>{propertyName(signal.property_id)}</h3>
+
+                        <div className="signal-queue-meta">
+                          <Zone risk={signal.risk_snapshot} />
+                          <span>Версия {signal.version}</span>
+
+                          {signal.is_stale && <span>Устарела</span>}
+                        </div>
+
+                        <small>Создан: {date(signal.created_at)}</small>
+
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            focusRequested.current = true;
+
+                            router.push(
+                              signalVersionUrl(params.toString(), signal.id),
+                              { scroll: false },
+                            );
+
+                            if (id === signal.id) {
+                              requestAnimationFrame(focusDetail);
+                              focusRequested.current = false;
+                            }
+                          }}
+                          aria-pressed={id === signal.id}
+                        >
+                          Открыть версию {signal.version}
+                        </Button>
+                      </article>
+                    );
+                  })}
+                </div>
               ) : (
                 <p className="notice">
-                  Сигналов по выбранным фильтрам нет. Черновик создаётся в
-                  карточке объекта после проверки материалов.
+                  {queueData.total > 0
+                    ? "На этой странице сигналов нет. Вернитесь на предыдущую страницу."
+                    : search.trim()
+                      ? "По вашему запросу сигналов не найдено. Измените поиск или фильтры."
+                      : "Сигналов по выбранным фильтрам нет. Черновик создаётся в карточке объекта после проверки материалов."}
                 </p>
               )}
 

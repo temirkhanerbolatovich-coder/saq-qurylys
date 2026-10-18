@@ -1,5 +1,14 @@
 # SAQ QURYLYS — архитектура MVP
 
+18.10.2026, локальный контракт0.18.0-mvp: listSignals q≤300 добавляет SQL predicate
+к текущему/сохранённому имени, signalUUID, version label и state code/label.
+EXISTS current Property.name не дублирует строки; JSON path только frozen name,
+ILike с буквальным escaping. Query/state/property_id до current signal_view,
+stale и pagination прежние. UI submit native form → URL q/reset page/pin signal_id,
+без local page filter; queue resolvedPath guard сохранён. Нет новых routes/DTO/
+dependencies/migrations/архитектурного слоя; новый ADR не требуется.
+Current stale/view N+1/scale остаётся ограничением. [Поиск сигналов](FEATURE_SIGNAL_SEARCH.md).
+
 18.10.2026, локальный контракт0.17.0-mvp: существующий properties list принимает
 order=name(default)|work_priority. Сначала текущие filtered PropertyOut, затем
 глобальная сортировка по действию/last_reviewed_at(NULL first)/server score DESC/

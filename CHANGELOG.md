@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased · Whole-queue signal search
+
+- Add q to existing listSignals for current/frozen property names, signal ID,
+  version and state before pagination; preserve filters, auth and snapshots.
+- Submit queue search with Enter/button, restore q in URL, retain selected
+  version across search/pages/empty/error, and reuse loading/retry/reset focus.
+- Contract0.18.0-mvp; local only, no new route/DTO/migration/dependency.
+
 ## Unreleased · Global property work priority
 
 - Extend existing listProperties with order=work_priority before pagination;

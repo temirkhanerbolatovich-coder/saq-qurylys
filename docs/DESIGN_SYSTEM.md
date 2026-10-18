@@ -1,5 +1,12 @@
 # SAQ QURYLYS — дизайн-система
 
+## Серверный поиск сигналов · локальный блок18.10
+
+Master1.4 сохранён. Native form с видимым label, search input и существующим
+outline Button «Найти сигналы», targets≥44px. Scoped signals-queue-search убирает
+общие form padding25/input margin23: форма не раздувает боковую очередь. Loading/
+alert/retry/empty и semantic tokens прежние. Изменения не вводят combobox/framework.
+
 ## Серверный приоритет обзора · локальный блок18.10
 
 Master1.4, текущие priority-list/PropertyCards и tokens сохранены. Подробный вид

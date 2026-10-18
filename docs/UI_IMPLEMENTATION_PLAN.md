@@ -1,5 +1,16 @@
 # SAQ QURYLYS — внедрение и поддержка UI/UX
 
+## Пятый блок после аудита18.10: серверный поиск сигналов
+
+Пользователь «гоу», база0bd2dfd, локальная codex/audit-workflow-fixes.
+UX-06: existing listSignals q (контракт0.18.0-mvp), name(current/frozen)/UUID/
+version/state, буквальные special chars, фильтры до pagination. Native submit,
+URL restore/resetpage, pin selected historical version при search/page/error.
+Критерии: запись за25 доступна; noPOST/no snapshot writes, error отдельно от empty,
+Back/reload/filters/reset/focus,≥44px и responsive обоих режимов.
+SQL-scale/N+1 UX-16 и независимая приёмка не входят в блок; прежняя история100
+в панели также не заменяется. Фактические результаты — UI_AUDIT/PROJECT_STATUS.
+
 ## Четвёртый блок после аудита18.10: глобальный приоритет
 
 Пользователь «гоу», базаbd78bba, локальная codex/audit-workflow-fixes.

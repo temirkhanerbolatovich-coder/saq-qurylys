@@ -1,5 +1,15 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Серверный поиск сигналов ·18.10
+
+- SignalsView: q из URL в queuePath, native search form, submit/pagination pin
+  выбранного signal_id; queueSearch — только draft ввода с восстановлением q.
+- Удалён filteredQueueItems: items идут напрямую из server page. Guard resolvedPath,
+  отдельно выбранный SignalCard, PropertyPicker/имена/retry прежние.
+- signals-queue-search: scoped padding/margin и≥44px input/button, текущие tokens.
+
+Контракт и границы — [поиск сигналов](FEATURE_SIGNAL_SEARCH.md).
+
 ## Приоритет рабочего обзора ·18.10
 
 - DashboardView: listProperties order=work_priority,page_size5; использует порядок
