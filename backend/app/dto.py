@@ -182,3 +182,18 @@ class Page(DTO, Generic[T]):
     page: int
     page_size: int
     total: int
+
+
+class PropertyReferenceOut(DTO):
+    id: UUID
+    parent_id: UUID | None
+    level: Literal['PROJECT', 'PHASE', 'BUILDING']
+    name: str
+    address: str
+    is_demo: bool
+
+
+class PropertyStructureOut(DTO):
+    ancestors: list[PropertyReferenceOut]
+    children: Page[PropertyReferenceOut]
+    siblings: Page[PropertyReferenceOut]

@@ -94,6 +94,56 @@ def property_detail(id: UUID, actor: Actor, db: DB):
     }
 
 
+@router.get(
+    '/api/v1/properties/{id}/structure',
+    response_model=dto.PropertyStructureOut,
+    operation_id='getPropertyStructure',
+    description=(
+        'Read saved parent_id relationships only: ancestors from root to parent, direct children, '
+        'and other children of the same non-null parent. Children and siblings have independent pages '
+        'ordered by name and ID. References do not inherit risk, legal bases or documents. '
+        'A cycle, missing ancestor or more than 16 ancestor levels returns 409.'
+    ),
+)
+def property_structure(
+    id: UUID,
+    actor: Actor,
+    db: DB,
+    children_page: int = Query(1, ge=1),
+    siblings_page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+):
+    row = get_property(db, id)
+    ancestors = []
+    seen = {row.id}
+    parent_id = row.parent_id
+    # Bound reads even if externally imported relationships are malformed.
+    while parent_id is not None:
+        if parent_id in seen or len(ancestors) >= 16:
+            raise HTTPException(409, 'Не удалось прочитать структуру: цикл или больше 16 уровней')
+        parent = db.get(Property, parent_id)
+        if parent is None:
+            raise HTTPException(409, 'Не удалось прочитать структуру: родительский объект не найден')
+        seen.add(parent.id)
+        ancestors.append(dto.PropertyReferenceOut.model_validate(parent))
+        parent_id = parent.parent_id
+
+    def related_page(condition, page):
+        query = select(Property).where(condition)
+        total = db.scalar(select(func.count()).select_from(query.subquery()))
+        items = db.scalars(query.order_by(Property.name, Property.id).offset((page - 1) * page_size).limit(page_size))
+        return {'items': list(items), 'page': page, 'page_size': page_size, 'total': total}
+
+    return {
+        'ancestors': list(reversed(ancestors)),
+        'children': related_page(Property.parent_id == id, children_page),
+        # Root objects are not siblings merely because they all lack a parent.
+        'siblings': related_page((Property.parent_id == row.parent_id) & (Property.id != id), siblings_page)
+        if row.parent_id is not None
+        else {'items': [], 'page': siblings_page, 'page_size': page_size, 'total': 0},
+    }
+
+
 @router.get('/api/v1/properties/{id}/risk', response_model=dto.RiskDetailOut, operation_id='getPropertyRisk')
 def property_risk(id: UUID, actor: Actor, db: DB, as_of: dto.AwareDatetime | None = None):
     if as_of is not None:

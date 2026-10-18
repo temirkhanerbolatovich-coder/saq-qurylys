@@ -1,5 +1,17 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Структура объекта ·18.10
+
+- PropertyStructure: одна read-only выборка родителей и двух paged списков,
+  отдельные page states, key по текущему объекту, guard resolvedPath от stale page,
+  native details, Link и существующие LoadState/Pagination. Фокус при листании
+  остаётся на content region. Ошибка видна отдельно от empty и основного досье.
+- PropertyReference/PropertyStructure: lightweight navigation DTO; Property type
+  отражает уже существующие обязательные parent_id/level/aliases.
+- propertyLevelLabels: PROJECT/PHASE/BUILDING → ЖК/очередь/корпус.
+
+Контракт/границы — [структура объекта](FEATURE_PROPERTY_STRUCTURE.md).
+
 ## Поиск / signal picker ·18.10
 
 - PropertyPicker: прежний match по умолчанию, filter mode для сигналов,

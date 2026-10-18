@@ -1,5 +1,17 @@
 # SAQ QURYLYS — внедрение и поддержка UI/UX
 
+## Третий блок после аудита18.10: связи объектов
+
+Пользователь «гоу», база9e7f195, локальная codex/audit-workflow-fixes.
+UX-04: read-only структура по реальным parent_id/level, bounded ancestors,
+серверные независимые страницы children/siblings и отдельные досье с registry context.
+Контракт0.16.0-mvp, без миграций/переназначения seed/наследования правового статуса.
+Текущий seed не содержит связей: data-completeness не заявляется закрытой.
+Критерии:103ребёнка/101-й доступен, root не получает ложных соседей,
+ошибка отдельно от empty, cycle/depth guard, viewer, focus/RU-KZ responsive,
+возврат к реестру и отсутствие бизнес-команд. Результаты — UI_AUDIT/PROJECT_STATUS.
+Далее UX-03 global priority, затем UX-06 server signal q; UX-16 и внешняя приёмка открыты.
+
 ## Второй блок после аудита18.10: поиск и объекты сигналов
 
 Продолжение согласовано пользователем. Та же ветка codex/audit-workflow-fixes,

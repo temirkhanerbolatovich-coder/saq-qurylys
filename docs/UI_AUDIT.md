@@ -1,5 +1,44 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Структура ЖК/очередей/корпусов ·18.10.2026 · локальный блок
+
+База9e7f195, согласование «гоу», codex/audit-workflow-fixes, один Codex.
+UX-04 реализован по сохранённым parent_id/level: breadcrumb, прямые дети и другие
+объекты того же ненулевого родителя, SQL pages10, отдельные досье и registry context.
+Новый read-only контракт0.16.0-mvp, auth/роли/риск/решения/snapshots прежние.
+Пустая структура текущего seed не дополнена предположениями по названиям.
+
+Focused backend **52PASS/43.90s**, своя случайная test schema QA DB:
+103ребёнка/порядок предков/независимые страницы соседей, отсутствие группировки
+по названию/общему застройщику, root empty siblings, неизменность досье,
+границы pages/cycle/depth/auth/viewer/404 и контракт. Первый прогон49PASS/1FAIL
+выявил нестабильное сравнение тестовой записи без last_reviewed_at: её risk.as_of
+по существующей логике utcnow. Fixture теперь явно фиксирует дату; продуктовый
+расчёт не менялся. Три новых browser tests PASS10.7s: navigation101/context,
+503retry и настоящий GET текущего досье. Статические checks/build PASS.
+
+Трёхуровневые связи проверяются отдельными synthetic PostgreSQL rows и явно
+presentation-only browser tree. В текущих8seed parent_id=null, level=PHASE;
+наполнение настоящими подтверждёнными связями/предметная приёмка не выполнены.
+Full browser **119PASS/3.8m**, workers1/retries0, против изолированного Linux
+QA API/worker с реальными OCR/PDF/review. После финального h2 refinement и
+упрощения page handler: production build, lint/format/typecheck PASS и повтор
+новых4browser tests **4PASS/21.4s**. Typecheck запускался повторно после build:
+одновременное чтение генерируемых .next types сначала дало missing routes.js;
+последовательный прогон PASS, продуктового изменения для этого не требовалось.
+Ruff check/format92files PASS, diff/hygiene/UTF8/links/private-literal checks PASS.
+Полная backend suite, нагрузка и независимая предметная приёмка не повторялись.
+
+Свежая responsive матрица:28presentation наблюдений (очередь/корпус ×2режима ×
+360/375/390/768/1024/1440/1920), плюс4настоящего досье (2режима ×390/1440).
+Режимы проверены по фактическому aria-pressed. Overflow/pageerrors/business
+commands0; reduced-motion, native summary Enter и ссылки≥44px проверены.
+Вручную просмотрены4итоговых снимка: phase detailed1440,building simple390,
+real dossier detailed1440/simple390. Остальные snapshots — автоматическая
+матрица, не независимая ручная UX-приёмка. Артефакты ignored:
+output/qa/property-structure-20261018. Новые200%zoom/secondPC не выполнялись.
+Публичный runtime не заменён. UX-03/06/16 остаются открыты.
+
 ## Поиск и объекты сигналов ·18.10.2026 · LOCAL VERIFIED
 
 Второй согласованный блок, базаcd10b84, codex/audit-workflow-fixes, один Codex.

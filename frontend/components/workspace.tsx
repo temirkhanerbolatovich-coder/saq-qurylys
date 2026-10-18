@@ -52,6 +52,7 @@ import {
 import { PdfDownload } from "@/components/pdf-download";
 import { ObjectRecords } from "@/components/object-records";
 import { PropertyHistory } from "@/components/property-history";
+import { PropertyStructure } from "@/components/property-structure";
 import { clearReviewDrafts } from "@/lib/use-review-draft";
 import { clearDossierFormDrafts } from "@/lib/use-dossier-form-draft";
 import { statusLabel } from "@/lib/status-labels";
@@ -1757,6 +1758,7 @@ export function PropertyView({ id }: { id: string }) {
         Красная зона не устанавливает нарушение, зелёная не гарантирует
         безопасность.
       </p>
+      <PropertyStructure key={row.id} row={row} registryQuery={registryQuery} />
       <WorkspaceTabs
         tabs={dossierTabs}
         active={sections.active}

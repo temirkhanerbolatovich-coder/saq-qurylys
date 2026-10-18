@@ -29,6 +29,7 @@ def test_live_responses_match_approved_contract(signed):
     samples = [
         ('/properties', 'PropertyPage'),
         ('/properties/' + str(demo_id('orken')), 'PropertyDetail'),
+        ('/properties/' + str(demo_id('orken')) + '/structure', 'PropertyStructureOut'),
         ('/properties/' + str(demo_id('samal')) + '/risk', 'RiskDetail'),
         ('/advertisements', 'AdvertisementPage'),
         ('/advertisements/review-queue', 'AdvertisementReviewPage'),

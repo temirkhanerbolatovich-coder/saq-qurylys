@@ -5465,6 +5465,70 @@ body {
   min-height: 44px;
 }
 
+.property-structure {
+  margin-bottom: var(--space-4);
+  min-width: 0;
+}
+.property-ancestors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.property-ancestors li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.property-ancestors a,
+.property-structure summary {
+  min-height: 44px;
+  align-content: center;
+  padding-block: var(--space-2);
+}
+.property-ancestors a {
+  display: inline-block;
+}
+.property-structure summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.property-structure-content {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+.property-structure-content > section {
+  min-width: 0;
+}
+.property-structure-content h2 {
+  font-size: var(--text-h3);
+}
+.property-relations {
+  padding: 0;
+  margin: var(--space-2) 0;
+  list-style: none;
+}
+.property-relations a {
+  display: grid;
+  gap: var(--space-1);
+  min-height: 44px;
+  padding: var(--space-2);
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--color-border);
+}
+.property-relations small {
+  color: var(--color-text-muted);
+}
+
 @media (max-width: 639px) {
   .registry-panel .filters {
     display: grid;

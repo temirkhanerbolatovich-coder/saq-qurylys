@@ -1,5 +1,16 @@
 # SAQ QURYLYS — архитектура MVP
 
+18.10.2026, локальный контракт0.16.0-mvp: GET properties/{id}/structure читает
+существующие parent_id/level и возвращает lightweight references. Ancestors
+ограничены16чтениями, циклы/некорректная цепочка дают409; children и siblings
+считаются SQL count и читаются order(name,id)/offset/limit с независимыми pages.
+Для корня siblings пуст, общий developer/name не создаёт группу.
+PropertyStructure переиспользует useData/LoadState/Pagination/Link, хранит pages
+локально досье и сохраняет registry return context при переходах.
+Ни риск, ни правовые основания/снимки не агрегируются. Миграций/dependencies нет;
+нового ADR не требуется: расширен существующий read-only API и текущие primitives.
+Границы/проверка — [структура объекта](FEATURE_PROPERTY_STRUCTURE.md).
+
 18.10.2026, локальный контракт0.15.0-mvp: существующий properties/dashboard q
 ищет literal case-insensitive substring по имени, адресу, каждому aliases,
 Developer.name/bin. Aliases раскрываются PostgreSQL json_array_elements_text

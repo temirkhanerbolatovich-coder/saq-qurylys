@@ -1,5 +1,64 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Навигация ЖК/очередей/корпусов ·18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
+
+Пользователь «гоу», Codex root, один исполнитель; ветка codex/audit-workflow-fixes,
+база9e7f195, Git clean на входе. Новые агентские задачи не создавались.
+Граница: локальный код/QA/коммит, без push/publish/deploy и изменения публичных служб.
+
+UX-04: GET properties/{id}/structure (контракт0.16.0-mvp) возвращает только
+сохранённые parent_id relationships: bounded ancestors и независимые SQL pages
+детей/соседей. Корни без parent не получают выдуманных siblings;103 ребёнка
+не ограничены первыми100. В досье — уровень, цепочка ссылок и native disclosure;
+Link сохраняет registry context, новое досье открывает «Обзор», Back/reload работают.
+Ссылки DEMO отмечены отдельно. Риск/правовые основания/документы не наследуются.
+Ошибка/retry связей отдельно от доступного досье; cycle/depth guards409.
+Миграций/dependencies/редактора структуры/seed-правок нет; auth/роли/решения и
+исторические snapshots прежние. Pages/disclosure локальны досье, после reload
+начинаются сначала. Нового ADR нет: расширен существующий read-only API/primitives.
+
+Файлы: backend app/api/properties.py,dto.py; test_property_structure/test_contract;
+frontend PropertyStructure,workspace,types,presentation,design-system.css;
+browser structure/fixture/responsive tests; контракт и актуальные docs.
+Документация: FEATURE_PROPERTY_STRUCTURE,README,CHANGELOG,REQUIREMENTS,
+ARCHITECTURE,DESIGN_SYSTEM,UX_GUIDELINES,UI_COMPONENTS,UI_IMPLEMENTATION_PLAN,UI_AUDIT.
+
+Проверки: .venv python .local/tabs-pdf-20261018/structure-backend-tests.py →
+**52PASS/43.90s** (structure/search/dashboard/contract/API, своя случайная test
+schema в QA DB); Ruff check/format backend →PASS92files. Первый49PASS/1FAIL
+исправлен в fixture: фиксирован last_reviewed_at, чтобы существующий динамический
+risk.as_of не нарушал сравнение неизменности. Продуктовая формула не менялась.
+Frontend npm run lint/format:check/typecheck и production build →PASS.
+Typecheck после build повторён последовательно из-за временной гонки .next/types
+при одновременном запуске; финальный прогон чистый. Browser targeted3PASS10.7s,
+full119PASS3.8m (workers1/retries0), затем после semantic h2 refinement и
+упрощения page handler новые4tests PASS21.4s на финальной сборке.
+Полная backend suite заново не запускалась:52focused плюс полный browser
+regression покрывают данный read-only блок. Git diff/hygiene/UTF8/local-links/
+private-literal scan PASS; это не независимый security аудит.
+
+Responsive:28presentation наблюдений2экрана×2режима×7размеров360/375/390/768/
+1024/1440/1920 и4настоящего досье(2режима×390/1440). Overflow/pageerror/business
+commands0, reduced-motion/native keyboard/ссылки≥44px. Вручную просмотрены4итоговых
+снимка, остальное автоматическая матрица. Новых200%zoom/secondPC/UX с аналитиком/
+нагрузочной приёмки не было. Полная структура — synthetic PostgreSQL transactions
+и явно browser presentation fixture: текущие8seed parent_id=null,level=PHASE,
+их данные не дополнялись предположениями из названий. Реальное наполнение OPEN.
+
+Локальный просмотр http://localhost:3227. Только QA saq-tabs-pdf-20261018
+API8227/DB55667 переведён на saq-structure-api:local-20261018; конфиг
+.local/tabs-pdf-20261018/structure.compose.json. Сохранены прежняя qa_search_*
+schema, storage, credentials и исходные QA public schema/storage. Публичные
+контейнеры/tunnel не заменены. Логи structure-backend-tests.log,structure-full.log,
+structure-targeted.log; screenshots output/qa/property-structure-20261018 ignored.
+
+Блокеры данного блока: нет. Открыто: подтверждённое наполнение parent_id,
+UX-03 глобальная приоритизация,UX-06 server signal q,UX-16 SQL-scale и внешняя
+приёмка. Точный следующий связный блок — UX-03: заменить priority top5 из первых100
+на серверную приоритизацию всего разрешённого набора с явным контрактом; сохранить
+UNKNOWN/роли/исторические snapshots, локальную границу и текущую рабочую навигацию.
+Перед локальным commit — self-review/проверки выше; ревизия базы9e7f195.
+
 ## Поиск реестра и выбор объекта сигнала · 18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
 
 Продолжение согласованного аудита, пользователь «продолжи работу». Codex root,

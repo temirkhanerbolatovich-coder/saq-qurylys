@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased · Property structure navigation
+
+- Add read-only ancestors, paged children and siblings using saved parent_id relations;
+  retain each object's separate risk, legal bases, documents and DEMO label.
+- Add compact dossier navigation with registry return context, empty/error/retry and keyboard focus.
+- Contract0.16.0-mvp adds getPropertyStructure; cycles/depth are bounded. No seed changes or deployment.
+
 ## Unreleased · Registry search and signal property selection
 
 - Extend existing registry/dashboard q search to individual saved aliases, developer name and BIN;

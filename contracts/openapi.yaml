@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.15.0-mvp",
+    "version": "0.16.0-mvp",
     "description": "SAQ QURYLYS contract. Registry/OCR, dated legal review, manual R1-R6, immutable signals/human decisions/PDF export and passive supporting PDF upload implemented. Commercial advertising collector remains planned. JSON is valid YAML 1.2. Manual monitoring candidates, immutable DEMO registry snapshots, comparisons and preliminary incident decisions are additive; the closed customer registry remains unavailable. Explicit licensed Primeminister.kz information import is implemented through leased jobs. Operator-provided KHC public PDF versions and page-text search preserve provenance and never establish legal applicability or modify risk. Authenticated read-only exports return exact saved PDFs or bounded derived copies; signal exports retain frozen snapshots."
   },
   "servers": [
@@ -4347,6 +4347,106 @@
           }
         },
         "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/api/v1/properties/{id}/structure": {
+      "get": {
+        "summary": "Property Structure",
+        "description": "Read saved parent_id relationships only: ancestors from root to parent, direct children, and other children of the same non-null parent. Children and siblings have independent pages ordered by name and ID. References do not inherit risk, legal bases or documents. A cycle, missing ancestor or more than 16 ancestor levels returns 409.",
+        "operationId": "getPropertyStructure",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "children_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Children Page"
+            }
+          },
+          {
+            "name": "siblings_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Siblings Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 10,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyStructureOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-origin": "proposal",
+        "x-implementation-status": "IMPLEMENTED_FIRST_SLICE"
       }
     }
   },
@@ -11556,6 +11656,116 @@
           "right_text"
         ],
         "title": "PublicationTextChange"
+      },
+      "PropertyReferenceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "PROJECT",
+              "PHASE",
+              "BUILDING"
+            ],
+            "title": "Level"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "parent_id",
+          "level",
+          "name",
+          "address",
+          "is_demo"
+        ],
+        "title": "PropertyReferenceOut"
+      },
+      "PropertyStructureOut": {
+        "properties": {
+          "ancestors": {
+            "items": {
+              "$ref": "#/components/schemas/PropertyReferenceOut"
+            },
+            "type": "array",
+            "title": "Ancestors"
+          },
+          "children": {
+            "$ref": "#/components/schemas/Page_PropertyReferenceOut_"
+          },
+          "siblings": {
+            "$ref": "#/components/schemas/Page_PropertyReferenceOut_"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ancestors",
+          "children",
+          "siblings"
+        ],
+        "title": "PropertyStructureOut"
+      },
+      "Page_PropertyReferenceOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PropertyReferenceOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[PropertyReferenceOut]"
       }
     }
   }

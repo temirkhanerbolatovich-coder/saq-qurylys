@@ -20,6 +20,12 @@ export const zoneLabels: Record<Property["risk"]["zone"], string> = {
   RED: "Красная",
 };
 
+export const propertyLevelLabels: Record<Property["level"], string> = {
+  PROJECT: "Жилой комплекс",
+  PHASE: "Очередь",
+  BUILDING: "Корпус",
+};
+
 // Only an encoded registry query is carried; the return path stays local and fixed.
 export function propertyDossierUrl(id: string, registryQuery = "") {
   const query = new URLSearchParams(registryQuery);

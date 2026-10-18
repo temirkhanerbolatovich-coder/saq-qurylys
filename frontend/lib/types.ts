@@ -15,6 +15,9 @@ export type Risk = {
 };
 export type Property = {
   id: string;
+  parent_id: string | null;
+  level: "PROJECT" | "PHASE" | "BUILDING";
+  aliases: string[];
   name: string;
   city: string;
   address: string;
@@ -28,6 +31,15 @@ export type Property = {
   last_reviewed_at: string | null;
   developer: { name: string; bin: string | null };
   risk: Risk;
+};
+export type PropertyReference = Pick<
+  Property,
+  "id" | "parent_id" | "level" | "name" | "address" | "is_demo"
+>;
+export type PropertyStructure = {
+  ancestors: PropertyReference[];
+  children: Page<PropertyReference>;
+  siblings: Page<PropertyReference>;
 };
 export type Asset = {
   id: string;
