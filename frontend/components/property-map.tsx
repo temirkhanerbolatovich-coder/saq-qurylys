@@ -165,12 +165,10 @@ export function PropertyMap({
     <section className="property-map-section" aria-label="Карта объектов">
       <header className="map-section-heading">
         <div>
-          <p className="eyebrow">КАРТА ТЕКУЩЕЙ СТРАНИЦЫ</p>
-          <h2 id="property-map-title">Выберите объект</h2>
-          <p>
-            Метка открывает краткие сведения. Полные документы и решения
-            находятся в досье объекта.
-          </p>
+          <h2 id="property-map-title">Карта текущей страницы</h2>
+          <a className="text-link map-skip" href="#property-list">
+            Перейти к списку объектов
+          </a>
         </div>
         <div
           className="map-count"
@@ -224,9 +222,6 @@ export function PropertyMap({
               </Button>
             </div>
           )}
-          <a className="text-link map-skip" href="#property-list">
-            Перейти к списку объектов
-          </a>
           <div className="map-grid">
             <div className="map-frame">
               <div

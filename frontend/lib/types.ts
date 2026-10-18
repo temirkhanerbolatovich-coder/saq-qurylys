@@ -32,6 +32,7 @@ export type Property = {
 export type Asset = {
   id: string;
   kind: string;
+  mime_type?: string;
   sha256: string;
   byte_size: number;
   captured_at: string;

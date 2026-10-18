@@ -1,4 +1,9 @@
-import type { Property } from "./types";
+import type { Asset, Property } from "./types";
+
+export function assetPdfLabel(asset: Asset) {
+  if (asset.mime_type === "application/pdf") return "Скачать исходный PDF";
+  return "Скачать PDF-копию источника";
+}
 
 export const factorLabels: Record<string, string> = {
   R1: "Отсутствие основания установлено",

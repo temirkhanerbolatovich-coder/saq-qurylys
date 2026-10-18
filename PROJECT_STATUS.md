@@ -1,5 +1,53 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Первый блок исправлений аудита · 18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
+
+Пользователь согласовал начало исправлений после полного UI/UX-аудита.
+Codex root, один исполнитель; ветка codex/audit-workflow-fixes от860e033.
+На входе только untracked docs/audits из предыдущего задания; они сохранены.
+Новых parallel agent tasks не создавалось. Работа и commit только локальные;
+публичная установка/тunnel/рабочие Docker services не заменялись.
+
+Сделано: фильтры/карта в обоих видах; общая mounted disclosure обеих очередей
+при выбранном материале; компактные KPI с пояснениями по запросу; компактная
+карта/мобильные filters; прямые source/registry tool transitions с раскрытием
+после commit вкладки и возвратом к кандидату; analysis action в шапке материала;
+ясные signal PDF actions и MIME-aware label источника в материале.
+Изменены frontend components/CSS и presentation/types;
+сервер/контракт/риск/роли/версии/зависимости не менялись. Новый ADR не требуется:
+использованы прежние native controls, маршруты и semantic master1.4.
+
+Проверки: npm run lint/typecheck/format:check PASS; production build через
+node .local/tabs-pdf-20261018/build.cjs PASS. Финальный npm run test:e2e:
+**113PASS/3.4m**, workers1/retries0. Первичный targeted25PASS/2FAIL,
+затем related8PASS; ранний full прерван после68PASS/4FAIL на старых раскрытиях в review-workspace.
+Исправлены общие test helpers/ожидания новой очереди. Журнал первого full сохранён
+отдельно; никаких retry для скрытия отказов.
+
+Свежая матрица108наблюдений9экранов×2вида×6размеров360/390/768/1024/1440/1920:
+overflow/errors/business writes0, reduced-motion. Тайлы заменены presentation
+подложкой, координаты/score из реального API. Вручную просмотрены5репрезентативных
+экранов (map/dashboard/review/material1440,registry390). MapTop646–651px,
+selected originalTop750–754px на1440×900. Не новый200%zoom/внешняя UX-приёмка.
+Новый signal PDF labels test — fixture, реальный PDF download и OCR входят в suite.
+Backend suite заново не запускалась; backend исходники не изменены.
+Repository hygiene, git diff --check и changed-file UTF8/local-links/private-literal
+scan PASS. Результаты сканов относятся к этому diff, не независимой security-приёмке.
+
+Документация: README/CHANGELOG, DESIGN_SYSTEM/UX_GUIDELINES/UI_COMPONENTS/
+UI_IMPLEMENTATION_PLAN/UI_AUDIT, исходные два отчёта docs/audits.
+Точные closure/partial/open — UI_AUDIT; все20пунктов не объявляются закрытыми.
+Остаются: server search/priority, связи очередей, paged signal picker, дальнейшая
+mobile shell/повторная проверка/независимый аналитик и freeze21октября.
+Следующий связный блок: paged signal property picker через существующий API,
+затем отдельно согласованный server search/priority contract.
+
+Текущий preview http://localhost:3227, прежний изолированный backend8227/DB55667,
+credentials только .local/tabs-pdf-20261018/credentials.txt. Ревизия проверок:
+860e033 плюс diff этого блока, конечный локальный SHA определяется git log -1
+ветки codex/audit-workflow-fixes. Push/PR/merge/deploy не выполнялись.
+Ниже — история предыдущих блоков, а не актуальная структура до/после.
+
 ## Вкладки и PDF по новому ТЗ · 18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
 
 Codex root, один исполнитель. Ветка `codex/dossier-tabs-pdf`, база `1b47cc6`.

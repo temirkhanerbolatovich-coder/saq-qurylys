@@ -23,7 +23,10 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { PropertyHistory } from "@/components/property-history";
-import { RemainingReviewQueue } from "@/components/review-queue";
+import {
+  RemainingReviewQueue,
+  ReviewQueuePanel,
+} from "@/components/review-queue";
 import { PdfDownload } from "@/components/pdf-download";
 import { PropertyPicker } from "@/components/property-picker";
 import {
@@ -289,10 +292,7 @@ function ProcessingReviewQueue() {
   }
   return (
     <>
-      <section
-        className="panel padded review-queue"
-        aria-label="Очередь проверки"
-      >
+      <ReviewQueuePanel label="Очередь проверки" selectedId={id}>
         <div className="review-toolbar">
           <h2>Очередь проверки</h2>
           <span>
@@ -341,7 +341,7 @@ function ProcessingReviewQueue() {
             <details
               key={id || "queue"}
               className="review-queue-materials"
-              open={!id}
+              open
             >
               <summary>
                 {id
@@ -403,7 +403,7 @@ function ProcessingReviewQueue() {
           Оригиналы идут в серверном порядке поступления. Выбор материала,
           фильтр и переход страницы не запускают анализ или подтверждение.
         </p>
-      </section>
+      </ReviewQueuePanel>
       {id ? (
         <ReviewMaterial key={id} id={id} onChange={queue.reload} />
       ) : data ? (

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased · Audit workflow fixes
+
+- Expose registry filters and map in both interface modes; remove the large map introduction.
+- Collapse queue controls when reviewing a selected material while preserving drafts and URL context.
+- Compact dashboard counters with on-demand explanations and retain all metric definitions.
+- Open the actual source/version tool from monitoring shortcuts and return to the candidate after selecting a version.
+- Move the analysis action into the material header and distinguish PDF copies from saved signal exports.
+- Preserve backend, contracts, risk, roles and snapshots; local only.
+
 ## Unreleased · Local tabs and record PDF
 
 - Replace dossier and monitoring section anchors with six/four real URL-backed tabs;

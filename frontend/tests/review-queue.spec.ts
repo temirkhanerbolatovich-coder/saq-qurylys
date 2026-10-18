@@ -150,6 +150,9 @@ test("derived work queue uses whole-set material counts and preserves selection,
   const reason = page.getByLabel("Обоснование проверки", { exact: true });
   await reason.fill("DEMO unsaved queue hypothesis reason");
   await queue
+    .getByText("Сменить материал · очередь и фильтры", { exact: true })
+    .click();
+  await queue
     .getByRole("button", { name: "Следующая страница", exact: true })
     .click();
   await expect(queue).toContainText("Страница 2 из 2");
@@ -160,6 +163,9 @@ test("derived work queue uses whole-set material counts and preserves selection,
   await expect(queue).toContainText("больше не иметь нерешённых действий");
   await page.reload();
   await expect(reason).toHaveValue("DEMO unsaved queue hypothesis reason");
+  await queue
+    .getByText("Сменить материал · очередь и фильтры", { exact: true })
+    .click();
   await page
     .getByLabel("Нерешённое действие", { exact: true })
     .selectOption("REVIEW_MATCH");
@@ -235,6 +241,9 @@ test("pending or failed derived filters do not show stale rows or a false zero a
     page.getByLabel("Обоснование проверки", { exact: true }),
   ).toBeVisible();
   mode = "pending";
+  await queue
+    .getByText("Сменить материал · очередь и фильтры", { exact: true })
+    .click();
   await page
     .getByLabel("Нерешённое действие", { exact: true })
     .selectOption("REVIEW_MATCH");

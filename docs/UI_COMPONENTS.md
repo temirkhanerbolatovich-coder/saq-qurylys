@@ -1,5 +1,19 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Первый блок аудита18.10
+
+- ReviewQueuePanel: существующий review-queue module, общий native disclosure
+  processing/actions очередей. Сохраняет mounted controls; выбранный материал
+  рендерится отдельно и не размонтируется при сворачивании очереди.
+- DashboardQueues: те же реальные ресурсы/счётчики/ссылки; пояснения в native details.
+- PropertiesView/PropertyResults: фильтры и карта не зависят от detailed;
+  detailed сохраняет выбор table/cards и прочих сведений.
+- MonitoringView.openTool: раскрытие нужного инструмента после commit вкладки;
+  сохранение candidate/drafts и возврат после выбора snapshot.
+- assetPdfLabel: существующий presentation module, метка из имеющегося MIME;
+  нет нового запроса или изменения контракта. Optional Asset.mime_type отражает
+  уже существующий DTO и совместим с прежними presentation fixtures.
+
 ## Вкладки и PDF · U18.10.2026
 
 - WorkspaceTabs / WorkspacePanel / useWorkspaceSection: общий native-button

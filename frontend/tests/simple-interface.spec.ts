@@ -66,8 +66,8 @@ test("catalog search, dossier and context return work without expert controls", 
   await page.getByRole("link", { name: "Найти объект", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Карта и список", exact: true }),
-  ).toBeHidden();
-  await expect(page.getByLabel("Фильтр по основанию")).toBeHidden();
+  ).toBeVisible();
+  await expect(page.getByLabel("Фильтр по основанию")).toBeVisible();
   await page.getByLabel("Поиск ЖК или адреса").fill("Бәйтерек");
   await expect(page.locator(".property-card")).toHaveCount(1);
   const name = await page.locator(".property-card h2").innerText();

@@ -32,6 +32,28 @@ const sections: Record<string, string> = {
   factor: "factor",
 };
 
+/** Keeps queue controls mounted while the selected material takes priority. */
+export function ReviewQueuePanel({
+  label,
+  selectedId,
+  children,
+}: {
+  label: string;
+  selectedId: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="panel review-queue" aria-label={label}>
+      <details key={selectedId || "queue"} open={!selectedId}>
+        <summary>
+          {selectedId ? "Сменить материал · очередь и фильтры" : label}
+        </summary>
+        <div className="padded">{children}</div>
+      </details>
+    </section>
+  );
+}
+
 /** Lists server-derived work; opening a target never submits a review command. */
 export function RemainingReviewQueue({
   renderMaterial,
@@ -131,10 +153,7 @@ export function RemainingReviewQueue({
   }
   return (
     <>
-      <section
-        className="panel padded review-queue"
-        aria-label="Нерешённые действия материалов"
-      >
+      <ReviewQueuePanel label="Нерешённые действия материалов" selectedId={id}>
         <div className="review-toolbar">
           <h2>Материалы с нерешёнными действиями</h2>
           <Button variant="outline" onClick={queue.reload}>
@@ -238,7 +257,7 @@ export function RemainingReviewQueue({
             <details
               key={id || "queue"}
               className="review-queue-materials"
-              open={!id}
+              open
             >
               <summary>
                 {id
@@ -340,7 +359,7 @@ export function RemainingReviewQueue({
             )}
           </>
         )}
-      </section>
+      </ReviewQueuePanel>
       {id
         ? renderMaterial(id, queue.reload)
         : data && (

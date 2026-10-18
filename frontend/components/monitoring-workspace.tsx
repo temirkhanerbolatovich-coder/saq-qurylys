@@ -159,11 +159,21 @@ export function MonitoringView() {
     monitoringTabs,
     monitoringSectionForHash,
   );
+  const pendingTool = useRef<string | null>(null);
   useEffect(() => {
-    const target = window.location.hash.slice(1);
-    if (monitoringSectionForHash(target) === sections.active)
+    const target = pendingTool.current || window.location.hash.slice(1);
+    if (monitoringSectionForHash(target) === sections.active) {
       revealMonitoringTarget(target);
+      pendingTool.current = null;
+    }
   }, [sections.active]);
+  function openTool(section: "sources" | "registry", target: string) {
+    if (sections.active === section) revealMonitoringTarget(target);
+    else {
+      pendingTool.current = target;
+      sections.select(section);
+    }
+  }
   const params = useSearchParams();
   const router = useRouter();
   const q = params.get("q") || "";
@@ -242,11 +252,17 @@ export function MonitoringView() {
       <div className="monitoring-boundary">
         <strong>Закрытый реестр недоступен. Сверка DEMO.</strong>
         <p>
-          Открытый документ КЖК доступен ниже для поиска по страницам.
-          Автоматическая сверка реальных объектов ещё не подключена; DEMO-список
-          к ним не применяется. Предварительный инцидент не подтверждает
-          нарушение и не начисляет R1 или другие баллы риска.
+          Открытый документ КЖК доступен во вкладке «Источники» для поиска по
+          страницам. Автоматическая сверка реальных объектов ещё не подключена;
+          DEMO-список к ним не применяется. Предварительный инцидент не
+          подтверждает нарушение и не начисляет R1 или другие баллы риска.
         </p>
+        <Button
+          variant="outline"
+          onClick={() => openTool("sources", "open-register-title")}
+        >
+          Открыть источники
+        </Button>
       </div>
       <WorkspaceTabs
         tabs={monitoringTabs}
@@ -426,6 +442,9 @@ export function MonitoringView() {
               id={candidateId}
               snapshotId={snapshotId}
               onSnapshotChange={setSnapshotId}
+              onChooseSnapshot={() =>
+                openTool("registry", "monitoring-registry")
+              }
               onChanged={changed}
             />
           ) : (
@@ -587,7 +606,13 @@ export function MonitoringView() {
                         key={snapshot.id}
                         snapshot={snapshot}
                         selected={snapshot.id === snapshotId}
-                        onSelect={() => setSnapshotId(snapshot.id)}
+                        onSelect={() => {
+                          setSnapshotId(snapshot.id);
+                          if (candidateId) {
+                            focusSelection.current = true;
+                            sections.select("candidates");
+                          }
+                        }}
                       />
                     ))
                   ) : (
@@ -768,11 +793,13 @@ function CandidateDetail({
   id,
   snapshotId,
   onSnapshotChange,
+  onChooseSnapshot,
   onChanged,
 }: {
   id: string;
   snapshotId: string;
   onSnapshotChange: (id: string) => void;
+  onChooseSnapshot: () => void;
   onChanged: () => void;
 }) {
   const { user } = useContext(Auth);
@@ -861,12 +888,19 @@ function CandidateDetail({
             >
               <h3>Новая сверка</h3>
               <p className="field-help">
-                Выберите DEMO-версию ниже или оставьте её ID пустым для
-                результата «Ожидает доступного реестра». Сверка реального
-                материала с DEMO запрещена. Адрес, очередь, даты публикации и
-                охват списка влияют на результат; совпадение названия само по
-                себе недостаточно.
+                Выберите DEMO-версию во вкладке «Версии реестра» или оставьте её
+                ID пустым для результата «Ожидает доступного реестра». Сверка
+                реального материала с DEMO запрещена. Адрес, очередь, даты
+                публикации и охват списка влияют на результат; совпадение
+                названия само по себе недостаточно.
               </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onChooseSnapshot}
+              >
+                Выбрать версию реестра
+              </Button>
               <Field label="Публикация для сверки">
                 <select
                   name="advertisement_id"

@@ -65,6 +65,7 @@ import {
 } from "@/lib/use-registry-context";
 import {
   factorLabels,
+  assetPdfLabel,
   propertyDossierUrl,
   zoneLabels,
 } from "@/lib/presentation";
@@ -725,7 +726,10 @@ function DashboardQueues({
           <p className="rail-number">
             {queue.resource.error ? "—" : (queue.count ?? "—")}
           </p>
-          <p className="muted">{queue.note}</p>
+          <details className="queue-explanation">
+            <summary>Что учитывается</summary>
+            <p className="muted">{queue.note}</p>
+          </details>
           {queue.resource.error ? (
             <LoadState
               error={queue.resource.error}
@@ -1195,7 +1199,6 @@ export function DashboardView() {
 }
 
 export function PropertiesView() {
-  const { detailed } = useInterfaceMode();
   const params = useSearchParams();
   const router = useRouter();
   const apiParams = new URLSearchParams(params);
@@ -1224,58 +1227,15 @@ export function PropertiesView() {
     <>
       <PageTitle
         eyebrow="РЕЕСТР СТРОИТЕЛЬСТВА"
-        title={showMap && detailed ? "Карта объектов" : "Объекты"}
+        title={showMap ? "Карта объектов" : "Объекты"}
         description={
-          showMap && detailed
+          showMap
             ? "Найдите объект, сравните приоритет проверки и откройте его досье."
             : "Каждая очередь и корпус проверяются по своим документам и датам."
         }
-        action={!showMap || !detailed}
+        action={!showMap}
       />
-      {showMap && detailed && (
-        <section
-          className="registry-map-guide"
-          aria-labelledby="registry-map-guide-title"
-        >
-          <div>
-            <p className="eyebrow">КАК ПОЛЬЗОВАТЬСЯ</p>
-            <h2 id="registry-map-guide-title">От карты к досье объекта</h2>
-          </div>
-          <ol>
-            <li>
-              <span>1</span>
-              <div>
-                <strong>Найдите объект</strong>
-                <small>Используйте название, адрес, зону или основание.</small>
-              </div>
-            </li>
-            <li>
-              <span>2</span>
-              <div>
-                <strong>Выберите метку</strong>
-                <small>Число показывает серверный балл проверки.</small>
-              </div>
-            </li>
-            <li>
-              <span>3</span>
-              <div>
-                <strong>Откройте досье</strong>
-                <small>Проверьте документы, факторы и историю решений.</small>
-              </div>
-            </li>
-          </ol>
-        </section>
-      )}
-      <section
-        className={`panel registry-panel ${detailed ? "" : "simple-catalog"}`}
-      >
-        <header className="registry-toolbar-heading" hidden={!detailed}>
-          <div>
-            <p className="eyebrow">ПОИСК И ФИЛЬТРЫ</p>
-            <h2>Найдите нужный объект</h2>
-            <p>Поиск и фильтры применяются одновременно к карте и списку.</p>
-          </div>
-        </header>
+      <section className="panel registry-panel">
         <div className="filters">
           <div className="search">
             <Search size={17} aria-hidden="true" />
@@ -1292,7 +1252,7 @@ export function PropertiesView() {
               onChange={(e) => filter("q", e.target.value)}
             />
           </div>
-          <label hidden={!detailed}>
+          <label>
             Город · точное название
             <input
               aria-label="Фильтр по городу"
@@ -1301,7 +1261,7 @@ export function PropertiesView() {
               onChange={(event) => filter("city", event.target.value)}
             />
           </label>
-          <label hidden={!detailed}>
+          <label>
             Зона
             <select
               aria-label="Фильтр по зоне"
@@ -1314,7 +1274,7 @@ export function PropertiesView() {
               <option value="GREEN">Зелёная</option>
             </select>
           </label>
-          <label hidden={!detailed}>
+          <label>
             Основание
             <select
               aria-label="Фильтр по основанию"
@@ -1330,16 +1290,10 @@ export function PropertiesView() {
             </select>
           </label>
         </div>
-        <div
-          className="registry-views"
-          role="group"
-          aria-label="Вид реестра"
-          hidden={!detailed && !hasFilters}
-        >
+        <div className="registry-views" role="group" aria-label="Вид реестра">
           <Button
             variant="outline"
             aria-pressed={!showMap}
-            hidden={!detailed}
             onClick={() => filter("view", "")}
           >
             Список
@@ -1347,7 +1301,6 @@ export function PropertiesView() {
           <Button
             variant="outline"
             aria-pressed={showMap}
-            hidden={!detailed}
             onClick={() => filter("view", "map")}
           >
             Карта и список
@@ -1421,7 +1374,7 @@ function PropertyResults({
         Найдено объектов: {data.total}
         <span>На странице: {data.items.length}</span>
       </div>
-      {showMap && detailed && (
+      {showMap && (
         <PropertyMap
           rows={data.items}
           registryQuery={registryQuery}
@@ -1429,7 +1382,7 @@ function PropertyResults({
           onSelect={setSelectedId}
         />
       )}
-      {showMap && detailed && (
+      {showMap && (
         <div className="registry-list-heading">
           <div>
             <p className="eyebrow">СПИСОК</p>
@@ -2505,6 +2458,11 @@ export function AdvertisementView({ id }: { id: string }) {
         <span className="advertisement-status-hint">
           Оригинал сохранён без изменений
         </span>
+        <Button asChild>
+          <Link href={`/review?advertisement_id=${id}`}>
+            Открыть анализ и проверку
+          </Link>
+        </Button>
       </div>
       <section className="panel padded publication-original advertisement-detail-panel">
         <div className="advertisement-detail-heading">
@@ -2562,12 +2520,16 @@ export function AdvertisementView({ id }: { id: string }) {
         {ad.assets.length > 0 && (
           <div className="advertisement-assets">
             <h3>Сохранённые материалы</h3>
+            <p className="field-help">
+              Исходный PDF скачивается без изменений. Для текста, HTML и
+              изображения формируется PDF-копия; оригинал доступен отдельно.
+            </p>
             {ad.assets.map((asset) => (
               <div className="asset" key={asset.id}>
                 <PdfDownload
                   kind="assets"
                   id={asset.id}
-                  label="Источник в PDF"
+                  label={assetPdfLabel(asset)}
                 />
                 <a className="text-link" href={`/api/v1/assets/${asset.id}`}>
                   Скачать материал <ArrowRight size={14} />
@@ -2579,11 +2541,6 @@ export function AdvertisementView({ id }: { id: string }) {
         )}
       </section>
       <div className="advertisement-detail-actions">
-        <Button asChild>
-          <Link href={`/review?advertisement_id=${id}`}>
-            Открыть анализ и проверку
-          </Link>
-        </Button>
         <p className="notice">
           Анализ и ручная проверка доступны в рабочем месте. Гипотезы не влияют
           на балл риска без отдельного решения аналитика.

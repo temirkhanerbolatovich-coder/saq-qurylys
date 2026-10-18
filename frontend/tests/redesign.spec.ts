@@ -204,7 +204,9 @@ test("review material selection is restored by Back and reload without starting 
     name: "Очередь проверки",
     exact: true,
   });
-  await queue.getByText("Выбрать другой материал", { exact: false }).click();
+  await queue
+    .getByText("Сменить материал · очередь и фильтры", { exact: true })
+    .click();
   await queue.locator(`[data-advertisement-id="${ads.items[1].id}"]`).click();
   await expect(page).toHaveURL(
     new RegExp(`advertisement_id=${ads.items[1].id}`),

@@ -1163,7 +1163,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
               <PdfDownload
                 kind="signals"
                 id={id}
-                label="Скачать снимок в PDF"
+                label="Скачать копию снимка"
               />
             )}
 
@@ -1184,7 +1184,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
               >
                 {row.pdf_state === "FAILED"
                   ? "Повторить генерацию PDF"
-                  : "Подготовить PDF"}
+                  : "Сформировать и сохранить PDF"}
               </Button>
             ) : null}
 
@@ -1192,6 +1192,12 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
               PDF хранит снимок и решение этой версии. Поздние изменения его не
               переписывают.
             </small>
+            {row.pdf_state !== "READY" && (
+              <p className="field-help">
+                «Скачать копию снимка» выдаёт файл без сохранения в системе.
+                Формирование PDF сохраняет файл этой версии в архиве.
+              </p>
+            )}
           </div>
 
           <div
