@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { login, testOrigin } from "./support";
+import { openMonitoringTool, login, testOrigin } from "./support";
 
 const objectId = "11111111-1111-4111-8111-111111111111";
 const jobIds = [
@@ -431,10 +431,7 @@ test("public register explains page matches, unknown absence and viewer access",
     },
   );
   await page.goto("/monitoring");
-  await page
-    .getByRole("navigation", { name: "Разделы мониторинга" })
-    .getByRole("link", { name: "Открытый документ КЖК", exact: true })
-    .click();
+  await openMonitoringTool(page, "open");
   const panel = page.getByRole("region", {
     name: "Открытый реестр гарантий КЖК",
     exact: true,

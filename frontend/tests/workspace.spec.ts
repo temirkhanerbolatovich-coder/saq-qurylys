@@ -106,6 +106,9 @@ test("dashboard and evidence come from authenticated API", async ({ page }) => {
     page.getByRole("heading", { name: "DEMO Бәйтерек · очередь 2" }),
   ).toBeVisible();
   await page
+    .getByRole("tab", { name: "Проверка и риски", exact: true })
+    .click();
+  await page
     .getByRole("button", { name: "Доказательства", exact: true })
     .first()
     .click();

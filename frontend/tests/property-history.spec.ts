@@ -20,12 +20,15 @@ test("dossier history reads real events with the recorded author and keeps the r
   ).json();
   expect(history.items.length).toBeGreaterThan(0);
   await page.goto(`/properties/${property.id}`);
-  await page.getByRole("link", { name: "История", exact: true }).click();
+  await page.getByRole("tab", { name: "История", exact: true }).click();
+  await page.getByRole("tab", { name: "История", exact: true }).click();
   const region = page.getByRole("region", {
     name: "История объекта",
     exact: true,
   });
-  await expect(region).toBeFocused();
+  await expect(
+    page.getByRole("tab", { name: "История", exact: true }),
+  ).toBeFocused();
   await expect(region).toContainText(`Всего событий: ${history.total}`);
   await expect(
     region
@@ -94,6 +97,7 @@ test("history pagination preserves context and handles delayed errors, retry, em
   await page.goto(
     `/properties/${property.id}?registry=${encodeURIComponent("q=DEMO&page=2")}`,
   );
+  await page.getByRole("tab", { name: "История", exact: true }).click();
   const region = page.getByRole("region", {
     name: "История объекта",
     exact: true,
@@ -149,7 +153,9 @@ test("history pagination preserves context and handles delayed errors, retry, em
       },
     }),
   );
-  await page.goto(`/properties/${property.id}?history_page=invalid`);
+  await page.goto(
+    `/properties/${property.id}?history_page=invalid&section=history`,
+  );
   await expect(region).toContainText("Сохранено событие");
   await expect(region).toContainText("Имя не указано");
   await expect(region).toContainText("Причина в событии не записана");

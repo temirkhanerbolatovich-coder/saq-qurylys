@@ -14,6 +14,7 @@ from app.api import (
     advertisements,
     analysis,
     auth,
+    exports,
     legal_bases,
     monitoring,
     open_registry,
@@ -79,6 +80,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {'status': 'ok'}
 
     app.include_router(auth.router)
+    app.include_router(exports.router)
     app.include_router(properties.router)
     app.include_router(advertisements.router)
     app.include_router(analysis.router)

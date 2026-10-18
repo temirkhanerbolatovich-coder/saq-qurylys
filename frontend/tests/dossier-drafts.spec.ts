@@ -60,14 +60,28 @@ test("dossier fields and files survive other objects and Back; reload explains m
   await page.locator('[data-testid="construction-R5"] > summary').click();
   await page.locator('[data-testid="construction-R6"] > summary').click();
   await page.locator("#r6-status").selectOption("COMPLETED_LATE");
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
   await page
     .getByText("Ввести реквизиты и загрузить документ", { exact: true })
     .click();
   await page
+    .getByRole("tab", { name: "Проверка и риски", exact: true })
+    .click();
+  await page
     .locator("#absence-result-KZHK_GUARANTEE")
     .selectOption("UNAVAILABLE");
-  for (const [id, value] of Object.entries(fields))
+  for (const [id, value] of Object.entries(fields)) {
+    await page
+      .getByRole("tab", {
+        name: id.startsWith("basis-") ? "Документы" : "Проверка и риски",
+        exact: true,
+      })
+      .click();
     await page.locator(`#${id}`).fill(value);
+  }
+  await page
+    .getByRole("tab", { name: "Проверка и риски", exact: true })
+    .click();
   const fileContent = "PRIVATE FILE CONTENT ONLY IN MEMORY 54321";
   await page.locator("#appeal-file").setInputFiles({
     name: "dossier-private.txt",
@@ -89,6 +103,7 @@ test("dossier fields and files survive other objects and Back; reload explains m
     .click();
   await expect(page.locator("#appeal-reason")).toHaveValue("");
   await page.goBack();
+  await expect(page).toHaveURL(/\/properties(?:\?|$)/);
   await page.goBack();
   await openDossierTools(page);
   await expect(page).toHaveURL(new RegExp(`/properties/${row.id}`));
@@ -292,6 +307,7 @@ test("legal basis decision restores its own reason and date after navigation and
   });
   await page.goto(`/properties/${row.id}`);
   await openDossierTools(page);
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
   await page.locator(".dossier-document > summary").first().click();
   const reason = page
     .getByLabel("Обоснование проверки основания", { exact: true })
@@ -307,6 +323,7 @@ test("legal basis decision restores its own reason and date after navigation and
   });
   revision = 2;
   await leaveAndReturn(page, row.name);
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
   await page.locator(".dossier-document > summary").first().click();
   await expect(reason).toHaveValue(
     "DEMO basis review stays a draft after revision change",

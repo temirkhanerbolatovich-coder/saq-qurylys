@@ -76,8 +76,13 @@ test("keyboard skip link, dossier anchors and R1 reason remain usable without co
     "absence-decision-help",
   );
   await reason.fill("DEMO unsaved interface-only draft");
-  await page.getByRole("link", { name: "Основания", exact: true }).click();
-  await expect(page.locator("#dossier-bases")).toBeFocused();
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
+  await expect(
+    page.getByRole("tab", { name: "Документы", exact: true }),
+  ).toBeFocused();
+  await page
+    .getByRole("tab", { name: "Проверка и риски", exact: true })
+    .click();
   await page.getByRole("link", { name: "Проверить R1", exact: true }).click();
   await expect(reason).toHaveValue("DEMO unsaved interface-only draft");
   await expect(

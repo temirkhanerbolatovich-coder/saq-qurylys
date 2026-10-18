@@ -1,5 +1,47 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Вкладки и PDF по новому ТЗ · 18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
+
+Codex root, один исполнитель. Ветка `codex/dossier-tabs-pdf`, база `1b47cc6`.
+Пользователь разрешил реализацию настоящих вкладок и минимального backend PDF;
+push/publish/deploy запрещены. Публичная установка остаётся на `e2dfefd`.
+
+В коде: шесть mounted панелей досье и четыре мониторинга, одна видима; URL section,
+клавиатура/legacy hash, компактное состояние, поиск/фильтр/пагинация документов,
+списки публикаций/сигналов. Read-only PDF с exact original/frozen signal и
+производными копиями, контракт0.14.0-mvp, ADR-016/FEATURE_RECORD_PDF.
+
+Финальный full browser **109PASS/3.2m**, workers1/retries0. Frontend typecheck,
+lint, format:check, production build PASS. Backend full820PASS/18Windows skips
+до завершающего PDF provenance/layout, после него focused export+contract13PASS.
+Ruff check/format90files PASS, repository hygiene/changed-file UTF8/local links/
+private-literal scan PASS. Начальные100PASS/8FAIL и последующие focused отказы
+задокументированы в UI_AUDIT; исправлены focus timing, history race и select label.
+
+Реальные PDF:15видов (open-registry exact в APItests);16HTTP smoke downloads
+включая исходный PDF byte-for-byte и изображение, плюс40DEMO-записей/18страниц.
+Poppler visual samples и glyph bounds17PDF/90страниц — без выхода за страницу. Новый
+текст→анализ→human hypothesis/match/evidence/R2→CONFIRMED signalv7→PDF39338bytes
+проверен отдельно; R1 не подтверждён. PDF экспорт не меняет снимок/риски/источники.
+
+Responsive375/768/1024/1440, RU/KZ, keyboard, legacylinks, reload/Back/Forward,
+черновики/файлы/возврат в реестр PASS. Настоящий Chromium zoom200%:1440→720CSSpx,
+DPR1→2, пять панелей overflow0. Дополнительные17captures: pageerrors/writes/overflow0.
+Внешняя UX/предметная приёмка и проверка на втором компьютере не выполнены.
+
+Стенд `saq-tabs-pdf-20261018`: loopback frontend3227/API8227/DB55667,
+собственные volumes/image `saq-tabs-pdf-api:local-20261018`, внешние collectors off.
+Прежний host preview3207 остановлен ради Windows build lock; рабочий Docker
+frontend и данные не менялись. Secrets/helpers/logs только ignored
+`.local/tabs-pdf-20261018`; артефакты `output/qa/tabs-pdf-20261018`.
+
+Документация: DESIGN_SYSTEM/UX_GUIDELINES/UI_COMPONENTS/UI_AUDIT/PLAN/REQUIREMENTS,
+README/CHANGELOG, FEATURE_RECORD_PDF и ADR-016. Ниже сохраняется история предыдущей
+сессии; preview3207 больше не является текущим. Ревизия проверки: база1b47cc6 плюс
+изменения этого локального блока; код и документация фиксируются локальным commit.
+Следующий шаг: пользовательская приёмка на localhost3227, затем отдельно
+согласованный freeze/publish. Push/PR/merge/deploy не выполнялись.
+
 ## Локальная доработка UI после аудита · 18.10.2026
 
 **IMPLEMENTED / LOCAL VERIFIED / NOT DEPLOYED.** Пользователь разрешил

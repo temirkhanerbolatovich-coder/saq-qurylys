@@ -1,5 +1,64 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## U18.10.2026: настоящие вкладки и PDF · LOCAL VERIFIED
+
+База1b47cc6, ветка codex/dossier-tabs-pdf, Codex root, один исполнитель.
+Актуальная локальная версия заменяет прежнюю схему anchors. Публичная установка
+e2dfefd и её данные не обновлялись. Следующие разделы — история предыдущих срезов.
+
+| Требование нового ТЗ | Реализовано и проверено |
+|---|---|
+| Реальные вкладки | 6 в досье, 4 в monitoring; ровно одна видимая panel, остальные mounted hidden |
+| Понятный первый экран | Название/адрес, застройщик, legal status, компактный server risk и основной переход; обзор по умолчанию |
+| Навигация/черновики | URL section, reload, Back/Forward, старые editor/document hashes, выбранные файлы и ввод без POST |
+| Длинные архивы | Документы: search/status/pages10; fixture25 с сохранением формы и переходом на страницу3 по hash; публикации/сигналы/история server-paged |
+| Разделение действий | Глобальные зоны / карточные tabs / действия конкретной записи; подтверждения и роли сохранены |
+| Шум и плотность | Убрана повторная большая risk panel, постоянная справка режима; справка о черновике по запросу; компактнее mobile shell |
+| Доступность | Native buttons/semantics, roving arrows/Home/End, focus, skip link, no page overflow, reduced motion |
+| Размеры | Реальные панели375/768/1024/1440; дополнительный regression320/1920; RU/KZ и целостность названий |
+| Масштаб200% | Настоящий chrome.tabs.setZoom(2) в отдельном Chromium QA profile: width1440→720, DPR1→2, 5панелей без page overflow |
+| PDF | 15 существующих видов; Linux HTTP smoke16случаев с изображением/exact original, плюс18страниц40DEMO-записей; open-registry exact path отдельно в API tests |
+| Предметные границы | Formula/roles/auth/review/snapshot не менялись; read-only exports не создают evidence/job/decision |
+
+Проверки: frontend lint/typecheck/format/build PASS; full browser **109PASS/3.2m**,
+workers1/retries0. Backend full **820PASS/18Windows skips/437.02s** до финального
+уточнения PDF provenance/layout; после него focused export+contract **13PASS**.
+Ruff check и format90files PASS; repository hygiene и changed-file scan PASS.
+Первый browser full100PASS/8FAIL раскрывал старые locator assumptions и реальные
+focus/URL races; исправлены. Последующий focused14PASS/1FAIL выявил неточный
+native-select label, теперь явный accessible name и успешный архивный regression.
+Не использовались retries для сокрытия отказов.
+
+Отдельный реальный сценарий: новый DEMO текст → анализ → human hypothesis →
+property match → evidence → отдельное CONFIRMED R2 → signal v7 CONFIRMED →
+сохранённый PDF **39338bytes**. R1 не подтверждён, исходник включён. Это техническая
+проверка цепочки, не независимая оценка качества OCR или правовая приёмка.
+
+PDF: кириллица/DEMO/источники/даты/версии читаются из файлов; hash/path/size guards,
+ошибки, роли, frozen signal и zero writes проверены. Poppler PNG визуально
+просмотрены для основания, изображения, середины/конца длинного списка; переносы,
+страницы и отсутствие обрезки проверены. Дополнительный glyph bounds scan:
+17файлов/90страниц, out-of-page glyphs0. Отчёт —
+в output/qa/tabs-pdf-20261018/exports/bounds.json. Это не ручное чтение каждой
+страницы каждого PDF. Перенос строки/поля на следующую страницу не выдаётся
+за потерю записи. Исходный PDF не получает изменяющей его DEMO-надписи.
+
+Реальные финальные страницы дополнительно сняты17наблюдениями, overflow/errors/
+business writes0; captures с reduced-motion. Скриншоты/PDF/logs находятся только
+в ignored output/qa/tabs-pdf-20261018 и .local/tabs-pdf-20261018.
+Стенд отдельный localhost3227/API8227/DB55667, платные/закрытые сервисы не подключены.
+
+Kompra: применён принцип разделённой карточки и иерархии из согласованного
+направления; приватные экраны не наблюдались и конкретное private поведение не
+приписывается сервису. Собственная палитра/семантика SAQ сохранены.
+
+Открыто: независимая приёмка обычным сотрудником/аналитиком, второй компьютер,
+субъективная оценка удобства и официальный freeze к защите21октября. Один
+zoom-профиль Chromium не является проверкой всех браузеров. Закрытый реестр,
+коммерческий C-01 и независимое качество AI/OCR этим UI/PDF-срезом не закрыты.
+PDF больших записей может достичь resource cap; отказ явный, оригинал доступен.
+Публикация требует отдельного разрешения пользователя.
+
 ## Локальная доработка по итогам сверки ТЗ · 18.10.2026
 
 База b24531b, ветка codex/ui-stabilization-20261018, Codex root; приложение

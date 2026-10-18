@@ -73,6 +73,9 @@ test("catalog search, dossier and context return work without expert controls", 
   const name = await page.locator(".property-card h2").innerText();
   await page.getByRole("link", { name, exact: true }).click();
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
+  await page
+    .getByRole("tab", { name: "Проверка и риски", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Материалы и проверки", exact: true }),
   ).toBeHidden();
@@ -196,6 +199,9 @@ test("simple dossier keeps expert drafts and file selection across mode changes"
   await expect(page.locator("#main-content")).toBeFocused();
   await page
     .getByRole("link", { name: "DEMO Бәйтерек · очередь 2", exact: true })
+    .click();
+  await page
+    .getByRole("tab", { name: "Проверка и риски", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Открыть инструменты", exact: true })

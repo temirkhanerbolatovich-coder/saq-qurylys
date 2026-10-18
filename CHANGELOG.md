@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased · Local tabs and record PDF
+
+- Replace dossier and monitoring section anchors with six/four real URL-backed tabs;
+  retain mounted drafts/files, keyboard focus, legacy links and browser history.
+- Compact the object header/mobile navigation; search, filter and page saved documents,
+  and show related publications/signals in existing server pages.
+- Add authenticated bounded read-only PDF downloads for saved records and sources;
+  preserve original PDF bytes and frozen signal payloads. Contract0.14.0-mvp.
+- Preserve existing risk, authorization, decisions and snapshots. Local only.
+
 ## Unreleased · Local UI completion
 
 - Collapse dossier documents while preserving visible scope/dates/status and mounted decision drafts.

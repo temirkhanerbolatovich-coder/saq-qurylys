@@ -1,6 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import {
+  WorkspaceTabs,
+  WorkspacePanel,
+  useWorkspaceSection,
+} from "@/components/ui/workspace-tabs";
+import { PdfDownload } from "@/components/pdf-download";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   useContext,
@@ -8,7 +14,6 @@ import {
   useRef,
   useState,
   type FormEvent,
-  type MouseEvent,
   type ReactNode,
 } from "react";
 import { api, command, date } from "@/lib/api";
@@ -124,15 +129,6 @@ function useMonitoringCommand() {
   };
 }
 
-const monitoringTargets = [
-  "monitoring-candidates",
-  "monitoring-detail",
-  "monitoring-incidents",
-  "open-register-title",
-  "monitoring-threads",
-  "monitoring-registry",
-];
-
 function revealMonitoringTarget(targetId: string) {
   const target = document.getElementById(targetId);
   // Opening a reference tool must preserve its existing forms, files and result state.
@@ -142,40 +138,32 @@ function revealMonitoringTarget(targetId: string) {
   target?.scrollIntoView({ block: "start" });
 }
 
+const monitoringTabs = [
+  { id: "candidates", label: "Кандидаты" },
+  { id: "incidents", label: "Инциденты" },
+  { id: "sources", label: "Источники" },
+  { id: "registry", label: "Версии реестра" },
+] as const;
+function monitoringSectionForHash(hash: string) {
+  if (["monitoring-candidates", "monitoring-detail"].includes(hash))
+    return "candidates";
+  if (hash === "monitoring-incidents") return "incidents";
+  if (["open-register-title", "monitoring-threads"].includes(hash))
+    return "sources";
+  if (hash === "monitoring-registry") return "registry";
+}
+
 export function MonitoringView() {
   const { user } = useContext(Auth);
-  const clickedTarget = useRef("");
+  const sections = useWorkspaceSection(
+    monitoringTabs,
+    monitoringSectionForHash,
+  );
   useEffect(() => {
-    const reveal = () => {
-      const target = window.location.hash.slice(1);
-      // A click already moved focus; its delayed hashchange must not steal the next keypress.
-      if (clickedTarget.current === target) {
-        clickedTarget.current = "";
-        return;
-      }
-      if (monitoringTargets.includes(target)) revealMonitoringTarget(target);
-    };
-    reveal();
-    window.addEventListener("hashchange", reveal);
-    return () => window.removeEventListener("hashchange", reveal);
-  }, []);
-  function navigateSection(event: MouseEvent<HTMLAnchorElement>) {
-    if (
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    )
-      return;
-    event.preventDefault();
-    const target = event.currentTarget.hash.slice(1);
-    if (window.location.hash !== `#${target}`) {
-      clickedTarget.current = target;
-      window.location.hash = target;
-    }
-    revealMonitoringTarget(target);
-  }
+    const target = window.location.hash.slice(1);
+    if (monitoringSectionForHash(target) === sections.active)
+      revealMonitoringTarget(target);
+  }, [sections.active]);
   const params = useSearchParams();
   const router = useRouter();
   const q = params.get("q") || "";
@@ -227,7 +215,7 @@ export function MonitoringView() {
       detailHeading.current?.scrollIntoView({ block: "start" });
       focusSelection.current = false;
     }
-  }, [candidateId]);
+  }, [candidateId, sections.active]);
   function update(changes: Record<string, string | null>) {
     const next = new URLSearchParams(params);
     for (const [name, nextValue] of Object.entries(changes)) {
@@ -238,7 +226,7 @@ export function MonitoringView() {
   }
   function selectCandidate(id: string) {
     focusSelection.current = true;
-    update({ candidate_id: id });
+    update({ candidate_id: id, section: "candidates" });
   }
   function changed() {
     queue.reload();
@@ -260,286 +248,288 @@ export function MonitoringView() {
           нарушение и не начисляет R1 или другие баллы риска.
         </p>
       </div>
-      <nav className="monitoring-local-nav" aria-label="Разделы мониторинга">
-        <a href="#monitoring-candidates" onClick={navigateSection}>
-          Кандидаты объектов
-        </a>
-        <a href="#monitoring-detail" onClick={navigateSection}>
-          Сверка кандидата
-        </a>
-        <a href="#monitoring-incidents" onClick={navigateSection}>
-          Предварительные инциденты
-        </a>
-        <a href="#open-register-title" onClick={navigateSection}>
-          Открытый документ КЖК
-        </a>
-        <a href="#monitoring-threads" onClick={navigateSection}>
-          Поиск Threads
-        </a>
-        <a href="#monitoring-registry" onClick={navigateSection}>
-          Версии DEMO-реестра
-        </a>
-      </nav>
+      <WorkspaceTabs
+        tabs={monitoringTabs}
+        active={sections.active}
+        onSelect={sections.select}
+        prefix="monitoring"
+        label="Разделы мониторинга"
+      />
 
-      <section
-        className="panel"
-        id="monitoring-candidates"
-        tabIndex={-1}
-        aria-labelledby="monitoring-candidates-title"
+      <WorkspacePanel
+        id="candidates"
+        active={sections.active}
+        prefix="monitoring"
       >
-        <div className="panel-heading">
-          <div>
-            <h2 id="monitoring-candidates-title">Кандидаты объектов</h2>
-            <p>
-              Отдельная очередь находок. Кандидат ещё не является подтверждённым
-              объектом в каталоге ЖК.
-            </p>
-          </div>
-          <Button variant="outline" onClick={queue.reload}>
-            Обновить кандидатов
-          </Button>
-        </div>
-        <div className="padded">
-          <form
-            className="monitoring-filters"
-            key={`${q}:${mode}`}
-            onSubmit={(event) => {
-              event.preventDefault();
-              const form = new FormData(event.currentTarget);
-              update({
-                q: value(form, "q"),
-                is_demo: value(form, "mode"),
-                page: null,
-                incident_page: null,
-              });
-            }}
-          >
-            <Field label="Поиск кандидата">
-              <input name="q" defaultValue={q} maxLength={200} type="search" />
-            </Field>
-            <Field label="Режим материалов">
-              <select name="mode" defaultValue={mode}>
-                <option value="">Все материалы</option>
-                <option value="true">DEMO</option>
-                <option value="false">Реальные</option>
-              </select>
-            </Field>
-            <Button type="submit" variant="outline">
-              Применить фильтры
+        <section
+          className="panel"
+          id="monitoring-candidates"
+          tabIndex={-1}
+          aria-labelledby="monitoring-candidates-title"
+        >
+          <div className="panel-heading">
+            <div>
+              <h2 id="monitoring-candidates-title">Кандидаты объектов</h2>
+              <p>
+                Отдельная очередь находок. Кандидат ещё не является
+                подтверждённым объектом в каталоге ЖК.
+              </p>
+            </div>
+            <Button variant="outline" onClick={queue.reload}>
+              Обновить кандидатов
             </Button>
-          </form>
-          {(q || mode) && (
-            <Button
-              variant="ghost"
-              onClick={() =>
+          </div>
+          <div className="padded">
+            <form
+              className="monitoring-filters"
+              key={`${q}:${mode}`}
+              onSubmit={(event) => {
+                event.preventDefault();
+                const form = new FormData(event.currentTarget);
                 update({
-                  q: null,
-                  is_demo: null,
+                  q: value(form, "q"),
+                  is_demo: value(form, "mode"),
                   page: null,
                   incident_page: null,
-                })
-              }
-            >
-              Сбросить фильтры
-            </Button>
-          )}
-        </div>
-        {!queueData ? (
-          <div className="padded">
-            <LoadState error={queueError} retry={queue.reload} />
-          </div>
-        ) : (
-          <>
-            <p className="padded">Найдено кандидатов: {queueData.total}</p>
-            {queueData.items.length ? (
-              <TableRegion label="Кандидаты объектов — таблица">
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Объект</th>
-                      <th scope="col">Город / очередь</th>
-                      <th scope="col">Последняя сверка</th>
-                      <th scope="col">Создан</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {queueData.items.map((candidate) => (
-                      <tr
-                        key={candidate.id}
-                        aria-selected={candidate.id === candidateId}
-                      >
-                        <td>
-                          <Link
-                            href={`/monitoring?${new URLSearchParams({ ...Object.fromEntries(params), candidate_id: candidate.id })}`}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              selectCandidate(candidate.id);
-                            }}
-                          >
-                            {candidate.name}
-                          </Link>{" "}
-                          <Demo value={candidate.is_demo} />
-                          <small>
-                            {candidate.address || "Адрес не установлен"}
-                          </small>
-                        </td>
-                        <td>
-                          {candidate.city}
-                          <small>
-                            {candidate.phase || "Очередь не установлена"}
-                          </small>
-                        </td>
-                        <td>{resultLabel(candidate.last_result)}</td>
-                        <td>{date(candidate.created_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </TableRegion>
-            ) : (
-              <p className="empty">
-                Кандидатов по этим условиям нет. Добавьте находку из сохранённой
-                публикации или измените фильтры.
-              </p>
-            )}
-            <Pagination
-              label="Страницы кандидатов"
-              page={queueData.page}
-              pageSize={queueData.page_size}
-              total={queueData.total}
-              onPageChange={(next) => update({ page: String(next) })}
-            />
-          </>
-        )}
-        {user?.role === "analyst" && (
-          <details className="padded">
-            <summary>Добавить кандидата из публикации</summary>
-            <CandidateCreate
-              advertisementId={params.get("advertisement_id") || ""}
-              onCreated={(candidate) => {
-                changed();
-                selectCandidate(candidate.id);
+                });
               }}
-            />
-          </details>
-        )}
-      </section>
-
-      <section
-        className="panel"
-        id="monitoring-detail"
-        tabIndex={-1}
-        ref={detailHeading}
-        aria-labelledby="monitoring-detail-title"
-      >
-        <div className="panel-heading">
-          <h2 id="monitoring-detail-title">Сверка кандидата</h2>
-        </div>
-        {candidateId ? (
-          <CandidateDetail
-            key={candidateId}
-            id={candidateId}
-            snapshotId={snapshotId}
-            onSnapshotChange={setSnapshotId}
-            onChanged={changed}
-          />
-        ) : (
-          <p className="empty">
-            Выберите кандидата в таблице или добавьте находку.
-          </p>
-        )}
-      </section>
-
-      <section
-        className="panel"
-        id="monitoring-incidents"
-        tabIndex={-1}
-        aria-labelledby="monitoring-incidents-title"
-      >
-        <div className="panel-heading">
-          <div>
-            <h2 id="monitoring-incidents-title">Предварительные инциденты</h2>
-            <p>
-              Причина для проверки, а не подтверждённый правовой вывод.
-              Повторная сверка дополняет активную карточку той же причины.
-            </p>
-          </div>
-          <Button variant="outline" onClick={incidents.reload}>
-            Обновить инциденты
-          </Button>
-        </div>
-        <div className="padded">
-          <Field label="Состояние инцидента">
-            <select
-              value={incidentState}
-              onChange={(event) =>
-                update({
-                  incident_state: event.target.value,
-                  incident_page: null,
-                })
-              }
             >
-              <option value="">Все состояния</option>
-              {Object.entries(incidentLabels).map(([state, label]) => (
-                <option key={state} value={state}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </Field>
-          {!incidentData ? (
-            <LoadState error={incidentError} retry={incidents.reload} />
+              <Field label="Поиск кандидата">
+                <input
+                  name="q"
+                  defaultValue={q}
+                  maxLength={200}
+                  type="search"
+                />
+              </Field>
+              <Field label="Режим материалов">
+                <select name="mode" defaultValue={mode}>
+                  <option value="">Все материалы</option>
+                  <option value="true">DEMO</option>
+                  <option value="false">Реальные</option>
+                </select>
+              </Field>
+              <Button type="submit" variant="outline">
+                Применить фильтры
+              </Button>
+            </form>
+            {(q || mode) && (
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  update({
+                    q: null,
+                    is_demo: null,
+                    page: null,
+                    incident_page: null,
+                  })
+                }
+              >
+                Сбросить фильтры
+              </Button>
+            )}
+          </div>
+          {!queueData ? (
+            <div className="padded">
+              <LoadState error={queueError} retry={queue.reload} />
+            </div>
           ) : (
             <>
-              <p>Найдено инцидентов: {incidentData.total}</p>
-              {incidentData.items.length ? (
-                incidentData.items.map((incident) => (
-                  <article key={incident.id} className="monitoring-record">
-                    <h3>
-                      <Link
-                        href={`/monitoring?${new URLSearchParams({ ...Object.fromEntries(params), candidate_id: incident.candidate_id })}`}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          selectCandidate(incident.candidate_id);
-                        }}
-                      >
-                        {incident.candidate_name}
-                      </Link>{" "}
-                      <Demo value={incident.is_demo} />
-                    </h3>
-                    <p>
-                      {incidentLabels[incident.state]} · {incident.rule_code}
-                    </p>
-                    <p className="monitoring-meta">
-                      Обновлён {date(incident.updated_at)} · ревизия{" "}
-                      {incident.revision}
-                    </p>
-                    <p>Решения и история доступны в карточке кандидата.</p>
-                  </article>
-                ))
+              <p className="padded">Найдено кандидатов: {queueData.total}</p>
+              {queueData.items.length ? (
+                <TableRegion label="Кандидаты объектов — таблица">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th scope="col">Объект</th>
+                        <th scope="col">Город / очередь</th>
+                        <th scope="col">Последняя сверка</th>
+                        <th scope="col">Создан</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {queueData.items.map((candidate) => (
+                        <tr
+                          key={candidate.id}
+                          aria-selected={candidate.id === candidateId}
+                        >
+                          <td>
+                            <Link
+                              href={`/monitoring?${new URLSearchParams({ ...Object.fromEntries(params), candidate_id: candidate.id })}`}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                selectCandidate(candidate.id);
+                              }}
+                            >
+                              {candidate.name}
+                            </Link>{" "}
+                            <Demo value={candidate.is_demo} />
+                            <small>
+                              {candidate.address || "Адрес не установлен"}
+                            </small>
+                          </td>
+                          <td>
+                            {candidate.city}
+                            <small>
+                              {candidate.phase || "Очередь не установлена"}
+                            </small>
+                          </td>
+                          <td>{resultLabel(candidate.last_result)}</td>
+                          <td>{date(candidate.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableRegion>
               ) : (
-                <p className="empty">Инцидентов по этим условиям нет.</p>
+                <p className="empty">
+                  Кандидатов по этим условиям нет. Добавьте находку из
+                  сохранённой публикации или измените фильтры.
+                </p>
               )}
               <Pagination
-                label="Страницы предварительных инцидентов"
-                page={incidentData.page}
-                pageSize={incidentData.page_size}
-                total={incidentData.total}
-                onPageChange={(next) => update({ incident_page: String(next) })}
+                label="Страницы кандидатов"
+                page={queueData.page}
+                pageSize={queueData.page_size}
+                total={queueData.total}
+                onPageChange={(next) => update({ page: String(next) })}
               />
             </>
           )}
-        </div>
-      </section>
-      <section
-        className="monitoring-tools"
-        aria-labelledby="monitoring-tools-title"
+          {user?.role === "analyst" && (
+            <details className="padded">
+              <summary>Добавить кандидата из публикации</summary>
+              <CandidateCreate
+                advertisementId={params.get("advertisement_id") || ""}
+                onCreated={(candidate) => {
+                  changed();
+                  selectCandidate(candidate.id);
+                }}
+              />
+            </details>
+          )}
+        </section>
+
+        <section
+          className="panel"
+          id="monitoring-detail"
+          tabIndex={-1}
+          ref={detailHeading}
+          aria-labelledby="monitoring-detail-title"
+        >
+          <div className="panel-heading">
+            <h2 id="monitoring-detail-title">Сверка кандидата</h2>
+          </div>
+          {candidateId ? (
+            <CandidateDetail
+              key={candidateId}
+              id={candidateId}
+              snapshotId={snapshotId}
+              onSnapshotChange={setSnapshotId}
+              onChanged={changed}
+            />
+          ) : (
+            <p className="empty">
+              Выберите кандидата в таблице или добавьте находку.
+            </p>
+          )}
+        </section>
+      </WorkspacePanel>
+      <WorkspacePanel
+        id="incidents"
+        active={sections.active}
+        prefix="monitoring"
       >
-        <h2 id="monitoring-tools-title">Справочные источники и настройки</h2>
-        <p className="muted">
-          Откройте нужный инструмент. Поиск по документу и предварительные
-          находки не устанавливают правовой статус объекта.
-        </p>
+        <section
+          className="panel"
+          id="monitoring-incidents"
+          tabIndex={-1}
+          aria-labelledby="monitoring-incidents-title"
+        >
+          <div className="panel-heading">
+            <div>
+              <h2 id="monitoring-incidents-title">Предварительные инциденты</h2>
+              <p>
+                Причина для проверки, а не подтверждённый правовой вывод.
+                Повторная сверка дополняет активную карточку той же причины.
+              </p>
+            </div>
+            <Button variant="outline" onClick={incidents.reload}>
+              Обновить инциденты
+            </Button>
+          </div>
+          <div className="padded">
+            <Field label="Состояние инцидента">
+              <select
+                value={incidentState}
+                onChange={(event) =>
+                  update({
+                    incident_state: event.target.value,
+                    incident_page: null,
+                  })
+                }
+              >
+                <option value="">Все состояния</option>
+                {Object.entries(incidentLabels).map(([state, label]) => (
+                  <option key={state} value={state}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            {!incidentData ? (
+              <LoadState error={incidentError} retry={incidents.reload} />
+            ) : (
+              <>
+                <p>Найдено инцидентов: {incidentData.total}</p>
+                {incidentData.items.length ? (
+                  incidentData.items.map((incident) => (
+                    <article key={incident.id} className="monitoring-record">
+                      <PdfDownload
+                        kind="incidents"
+                        id={incident.id}
+                        label="PDF инцидента"
+                      />
+                      <h3>
+                        <Link
+                          href={`/monitoring?${new URLSearchParams({ ...Object.fromEntries(params), candidate_id: incident.candidate_id })}`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            selectCandidate(incident.candidate_id);
+                          }}
+                        >
+                          {incident.candidate_name}
+                        </Link>{" "}
+                        <Demo value={incident.is_demo} />
+                      </h3>
+                      <p>
+                        {incidentLabels[incident.state]} · {incident.rule_code}
+                      </p>
+                      <p className="monitoring-meta">
+                        Обновлён {date(incident.updated_at)} · ревизия{" "}
+                        {incident.revision}
+                      </p>
+                      <p>Решения и история доступны в карточке кандидата.</p>
+                    </article>
+                  ))
+                ) : (
+                  <p className="empty">Инцидентов по этим условиям нет.</p>
+                )}
+                <Pagination
+                  label="Страницы предварительных инцидентов"
+                  page={incidentData.page}
+                  pageSize={incidentData.page_size}
+                  total={incidentData.total}
+                  onPageChange={(next) =>
+                    update({ incident_page: String(next) })
+                  }
+                />
+              </>
+            )}
+          </div>
+        </section>
+      </WorkspacePanel>
+      <WorkspacePanel id="sources" active={sections.active} prefix="monitoring">
         <details className="monitoring-tool">
           <summary>
             Справочный документ КЖК
@@ -556,6 +546,12 @@ export function MonitoringView() {
           </summary>
           <ThreadsSearch />
         </details>
+      </WorkspacePanel>
+      <WorkspacePanel
+        id="registry"
+        active={sections.active}
+        prefix="monitoring"
+      >
         <details className="monitoring-tool">
           <summary>
             Учебные версии реестра
@@ -624,7 +620,7 @@ export function MonitoringView() {
             </div>
           </section>
         </details>
-      </section>
+      </WorkspacePanel>
     </div>
   );
 }
@@ -823,6 +819,11 @@ function CandidateDetail({
           <h3>
             {data.candidate.name} <Demo value={data.candidate.is_demo} />
           </h3>
+          <PdfDownload
+            kind="candidates"
+            id={data.candidate.id}
+            label="PDF карточки кандидата"
+          />
           <p>
             {data.candidate.city} ·{" "}
             {data.candidate.address || "Адрес не установлен"}
@@ -945,6 +946,11 @@ function CandidateDetail({
           {data.comparisons.length ? (
             data.comparisons.map((comparison) => (
               <article className="monitoring-record" key={comparison.id}>
+                <PdfDownload
+                  kind="comparisons"
+                  id={comparison.id}
+                  label="PDF сверки"
+                />
                 <h4>{resultLabel(comparison.result)}</h4>
                 <p>{comparison.explanation}</p>
                 <p className="monitoring-meta">
@@ -1042,6 +1048,11 @@ function RegistryVersion({
   const { user } = useContext(Auth);
   return (
     <article className="monitoring-record">
+      <PdfDownload
+        kind="registry-snapshots"
+        id={snapshot.id}
+        label="PDF версии реестра"
+      />
       <h3>
         {snapshot.label} <Demo value={snapshot.is_demo} />
       </h3>

@@ -200,6 +200,7 @@ test("collapsed documents keep decisions mounted and visible metadata at all req
     await route.fulfill({ response, json: detail });
   });
   await page.goto(`/properties/${row.id}`);
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
   const card = page.locator(".dossier-document").first();
   await expect(card).not.toHaveAttribute("open", "");
   await expect(card.locator("summary")).toContainText("Охват:");

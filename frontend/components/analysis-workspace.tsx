@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { PropertyHistory } from "@/components/property-history";
 import { RemainingReviewQueue } from "@/components/review-queue";
+import { PdfDownload } from "@/components/pdf-download";
 import { PropertyPicker } from "@/components/property-picker";
 import {
   Auth,
@@ -634,11 +635,13 @@ function ReviewMaterial({
   ];
   return (
     <>
-      <p className="field-help">
-        Черновик можно восстановить в текущей вкладке в течение 12 часов после
-        последнего изменения. Он не отправляется автоматически. Выход из
-        аккаунта удаляет черновики.
-      </p>
+      <details className="review-draft-help">
+        <summary>О черновике проверки</summary>
+        <p className="field-help">
+          Черновик хранится в текущей вкладке 12 часов после изменения.
+          Восстановление не отправляет решения. Выход удаляет черновики.
+        </p>
+      </details>
       {draft.restored && (
         <p role="status" className="notice">
           Восстановлен локальный черновик этого материала. Сверьте актуальные
@@ -809,12 +812,29 @@ function ReviewMaterial({
             <pre className="original-text">{ad.original_text}</pre>
           )}
           {image && (
+            <PdfDownload
+              kind="assets"
+              id={image.id}
+              label="PDF-копия изображения"
+            />
+          )}
+          {image && (
             <a className="text-link" href={`/api/v1/assets/${image.id}`}>
               Скачать оригинал
             </a>
           )}
           {extraction && (
             <>
+              <PdfDownload
+                kind="extractions"
+                id={extraction.id}
+                label="PDF результатов анализа"
+              />
+              <PdfDownload
+                kind="advertisements"
+                id={ad.id}
+                label="PDF публикации"
+              />
               <h3>
                 {image
                   ? "Распознанный / проверяемый текст"

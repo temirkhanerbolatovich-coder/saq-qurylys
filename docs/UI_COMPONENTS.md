@@ -1,5 +1,24 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Вкладки и PDF · U18.10.2026
+
+- WorkspaceTabs / WorkspacePanel / useWorkspaceSection: общий native-button
+  tablist, roving keyboard focus, URL section и legacy mapping. Все панели mounted,
+  hidden только невыбранные. Next-integrated history предотвращает конкуренцию
+  асинхронного replace старого hash с новым выбором.
+- PropertyView: компактная шапка, шесть панелей, полный локальный документный
+  фильтр/поиск/pages10, восстановление нужной страницы legacy document.
+- MonitoringView: четыре панели, выбранный кандидат и вспомогательные source
+  формы сохраняют ввод. Native disclosures внутри источников не заменяют tabs.
+- ObjectRecords: существующие paged advertisements/signals по property_id,
+  реальные даты/статусы, ссылки и PDF по записи; без выдуманной candidate-property связи.
+- PdfDownload: GET, pending/error/retry, MIME/PDF signature, Blob download;
+  без POST, print dialog или ложного success. Исходный PDF не преобразуется.
+- PropertyHistory: PDF записи внутри native details после первого summary.
+
+API/правила и пределы — [FEATURE_RECORD_PDF](FEATURE_RECORD_PDF.md).
+Исторические milestones ниже не описывают текущие anchors как новые tabs.
+
 ## Локальная доработка после аудита · 18.10.2026
 
 - PropertyPicker: существующие Button/Pagination/LoadState и native search/select.

@@ -61,6 +61,9 @@ test("appeal document requires a separate R4 decision", async ({ page }) => {
     .getByRole("button", { name: "Доказательства", exact: true })
     .click();
   await expect(page.getByText("Заявителей: 2", { exact: false })).toBeVisible();
+  await page
+    .getByRole("tab", { name: "Проверка и риски", exact: true })
+    .click();
   await page.getByRole("button", { name: "Отклонить R4", exact: true }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "R4 отклонён" }),

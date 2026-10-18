@@ -12,6 +12,7 @@ test("legal document stays pending until a dated human review, rejection never c
     p.name.includes("Алтай"),
   ).id;
   await page.goto(`/properties/${id}`);
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
   const number = `DEMO-BASIS-${Date.now()}`;
   await page
     .getByText("Ввести реквизиты и загрузить документ", { exact: true })

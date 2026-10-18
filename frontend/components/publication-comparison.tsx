@@ -6,6 +6,7 @@ import { useTransition, type CSSProperties } from "react";
 import { date } from "@/lib/api";
 import type { Advertisement, Asset, Extraction, Page } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { PdfDownload } from "@/components/pdf-download";
 import { Pagination } from "@/components/ui/pagination";
 import { TableRegion } from "@/components/ui/table-region";
 import { Demo, LoadState, PageTitle, useData } from "@/components/workspace";
@@ -307,8 +308,16 @@ function ComparisonResult({ path }: { path: string }) {
       />
     );
   const comparison = result.data;
+  const exportQuery = new URLSearchParams(path.split("?")[1]);
+  exportQuery.delete("left_id");
   return (
     <section aria-label="Результат сравнения">
+      <PdfDownload
+        kind="publication-comparison"
+        id={comparison.left.advertisement_id}
+        query={exportQuery.toString()}
+        label="PDF сравнения"
+      />
       <h2 aria-live="polite">{resultLabels[comparison.status]}</h2>
       <p>
         {comparison.same_advertisement

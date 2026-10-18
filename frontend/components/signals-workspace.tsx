@@ -1,5 +1,7 @@
 "use client";
 
+import { PdfDownload } from "@/components/pdf-download";
+
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -938,6 +940,11 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                 >
                   Исходный документ основания
                 </a>
+                <PdfDownload
+                  kind="assets"
+                  id={basis.asset_id}
+                  label="Источник в PDF"
+                />
               </article>
             ))}
 
@@ -1013,6 +1020,11 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                     >
                       Сохранённый исходник
                     </a>
+                    <PdfDownload
+                      kind="assets"
+                      id={evidence.asset_id}
+                      label="Источник в PDF"
+                    />
 
                     {evidence.source_url && (
                       <a
@@ -1147,6 +1159,13 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
             tabIndex={-1}
           >
             <h4>PDF этой версии</h4>
+            {row.pdf_state !== "READY" && (
+              <PdfDownload
+                kind="signals"
+                id={id}
+                label="Скачать снимок в PDF"
+              />
+            )}
 
             <p role={row.pdf_state === "QUEUED" ? "status" : undefined}>
               {pdfLabels[row.pdf_state]}

@@ -9,6 +9,7 @@ import { statusLabel } from "@/lib/status-labels";
 import type { AuditEvent, Page } from "@/lib/types";
 import { Pagination } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
+import { PdfDownload } from "@/components/pdf-download";
 import { LoadState, useData } from "@/components/workspace";
 
 const actionLabels: Record<string, string> = {
@@ -193,6 +194,11 @@ export function PropertyHistory({
                     )}
                     <details className="history-record">
                       <summary>Запись аудита</summary>
+                      <PdfDownload
+                        kind="audit"
+                        id={event.id}
+                        label="PDF записи"
+                      />
                       <dl>
                         <dt>Код события</dt>
                         <dd>{event.action}</dd>

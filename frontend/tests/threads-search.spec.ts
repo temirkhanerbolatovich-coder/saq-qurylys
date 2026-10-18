@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { login } from "./support";
+import { openMonitoringTool, login } from "./support";
 
 test("Threads reports the real disabled connection without issuing a search", async ({
   page,
@@ -10,10 +10,7 @@ test("Threads reports the real disabled connection without issuing a search", as
     if (request.url().endsWith("/monitoring/threads/search")) searches++;
   });
   await page.goto("/monitoring");
-  await page
-    .getByRole("navigation", { name: "Разделы мониторинга" })
-    .getByRole("link", { name: "Поиск Threads", exact: true })
-    .click();
+  await openMonitoringTool(page, "threads");
   const panel = page.getByRole("region", {
     name: "Поиск в Threads",
     exact: true,
@@ -91,10 +88,7 @@ test("Threads preview handles fixture results, empty pages and failure without r
     });
   });
   await page.goto("/monitoring");
-  await page
-    .getByRole("navigation", { name: "Разделы мониторинга" })
-    .getByRole("link", { name: "Поиск Threads", exact: true })
-    .click();
+  await openMonitoringTool(page, "threads");
   const panel = page.getByRole("region", {
     name: "Поиск в Threads",
     exact: true,
@@ -168,10 +162,7 @@ for (const state of ["TOKEN_MISSING", "TOKEN_INVALID"] as const) {
       }),
     );
     await page.goto("/monitoring");
-    await page
-      .getByRole("navigation", { name: "Разделы мониторинга" })
-      .getByRole("link", { name: "Поиск Threads", exact: true })
-      .click();
+    await openMonitoringTool(page, "threads");
     const panel = page.getByRole("region", {
       name: "Поиск в Threads",
       exact: true,

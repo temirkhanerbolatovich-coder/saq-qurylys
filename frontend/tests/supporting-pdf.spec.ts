@@ -50,6 +50,7 @@ test("supporting PDF preserves original bytes and stays pending until human revi
   const pdf = demoPdf();
 
   await page.goto(`/properties/${property.id}`);
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
   await page
     .getByText("Ввести реквизиты и загрузить документ", { exact: true })
     .click();

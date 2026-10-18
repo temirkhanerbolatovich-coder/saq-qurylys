@@ -1184,6 +1184,90 @@ input[type="checkbox"] {
   margin-bottom: var(--space-6);
 }
 
+.workspace-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-3);
+  margin-block: var(--space-4);
+}
+.workspace-tabs [role="tab"] {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+.workspace-tabs [aria-selected="true"] {
+  background: var(--color-brand);
+  color: var(--color-surface);
+  border-color: var(--color-brand);
+  font-weight: 600;
+}
+.workspace-panel[hidden] {
+  display: none !important;
+}
+.workspace-panel {
+  min-width: 0;
+}
+.workspace-panel > * + * {
+  margin-top: var(--space-4);
+}
+.workspace-panel:focus-visible,
+.workspace-tabs button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+.dossier-compact-state,
+.document-filters,
+.object-record,
+.pdf-download {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.dossier-compact-state {
+  padding-block: var(--space-2);
+}
+.dossier-workspace .page-heading {
+  padding-bottom: 0;
+  margin-bottom: var(--space-2);
+  border-bottom: 0;
+}
+.dossier-compact-state > button {
+  margin-inline-start: auto;
+}
+.document-filters > label {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.document-filters input,
+.document-filters select {
+  width: 100%;
+}
+.object-record {
+  justify-content: space-between;
+  border-top: 1px solid var(--color-border);
+  padding-block: var(--space-3);
+}
+.object-record > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pdf-download {
+  display: inline-flex;
+  margin: var(--space-2) var(--space-2) var(--space-2) 0;
+}
+.pdf-download > [role="alert"] {
+  flex-basis: 100%;
+  color: var(--color-danger);
+}
+
 .dossier-document > summary {
   cursor: pointer;
   min-height: 44px;
@@ -4582,26 +4666,45 @@ body {
 @media (max-width: 639px) {
   .analyst-workspace .sidebar {
     padding: var(--space-4);
+    gap: var(--space-2);
   }
   .analyst-workspace .brand {
     font-size: 15px;
     gap: var(--space-2);
   }
   .analyst-workspace .brand small {
-    font-size: 12px;
-    max-width: 130px;
+    display: none;
   }
   .analyst-workspace .sidebar .user {
     max-width: 132px;
   }
   .analyst-workspace .sidebar nav {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
   .analyst-workspace .sidebar nav a {
     flex-direction: row;
     font-size: 12px;
     gap: var(--space-1);
     padding: var(--space-2) var(--space-1);
+  }
+  .analyst-workspace .sidebar nav a svg {
+    display: none;
+  }
+  .analyst-workspace .topbar {
+    gap: var(--space-2);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .analyst-workspace .topbar-search {
+    padding-block: 0;
+  }
+  .dossier-workspace .back {
+    margin-bottom: var(--space-3);
+  }
+  .dossier-workspace .page-heading {
+    margin-bottom: var(--space-2);
+  }
+  .dossier-workspace .object-summary {
+    margin-block: var(--space-2);
   }
   .analyst-workspace .topbar,
   .checking-nav {

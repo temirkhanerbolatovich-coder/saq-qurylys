@@ -154,9 +154,12 @@ test("risk dossier reflows at 320 CSS pixels and reduced motion disables feedbac
   for (const width of [320, 375, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto(`/properties/${row.id}`);
-    await expect(page.locator(".risk-number")).toContainText(
+    await expect(page.locator(".dossier-compact-state")).toContainText(
       String(row.risk.score),
     );
+    await page
+      .getByRole("tab", { name: "Проверка и риски", exact: true })
+      .click();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -166,13 +169,19 @@ test("risk dossier reflows at 320 CSS pixels and reduced motion disables feedbac
       .getByRole("button", { name: "Доказательства", exact: true })
       .first();
     await button.click();
-    await expect(button).toHaveAttribute("aria-expanded", "true");
+    await expect(
+      page.getByRole("tab", { name: "Документы", exact: true }),
+    ).toHaveAttribute("aria-selected", "true");
     await expect(page.locator(".evidence-list")).toBeVisible();
     expect(
       await page
         .locator(".evidence-list")
         .evaluate((el) => parseFloat(getComputedStyle(el).animationDuration)),
     ).toBeLessThanOrEqual(0.01);
+    await page
+      .getByRole("tab", { name: "Проверка и риски", exact: true })
+      .click();
+    await expect(button).toHaveAttribute("aria-expanded", "true");
     await button.click();
     await expect(button).toHaveAttribute("aria-expanded", "false");
   }

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.13.0-mvp",
-    "description": "SAQ QURYLYS contract. Registry/OCR, dated legal review, manual R1-R6, immutable signals/human decisions/PDF export and passive supporting PDF upload implemented. Commercial advertising collector remains planned. JSON is valid YAML 1.2. Manual monitoring candidates, immutable DEMO registry snapshots, comparisons and preliminary incident decisions are additive; the closed customer registry remains unavailable. Explicit licensed Primeminister.kz information import is implemented through leased jobs. Operator-provided KHC public PDF versions and page-text search preserve provenance and never establish legal applicability or modify risk."
+    "version": "0.14.0-mvp",
+    "description": "SAQ QURYLYS contract. Registry/OCR, dated legal review, manual R1-R6, immutable signals/human decisions/PDF export and passive supporting PDF upload implemented. Commercial advertising collector remains planned. JSON is valid YAML 1.2. Manual monitoring candidates, immutable DEMO registry snapshots, comparisons and preliminary incident decisions are additive; the closed customer registry remains unavailable. Explicit licensed Primeminister.kz information import is implemented through leased jobs. Operator-provided KHC public PDF versions and page-text search preserve provenance and never establish legal applicability or modify risk. Authenticated read-only exports return exact saved PDFs or bounded derived copies; signal exports retain frozen snapshots."
   },
   "servers": [
     {
@@ -4219,6 +4219,134 @@
         "description": "Read-only, exact line comparison of stored original_text by default, or explicitly selected historical extraction.analysis_text belonging to each publication and its source asset. No implicit OCR fallback, normalization, entity matching, duplicate verdict or risk changes. Missing/blank text is TEXT_UNAVAILABLE, never identical. DEMO and real sources cannot mix. Limits: 100000 Unicode characters and 1000 splitlines per selected text, rejected without truncation. Line ranges are zero-based half-open; returned blocks preserve exact line endings. text_sha256 hashes selected UTF-8 DB text, not original file bytes; storage integrity is not reverified. same_source_url compares two known URLs literally and otherwise remains null.",
         "x-implementation-status": "IMPLEMENTED_SAVED_PUBLICATION_COMPARISON",
         "x-origin": "USER_APPROVED_BACKEND_FUNCTIONALITY"
+      }
+    },
+    "/api/v1/exports/{kind}/{id}/pdf": {
+      "get": {
+        "summary": "Download Record Pdf",
+        "operationId": "downloadRecordPdf",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "assets",
+                "evidence",
+                "legal-bases",
+                "risk-factors",
+                "advertisements",
+                "extractions",
+                "properties",
+                "signals",
+                "comparisons",
+                "registry-snapshots",
+                "open-registry",
+                "audit",
+                "incidents",
+                "candidates",
+                "publication-comparison"
+              ],
+              "type": "string",
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "right_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Right Id"
+            }
+          },
+          {
+            "name": "left_extraction_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Left Extraction Id"
+            }
+          },
+          {
+            "name": "right_extraction_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Right Extraction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Original PDF or explicitly labelled derived PDF copy",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Saved source is missing or fails integrity verification"
+          },
+          "413": {
+            "description": "Export exceeds bounded size"
+          },
+          "503": {
+            "description": "Renderer unavailable, busy or timed out; retry is safe"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "IMPLEMENTED"
       }
     }
   },
