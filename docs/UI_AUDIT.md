@@ -1,5 +1,50 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Финальная локальная сверка и стабилизация ·18.10.2026
+
+Базаa3afdf0, codex/audit-workflow-fixes, один Codex; пользователь «гоу гоу».
+[Актуальная матрица ТЗ/всех20 замечаний](audits/SAQ_QURYLYS_UI_UX_RECONCILIATION_2026-10-18.md):
+10 технически устранены,5 частично,5 открыты/отложены. Это учёт backlog,
+не процент готовности продукта. Baseline860e033 не переписывался.
+
+Текущий UI-блок: GREEN сопровождается явным статусом основания в registry,
+cards/dashboard/dossier/selected map; number/zone остаются серверными.
+≤639px поиск раскрывается кнопкой44px с focus, Escape предотвращает native
+очистку input, возвращает focus и сохраняет draft. Сжаты отступы shell/досье,
+не скрыты DEMO/ограничения/вкладки. Monitoring snapshot native select/page10
+показывает label/город/дату, выбранный охват/истечение/полноту; metadata/ID
+сохраняются между страницами/error. Manual UUID в details; reload по-прежнему
+сбрасывает выбор/несохранённое основание. q+city применяются вместе через350ms/
+Enter, reset/page/view/URL сохранены. LoadState retry type=button предотвращает
+случайный submit формы сверки. Backend/API0.18/auth/риск/снимки/данные прежние.
+
+Новые4теста и связанные сценарии **22PASS/41.4s**. Первый прогон19PASS/3FAIL:
+native Escape очищал draft, label locator включал option text и mobile fold
+был927px. Исправлены Escape и семантический role locator, compact spacing;
+промежуточный3PASS/1FAIL показал875px, затем финальный22PASS. Это не отказ
+бизнес-формулы. После последней сборки full **130PASS/3.9m**, workers1/retries0:
+реальные API/worker/OCR/PDF/historical R2, роли, drafts и navigation.
+npm build/typecheck/lint/format:check PASS. Backend suite не повторялась;
+предыдущие57PASS/1Windows PDF SKIP относятся к a3afdf0.
+
+Fresh14наблюдений реального GREEN+UNKNOWN досье:2вида×360/375/390/768/1024/
+1440/1920px, overflow/errors/businessPOST0, reduced-motion. На375/390 начало
+summary≈832–836px при844px высоты, на360≈884–888 и768≈872–876: UX-09 частично
+открыт. Не заявляется первый экран для всех имён и наборов. Просмотрены PNG
+390/768/1440; дополнительно реальный snapshot picker390/1440, overflow/errors/
+commands0, визуально проверены label/truncation + полное описание ниже select.
+Читаемость длинного названия сохраняется в metadata, не только в option.
+
+Настоящий browser200% через chrome.tabs.setZoom/getZoom2, DPR2 и innerWidth720
+при viewport1440:6вкладок, scrollWidth720 во всех. Full-page screenshot при
+zoom обрезал raster; использован viewport capture, DOM-измерение до него.
+Локальные artifacts: output/qa/audit-stabilization-20261018; логи/JSON в ignored
+.local/tabs-pdf-20261018/audit-stabilization-*. Новая внешняя UX/screen-reader/
+предметная/SQL-scale/второйПК приёмка не проводилась. C-01/качество OCR и реальных
+источников этим UI-блоком не закрыты. Публичная установка не обновлялась.
+Финальный self-review, diff check, hygiene, strict UTF8, добавленные local links
+и private-literal scan17source files PASS; секретные значения не выводились.
+
 ## Поиск по всей очереди сигналов ·18.10.2026 · локальный блок
 
 UX-06, база0bd2dfd, codex/audit-workflow-fixes; согласование «гоу», один Codex.

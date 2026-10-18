@@ -7,7 +7,7 @@ import type { Property } from "@/lib/types";
 import { mapConfig } from "@/lib/map-config";
 import { Button } from "@/components/ui/button";
 import { statusLabel } from "@/lib/status-labels";
-import { propertyDossierUrl } from "@/lib/presentation";
+import { propertyDossierUrl, propertyRiskContext } from "@/lib/presentation";
 import "leaflet/dist/leaflet.css";
 
 const zones = { GREEN: "Зелёная", YELLOW: "Жёлтая", RED: "Красная" };
@@ -102,7 +102,7 @@ export function PropertyMap({
               iconSize: [44, 44],
               iconAnchor: [22, 22],
             }),
-            title: `Выбрать ${row.name}: ${row.risk.score}, ${zones[row.risk.zone]} зона`,
+            title: `Выбрать ${row.name}: ${row.risk.score}, ${zones[row.risk.zone]} зона${propertyRiskContext(row) ? `; ${propertyRiskContext(row)}` : ""}`,
             keyboard: true,
           }).addTo(map);
           const select = () => {
@@ -275,6 +275,11 @@ export function PropertyMap({
                           <strong>{selected.risk.score}</strong>{" "}
                           {zones[selected.risk.zone]}
                         </span>
+                        {propertyRiskContext(selected) && (
+                          <span className="property-risk-context">
+                            {propertyRiskContext(selected)}
+                          </span>
+                        )}
                       </dd>
                     </div>
                     <div>

@@ -1,5 +1,85 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Сверка ТЗ и стабилизация UI ·18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
+
+Пользователь «гоу гоу», Codex root, один исполнитель; codex/audit-workflow-fixes,
+базаa3afdf0, clean на входе. Новых агентских задач не создавалось.
+Разрешён локальный commit; запрет push/publish/deploy сохраняется.
+
+Завершён ограниченный frontend-блок UX-07/09/12/17:
+- PropertyRisk/propertyRiskContext добавляет рядом с GREEN точный статус
+  основания (UNKNOWN/PENDING/REJECTED); Zone/число/server calculation прежние.
+  Registry/cards/dashboard/dossier/selected map и marker accessible name.
+- GlobalSearch≤639px: native44px toggle, aria-expanded/controls, opening focus,
+  Escape preventDefault сохраняет draft/возвращает focus, Enter ведёт в registry.
+  Одна mounted форма, desktop visible. Compact shell/досье сохраняет статусы/
+  юридическую оговорку/DEMO/полные вкладки; first fold360/768 ещё частичен.
+- Snapshot chooser: native select/page10, label/город/дата, выбранная полнота/
+  охват/истечение, cached metadata/ID вне страницы и при error/retry; UUID
+  перенесён в details. Выбор не выполняет compare; REAL+DEMO запрет прежний.
+  Reload по-прежнему сбрасывает snapshot/reason, manual ID не загружает metadata.
+  Shared LoadState retry теперь type=button, без случайного submit формы.
+- Registry q+city: общий debounce350ms, Enter/reset/URL/page/view/focus сохранены.
+  Город остаётся точным текстовым фильтром, combobox не добавлялся.
+
+Файлы: frontend workspace/monitoring-workspace/property-map/presentation/
+design-system.css; новый tests/audit-stabilization.spec.ts. Backend/контракт0.18/
+auth/бизнес-данные/риск/исторические снимки не менялись; dependencies/ADR нет.
+Master1.4 и native controls/существующие UI primitives сохранены.
+Docs: README/CHANGELOG, REQUIREMENTS, DESIGN_SYSTEM/UX_GUIDELINES/UI_COMPONENTS,
+UI_IMPLEMENTATION_PLAN/UI_AUDIT/REMAINING_CHECKLIST и
+[полная сверка ТЗ/20 замечаний](docs/audits/SAQ_QURYLYS_UI_UX_RECONCILIATION_2026-10-18.md).
+Итог backlog:10 технически устранены,5 частично,5 open/deferred, не процент
+готовности MVP. Исходный аудит860e033 сохранён исторически. Kompra documented
+patterns отделены от недоступного приватного UI; новых private screens не изучали.
+
+Фактические проверки на финальной сборке:
+- node .local/tabs-pdf-20261018/build.cjs → npm run build PASS.
+- npm run typecheck; npm run lint; npm run format:check → PASS.
+- node .local/tabs-pdf-20261018/test.cjs tests/audit-stabilization.spec.ts
+  tests/audit-workflows.spec.ts tests/monitoring.spec.ts tests/redesign.spec.ts
+  tests/workspace.spec.ts →22PASS/41.4s.
+- node .local/tabs-pdf-20261018/run.cjs full →130PASS/3.9m, workers1/retries0;
+  API/worker/Linux OCR/PDF/review/historical R2, roles, draft/tab/URL regression.
+  Лог audit-stabilization-full.log; related audit-stabilization-targeted.log.
+- Новый chooser101 использует presentation response fixture; реальный compare
+  отдельно покрыт monitoring.spec.ts. Fresh14real dossier observations:
+  2вида×360/375/390/768/1024/1440/1920, overflow/errors/businessPOST0,
+  reduced-motion. Ещё2real picker captures390/1440, те же нули. PNG просмотрены
+  390/768/1440 dossier и390/1440 picker. artifacts output/qa/audit-stabilization-20261018.
+- node .local/tabs-pdf-20261018/audit-stabilization-zoom.cjs → actual browser200%,
+  getZoom2/DPR2/innerWidth720,6вкладок scrollWidth720. Full-page capture обрезал
+  raster; локальный снимок viewport, измерения DOM до capture. Не CSS zoom.
+- .venv/Scripts/python.exe scripts/check_repository_hygiene.py → PASS.
+  .venv/Scripts/python.exe .local/tabs-pdf-20261018/validate-audit-stabilization.py
+  →17source files PASS: strict UTF8/added local links/private literals (без вывода
+  значений). git diff --check PASS, self-review scope/semantics/error paths PASS.
+
+Первый related run19PASS/3FAIL: native Escape clearing; getByLabel locator с
+option text (accessible combobox существует); mobile summary927px. Исправлены
+preventDefault/role locator/spacing. Промежуточный3PASS/1FAIL875px; затем22PASS
+и full130PASS. Нет переписывания факторов/удаления QA данных для прохождения.
+Backend этим блоком не менялся и заново не прогонялся (предыдущийa3afdf0:
+57PASS/1Windows native Pango PDF SKIP). Полный security/load/screen-reader audit,
+независимые UX/предметная/внешний holdout и второйПК не выполнены этим блоком.
+
+Runtime прежний: localpreview3227, QA API8227/PostgreSQL57667,
+image saq-signal-search-api:local-20261018, QA project saq-tabs-pdf-20261018.
+Config .local/tabs-pdf-20261018/signal-search-final.compose.json и отдельная
+qa_signal_search_* schema/storage сохранены. Старая qa_search_* и прежние volumes
+не удалялись, публичные images/tunnel не заменялись; frontend preview пересобран.
+Все private configs/logs/captures ignored; credentials не включаются в commit.
+
+Открытые границы: mobile fold360/768; UX-14/15 PDF labels/names, clean DEMO
+UX-20; реальные hierarchy UX-04; понимание GREEN UX-07; reload выбора/reason
+UX-12; SQL-scale UX-16; hidden reads UX-18/change summary UX-19.
+Обязательные C-01/качество OCR/внешняя UX/предметная/второйПК/сдача не закрыты.
+Следующий точный шаг: закончить UX-14/15 на имеющихся MIME/record metadata,
+затем отдельный читаемый DEMO-набор и независимая репетиция основного сценария.
+Для C-01 сначала требуется конкретный разрешённый рекламный источник; live
+import до установления источника/разрешения не выполнять. Новую публикацию
+делать только после отдельного разрешения пользователя.
+
 ## Поиск всей очереди сигналов ·18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
 
 Пользователь «гоу», Codex root, один исполнитель; codex/audit-workflow-fixes,

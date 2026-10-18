@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased · Local UI stabilization and audit reconciliation
+
+- Show the legal-basis limitation next to GREEN property scores without changing risk.
+- Collapse mobile global search, retain its draft on Escape, restore keyboard focus,
+  and tighten dossier spacing while preserving labels, limitations and touch targets.
+- Choose a DEMO registry version by readable label/date/scope with paging and retry;
+  retain manual UUID input in details. Selection remains local until reload.
+- Debounce registry q/city together for350ms, support Enter and preserve URL/reset/view context.
+- Reconcile all20 audit findings and UI requirements; keep partial/external acceptance explicit.
+- No backend/contract/dependency changes or public deployment.
+
 ## Unreleased · Whole-queue signal search
 
 - Add q to existing listSignals for current/frozen property names, signal ID,

@@ -217,6 +217,12 @@ export function MonitoringView() {
   const incidentError =
     incidents.resolvedPath === incidentPath ? incidents.error : "";
   const [snapshotId, setSnapshotId] = useState("");
+  const [selectedSnapshot, setSelectedSnapshot] =
+    useState<RegistrySnapshot | null>(null);
+  function chooseSnapshot(snapshot: RegistrySnapshot | null) {
+    setSelectedSnapshot(snapshot);
+    setSnapshotId(snapshot?.id || "");
+  }
   const detailHeading = useRef<HTMLElement>(null);
   const focusSelection = useRef(false);
   useEffect(() => {
@@ -441,7 +447,82 @@ export function MonitoringView() {
               key={candidateId}
               id={candidateId}
               snapshotId={snapshotId}
-              onSnapshotChange={setSnapshotId}
+              onSnapshotChange={(id) => {
+                setSnapshotId(id);
+                setSelectedSnapshot(null);
+              }}
+              snapshotPicker={
+                <div
+                  className="registry-snapshot-picker"
+                  role="region"
+                  aria-label="Выбор версии реестра"
+                >
+                  <Field label="DEMO-версия реестра">
+                    <select
+                      value={snapshotId}
+                      onChange={(event) =>
+                        chooseSnapshot(
+                          snapshotData?.items.find(
+                            (row) => row.id === event.target.value,
+                          ) || null,
+                        )
+                      }
+                    >
+                      <option value="">Без версии · реестр недоступен</option>
+                      {snapshotId &&
+                        !snapshotData?.items.some(
+                          (row) => row.id === snapshotId,
+                        ) && (
+                          <option value={snapshotId}>
+                            {selectedSnapshot?.label ||
+                              "Версия задана вручную · сведения не загружены"}
+                          </option>
+                        )}
+                      {snapshotData?.items.map((row) => (
+                        <option key={row.id} value={row.id}>
+                          {row.label} · {row.city} · {date(row.created_at)} ·
+                          DEMO
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  {selectedSnapshot && (
+                    <div className="notice" role="status">
+                      <strong>{selectedSnapshot.label} · DEMO</strong>
+                      <p>
+                        {selectedSnapshot.city} ·{" "}
+                        {selectedSnapshot.complete
+                          ? "Полный учебный список"
+                          : "Частичный учебный список"}{" "}
+                        · записей: {selectedSnapshot.entries.length}
+                      </p>
+                      <p>
+                        Охват: {date(selectedSnapshot.coverage_from)} —{" "}
+                        {date(selectedSnapshot.coverage_until)}. Пригоден до:{" "}
+                        {date(selectedSnapshot.expires_at)}.
+                      </p>
+                    </div>
+                  )}
+                  {!snapshotData ? (
+                    <LoadState error={snapshotError} retry={snapshots.reload} />
+                  ) : (
+                    <>
+                      {!snapshotData.total && (
+                        <p>Версий пока нет. Можно сверять без реестра.</p>
+                      )}
+                      <Pagination
+                        page={snapshotPage}
+                        pageSize={10}
+                        total={snapshotData.total}
+                        label="Страницы выбора версии реестра"
+                        onPageChange={(next) =>
+                          update({ snapshot_page: String(next) })
+                        }
+                      />
+                    </>
+                  )}
+                </div>
+              }
               onChooseSnapshot={() =>
                 openTool("registry", "monitoring-registry")
               }
@@ -607,7 +688,7 @@ export function MonitoringView() {
                         snapshot={snapshot}
                         selected={snapshot.id === snapshotId}
                         onSelect={() => {
-                          setSnapshotId(snapshot.id);
+                          chooseSnapshot(snapshot);
                           if (candidateId) {
                             focusSelection.current = true;
                             sections.select("candidates");
@@ -636,7 +717,7 @@ export function MonitoringView() {
                   <summary>Создать версию DEMO-реестра</summary>
                   <SnapshotCreate
                     onCreated={(snapshot) => {
-                      setSnapshotId(snapshot.id);
+                      chooseSnapshot(snapshot);
                       snapshots.reload();
                     }}
                   />
@@ -792,12 +873,14 @@ function CandidateCreate({
 function CandidateDetail({
   id,
   snapshotId,
+  snapshotPicker,
   onSnapshotChange,
   onChooseSnapshot,
   onChanged,
 }: {
   id: string;
   snapshotId: string;
+  snapshotPicker: ReactNode;
   onSnapshotChange: (id: string) => void;
   onChooseSnapshot: () => void;
   onChanged: () => void;
@@ -888,11 +971,11 @@ function CandidateDetail({
             >
               <h3>Новая сверка</h3>
               <p className="field-help">
-                Выберите DEMO-версию во вкладке «Версии реестра» или оставьте её
-                ID пустым для результата «Ожидает доступного реестра». Сверка
-                реального материала с DEMO запрещена. Адрес, очередь, даты
-                публикации и охват списка влияют на результат; совпадение
-                названия само по себе недостаточно.
+                Выберите DEMO-версию в списке или оставьте «Без версии» для
+                результата «Ожидает доступного реестра». Сверка реального
+                материала с DEMO запрещена. Адрес, очередь, даты публикации и
+                охват списка влияют на результат; совпадение названия само по
+                себе недостаточно.
               </p>
               <Button
                 type="button"
@@ -914,15 +997,24 @@ function CandidateDetail({
                   ))}
                 </select>
               </Field>
-              <Field label="ID DEMO-версии реестра (пусто — реестр недоступен)">
-                <input
-                  value={snapshotId}
-                  onChange={(event) => onSnapshotChange(event.target.value)}
-                  maxLength={36}
-                  pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-                  autoComplete="off"
-                />
-              </Field>
+              {snapshotPicker}
+              <details>
+                <summary>Технический ID версии</summary>
+                <p className="field-help">
+                  Ручной ввод не загружает описание версии. Для проверки
+                  названия и охвата используйте список выше. Выбор сохраняется
+                  до обновления страницы.
+                </p>
+                <Field label="ID DEMO-версии реестра (пусто — реестр недоступен)">
+                  <input
+                    value={snapshotId}
+                    onChange={(event) => onSnapshotChange(event.target.value)}
+                    maxLength={36}
+                    pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+                    autoComplete="off"
+                  />
+                </Field>
+              </details>
               <Button
                 type="button"
                 variant="ghost"

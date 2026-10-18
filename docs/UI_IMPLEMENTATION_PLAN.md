@@ -1,5 +1,20 @@
 # SAQ QURYLYS — внедрение и поддержка UI/UX
 
+## Шестой блок после аудита18.10: локальная стабилизация
+
+Пользователь «гоу гоу», базаa3afdf0, codex/audit-workflow-fixes, один Codex.
+UX-07/09/12/17: контекст GREEN, disclosure поиска/focus/draft на mobile,
+читаемая DEMO-версия со страницами/metadata/error и debounce q+city350ms/Enter.
+Расширены существующие native controls/Button/Pagination/LoadState; master1.4,
+backend/API0.18/auth/риск/снимки/данные прежние, no dependency/ADR.
+Связанные22browser tests PASS; полный прогон и self-review — PROJECT_STATUS.
+[Новая сверка всех20 пунктов](audits/SAQ_QURYLYS_UI_UX_RECONCILIATION_2026-10-18.md)
+отделяет техническое закрытие от partial/open/внешней приёмки; исходный аудит
+сохранён как baseline. Только local commit, без push/publish/deploy.
+Следующий связный UI-блок: UX-14/15 labels/имена PDF и отдельный читаемый DEMO
+для приёмки; mobile fold360/768 остаётся частично открытым. C-01 и внешний
+holdout/UX/второйПК требуют отдельных фактических подтверждений.
+
 ## Пятый блок после аудита18.10: серверный поиск сигналов
 
 Пользователь «гоу», база0bd2dfd, локальная codex/audit-workflow-fixes.

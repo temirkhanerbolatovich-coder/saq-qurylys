@@ -1,5 +1,19 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Стабилизация после аудита ·18.10
+
+- GlobalSearch: одна mounted search form, mobile toggle с aria-expanded/controls,
+  opening focus/Escape без очистки input; desktop visible, native submit прежний.
+- PropertyRisk/propertyRiskContext: Zone и статус основания рядом в registry,
+  property cards, dashboard, dossier; тот же helper в PropertyMap marker/selection.
+- PropertiesView: два draft q/city, общий debounce350ms, Enter/reset/URL sync;
+  существующий resolvedPath guard скрывает прежний ответ под новым URL.
+- MonitoringView передаёт CandidateDetail готовый snapshotPicker: существующие
+  snapshot page10, Field/native select, cached selected metadata, Pagination,
+  LoadState/retry, manual UUID в details. Нового endpoint/компонентной библиотеки нет.
+- LoadState retry имеет type=button, чтобы вложение в форму не отправляло её
+  бизнес-команду. Pagination/button semantics прежние.
+
 ## Серверный поиск сигналов ·18.10
 
 - SignalsView: q из URL в queuePath, native search form, submit/pagination pin

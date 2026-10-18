@@ -65,6 +65,7 @@ import {
   factorLabels,
   assetPdfLabel,
   propertyDossierUrl,
+  propertyRiskContext,
   zoneLabels,
 } from "@/lib/presentation";
 import { AppealReview } from "@/components/appeal-review";
@@ -115,38 +116,66 @@ const nav = [
 
 function GlobalSearch() {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const input = useRef<HTMLInputElement>(null);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const query = String(data.get("q") || "").trim();
     if (!query) return;
+    setOpen(false);
     router.push(`/properties?q=${encodeURIComponent(query)}`);
   }
 
   return (
-    <form
-      className="topbar-search"
-      role="search"
-      aria-label="Поиск объекта"
-      onSubmit={submit}
-    >
-      <Search size={16} aria-hidden="true" />
-      <label className="sr-only" htmlFor="global-property-search">
-        Найти объект или адрес
-      </label>
-      <input
-        id="global-property-search"
-        name="q"
-        type="search"
-        placeholder="Найти объект или адрес"
-        autoComplete="off"
-        maxLength={300}
-      />
-      <button type="submit" aria-label="Найти объект">
-        <ArrowRight size={16} aria-hidden="true" />
+    <div className={`global-search${open ? " is-open" : ""}`}>
+      <button
+        ref={toggle}
+        type="button"
+        className="global-search-toggle"
+        aria-expanded={open}
+        aria-controls="global-search-form"
+        onClick={() => {
+          setOpen(!open);
+          if (!open) requestAnimationFrame(() => input.current?.focus());
+        }}
+      >
+        <Search size={16} aria-hidden="true" /> Поиск
       </button>
-    </form>
+      <form
+        id="global-search-form"
+        className="topbar-search"
+        role="search"
+        aria-label="Поиск объекта"
+        onSubmit={submit}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && toggle.current?.offsetParent) {
+            event.preventDefault();
+            setOpen(false);
+            toggle.current?.focus();
+          }
+        }}
+      >
+        <Search size={16} aria-hidden="true" />
+        <label className="sr-only" htmlFor="global-property-search">
+          Найти объект или адрес
+        </label>
+        <input
+          ref={input}
+          id="global-property-search"
+          name="q"
+          type="search"
+          placeholder="Найти объект или адрес"
+          autoComplete="off"
+          maxLength={300}
+        />
+        <button type="submit" aria-label="Найти объект">
+          <ArrowRight size={16} aria-hidden="true" />
+        </button>
+      </form>
+    </div>
   );
 }
 
@@ -390,6 +419,16 @@ export function Zone({ risk }: { risk: Property["risk"] }) {
   );
 }
 
+function PropertyRisk({ row }: { row: Property }) {
+  const context = propertyRiskContext(row);
+  return (
+    <span className="property-risk">
+      <Zone risk={row.risk} />
+      {context && <span className="property-risk-context">{context}</span>}
+    </span>
+  );
+}
+
 export function RiskSummary({ risk }: { risk: Property["risk"] }) {
   const { detailed } = useInterfaceMode();
   return (
@@ -466,7 +505,7 @@ export function LoadState({
   return error ? (
     <>
       <Notice error={error} />
-      <Button variant="outline" onClick={retry}>
+      <Button type="button" variant="outline" onClick={retry}>
         Повторить загрузку
       </Button>
     </>
@@ -565,7 +604,7 @@ function PropertyTable({
                 </span>
               </td>
               <td>
-                <Zone risk={row.risk} />
+                <PropertyRisk row={row} />
               </td>
               <td>
                 <span className="factor-codes">
@@ -622,8 +661,10 @@ function PropertyCards({
             <p>{row.address}</p>
           </div>
           <div className="property-card-state">
-            <Zone risk={row.risk} />
-            <span>{legalLabels[row.legal_verification_status]}</span>
+            <PropertyRisk row={row} />
+            {!propertyRiskContext(row) && (
+              <span>{legalLabels[row.legal_verification_status]}</span>
+            )}
           </div>
           <p className="property-card-reason">
             <strong>{propertyNextAction(row).label}. </strong>
@@ -1128,7 +1169,7 @@ export function DashboardView() {
                       </p>
                     </div>
                     <div className="priority-action">
-                      <Zone risk={row.risk} />
+                      <PropertyRisk row={row} />
                       <p className="field-help">
                         {propertyNextAction(row).label}
                       </p>
@@ -1195,6 +1236,41 @@ export function DashboardView() {
 export function PropertiesView() {
   const params = useSearchParams();
   const router = useRouter();
+  const textSource = JSON.stringify([
+    params.get("q") || "",
+    params.get("city") || "",
+  ]);
+  const [text, setText] = useState({
+    source: textSource,
+    q: params.get("q") || "",
+    city: params.get("city") || "",
+  });
+  // Adjust drafts only when URL text changes (reload/Back/reset), not on every render.
+  if (text.source !== textSource)
+    setText({
+      source: textSource,
+      q: params.get("q") || "",
+      city: params.get("city") || "",
+    });
+  const paramsText = params.toString();
+  useEffect(() => {
+    const next = new URLSearchParams(paramsText);
+    if (
+      text.source !== textSource ||
+      (text.q === (next.get("q") || "") &&
+        text.city === (next.get("city") || ""))
+    )
+      return;
+    const timer = setTimeout(() => {
+      for (const key of ["q", "city"] as const) {
+        if (text[key]) next.set(key, text[key]);
+        else next.delete(key);
+      }
+      next.delete("page");
+      router.replace(`/properties?${next}`, { scroll: false });
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [text, textSource, paramsText, router]);
   const apiParams = new URLSearchParams(params);
   apiParams.delete("view");
   const query = apiParams.toString();
@@ -1204,6 +1280,7 @@ export function PropertiesView() {
     params.get(name),
   );
   function clearFilters() {
+    setText({ source: textSource, q: "", city: "" });
     const next = new URLSearchParams(params);
     for (const name of ["q", "city", "zone", "legal_status", "page"])
       next.delete(name);
@@ -1212,6 +1289,10 @@ export function PropertiesView() {
   }
   function filter(name: string, value: string) {
     const next = new URLSearchParams(params);
+    for (const key of ["q", "city"] as const) {
+      if (text[key]) next.set(key, text[key]);
+      else next.delete(key);
+    }
     if (value) next.set(name, value);
     else next.delete(name);
     if (name !== "page" && name !== "view") next.delete("page");
@@ -1242,8 +1323,11 @@ export function PropertiesView() {
               type="search"
               maxLength={300}
               placeholder="ЖК, адрес, застройщик или БИН"
-              value={params.get("q") || ""}
-              onChange={(e) => filter("q", e.target.value)}
+              value={text.q}
+              onChange={(event) => setText({ ...text, q: event.target.value })}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") filter("q", text.q);
+              }}
             />
           </div>
           <label>
@@ -1251,8 +1335,13 @@ export function PropertiesView() {
             <input
               aria-label="Фильтр по городу"
               maxLength={300}
-              value={params.get("city") || ""}
-              onChange={(event) => filter("city", event.target.value)}
+              value={text.city}
+              onChange={(event) =>
+                setText({ ...text, city: event.target.value })
+              }
+              onKeyDown={(event) => {
+                if (event.key === "Enter") filter("city", text.city);
+              }}
             />
           </label>
           <label>
@@ -1732,7 +1821,7 @@ export function PropertyView({ id }: { id: string }) {
         <span>{legalLabels[row.legal_verification_status]}</span>
       </div>
       <div className="dossier-compact-state">
-        <Zone risk={row.risk} />
+        <PropertyRisk row={row} />
         <span>
           {row.risk.confirmed_codes.length
             ? `Подтверждены: ${row.risk.confirmed_codes.join(", ")}`

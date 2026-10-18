@@ -26,6 +26,17 @@ export const propertyLevelLabels: Record<Property["level"], string> = {
   BUILDING: "Корпус",
 };
 
+export function propertyRiskContext(row: Property) {
+  if (row.risk.zone !== "GREEN") return null;
+  if (row.legal_verification_status === "PENDING")
+    return "Основание ожидает решения";
+  if (row.legal_verification_status === "UNKNOWN")
+    return "Основание не проверено";
+  if (row.legal_verification_status === "REJECTED")
+    return "Основание отклонено";
+  return null;
+}
+
 // Only an encoded registry query is carried; the return path stays local and fixed.
 export function propertyDossierUrl(id: string, registryQuery = "") {
   const query = new URLSearchParams(registryQuery);
