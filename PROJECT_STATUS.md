@@ -38,7 +38,10 @@ frontend и данные не менялись. Secrets/helpers/logs тольк�
 Документация: DESIGN_SYSTEM/UX_GUIDELINES/UI_COMPONENTS/UI_AUDIT/PLAN/REQUIREMENTS,
 README/CHANGELOG, FEATURE_RECORD_PDF и ADR-016. Ниже сохраняется история предыдущей
 сессии; preview3207 больше не является текущим. Ревизия проверки: база1b47cc6 плюс
-изменения этого локального блока; код и документация фиксируются локальным commit.
+изменения этого локального блока. Код/контракт/проверки зафиксированы в локальном
+`cd32183` (feat: add stateful dossier tabs and read-only PDF downloads).
+Эта запись SHA оформлена отдельным documentation-only commit. Доступ к QA preview
+сохранён в ignored `.local/tabs-pdf-20261018/credentials.txt`; secrets не в Git.
 Следующий шаг: пользовательская приёмка на localhost3227, затем отдельно
 согласованный freeze/publish. Push/PR/merge/deploy не выполнялись.
 
