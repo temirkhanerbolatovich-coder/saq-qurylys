@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased · Global property work priority
+
+- Extend existing listProperties with order=work_priority before pagination;
+  retain default name/ID, filters and unchanged server scores/legal views.
+- Read the dashboard's first5 (simple3) from that server order across the full registry;
+  remove the client comparator and distinguish list failures from empty results.
+- Contract0.17.0-mvp; local only. Existing all-view calculation/SQL scaling remains open.
+
 ## Unreleased · Property structure navigation
 
 - Add read-only ancestors, paged children and siblings using saved parent_id relations;

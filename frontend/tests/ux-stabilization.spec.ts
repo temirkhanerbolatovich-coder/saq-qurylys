@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { login } from "./support";
 import type { Property } from "../lib/types";
 
-test("work action and oldest review precede score without inventing deadlines", async ({
+test("dashboard preserves the supplied server work order and scores without inventing deadlines", async ({
   page,
 }) => {
   await login(page);
@@ -40,10 +40,17 @@ test("work action and oldest review precede score without inventing deadlines", 
       risk: { ...items[3].risk, score: 35 },
     },
   ];
-  await page.route("**/api/v1/properties?page_size=100", (route) =>
-    route.fulfill({
-      json: { items: rows, page: 1, page_size: 100, total: 140 },
-    }),
+  await page.route(
+    "**/api/v1/properties?order=work_priority&page_size=5",
+    (route) =>
+      route.fulfill({
+        json: {
+          items: [rows[2], rows[3], rows[1], rows[0]],
+          page: 1,
+          page_size: 5,
+          total: 140,
+        },
+      }),
   );
   await page.reload();
   await expect(page.locator(".priority-list .object-name")).toHaveText([
@@ -61,7 +68,9 @@ test("work action and oldest review precede score without inventing deadlines", 
   await expect(
     page.getByText("Сроки задач не установлены.", { exact: false }),
   ).toBeVisible();
-  await expect(page.locator(".queue-scope")).toContainText("первых 4");
+  await expect(page.locator(".queue-scope")).toContainText(
+    "по всему доступному реестру",
+  );
 });
 
 test("picker reaches the 101st object, preserves selection through searches, errors and reload without commands", async ({

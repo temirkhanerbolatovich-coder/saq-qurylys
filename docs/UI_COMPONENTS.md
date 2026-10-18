@@ -1,5 +1,16 @@
 # SAQ QURYLYS — каталог компонентов
 
+## Приоритет рабочего обзора ·18.10
+
+- DashboardView: listProperties order=work_priority,page_size5; использует порядок
+  items напрямую, учитывает error до показа rows. SimpleDashboard показывает3.
+- propertyNextAction: только подпись действия по имеющемуся статусу; order и
+  comparePropertyWork удалены, сортировка принадлежит server listProperties.
+- LoadState/Pagination/PropertyCards/Zone и семантический master прежние.
+- priority-action: mobile grid с полноширинным пояснением, без новой оболочки.
+
+Параметр и ограничения — [приоритет проверки](FEATURE_PROPERTY_PRIORITY.md).
+
 ## Структура объекта ·18.10
 
 - PropertyStructure: одна read-only выборка родителей и двух paged списков,

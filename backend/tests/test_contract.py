@@ -22,6 +22,19 @@ def test_registry_search_description_matches_live_parameters(client):
         assert documented['schema']['maxLength'] == actual['schema']['anyOf'][0]['maxLength'] == 300
 
 
+def test_property_order_contract_matches_live_parameter(client):
+    spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
+    documented = next(
+        item for item in spec['paths']['/api/v1/properties']['get']['parameters'] if item['name'] == 'order'
+    )
+    actual = next(
+        item
+        for item in client.app.openapi()['paths']['/api/v1/properties']['get']['parameters']
+        if item['name'] == 'order'
+    )
+    assert documented == actual
+
+
 def test_live_responses_match_approved_contract(signed):
     spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
     spec['$schema'] = 'https://json-schema.org/draft/2020-12/schema'

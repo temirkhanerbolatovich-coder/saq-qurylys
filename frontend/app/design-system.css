@@ -746,9 +746,21 @@ button:disabled {
   }
   .priority-action {
     grid-column: 1 / -1;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: start;
     align-items: center;
+  }
+  .priority-action .field-help {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    margin: 0;
+  }
+  .priority-action .text-link {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
   }
   .priority-object {
     grid-column: 1 / -1;

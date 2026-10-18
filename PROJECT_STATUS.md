@@ -1,5 +1,67 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Приоритет всего реестра ·18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
+
+Пользователь «гоу», Codex root, один исполнитель; codex/audit-workflow-fixes,
+базаbd78bba, clean на входе. Новые агентские задачи не создавались.
+Разрешён локальный блок и commit; запрет push/publish/deploy сохранён.
+
+UX-03: существующий GET properties принимает order=name(default)|work_priority,
+контракт0.17.0-mvp. Все filtered current PropertyOut сортируются до pagination:
+PENDING → UNKNOWN/REJECTED → остальные; затем NULL last_reviewed_at first,
+более давняя дата, server score DESC, UUID ASC. Эффективный legal status берётся
+из существующего server view; не raw status и не risk.as_of вместо даты проверки.
+Default name/ID, фильтры/q/total/страницы, роли/auth и response schema прежние.
+Dashboard получает5, simple показывает3 из этой выдачи; comparePropertyWork и
+client order удалены. propertyNextAction оставляет только UI label.
+Ошибка priority list имеет LoadState alert/retry, не false empty; другие очереди
+доступны. При визуальном просмотре устранено сжатие mobile пояснения: scoped
+priority-action≤639px grid, балл/ссылка в строке1, текст полной шириной в строке2.
+Формула риска/решения/снимки/данные/seed не менялись. Нет новых endpoints/DTO,
+dependency/migration/слоя; новый ADR не нужен. UX-16 остаётся: прежние all-view
+расчёт/N+1 и сортировка в памяти не являются SQL-scale или нагрузочной приёмкой.
+
+Файлы: backend app/api/properties.py,test_property_priority/test_contract;
+contracts/openapi.yaml; frontend workspace,property-priority,design-system.css,
+dashboard-priority/redesign/simple-interface/ux-stabilization tests.
+Docs: FEATURE_PROPERTY_PRIORITY,README,CHANGELOG,REQUIREMENTS,ARCHITECTURE,
+DESIGN_SYSTEM,UX_GUIDELINES,UI_COMPONENTS,UI_IMPLEMENTATION_PLAN,UI_AUDIT и этот статус.
+
+Проверки: .venv python .local/tabs-pdf-20261018/priority-backend-tests.py →
+**57PASS/50.62s** (priority/structure/search/dashboard/contract/API, своя случайная
+test schema QA PostgreSQL).101filler перед важными записями, группировка по
+действию, NULL/date/score/ID, стабильные страницы, filters/effective legal status,
+unchanged detail/viewer/auth; live/manual order parameter полностью совпадает.
+Ruff check/format backend PASS93files. npm run build/typecheck/lint/format:check PASS.
+Browser related21PASS46.7s; full124PASS4.0m (workers1/retries0, реальный Linux QA
+OCR/PDF/review); после mobile CSS и нового width regression final6PASS22.6s
+(dashboard-priority/integrated-layout). Полный backend suite не повторялся:
+серверный блок read-only ordering покрыт focused57 и полным браузерным regression.
+Новый полный browser suite после только scoped mobile CSS не повторялся;
+фактическая финальная сборка проверена6связанными tests/матрицей.
+Git diff/hygiene/UTF8/local-links/private-literal scan PASS; это не security-аудит.
+
+Responsive14наблюдений настоящего обзора:2режима×360/375/390/768/1024/1440/1920,
+reduced-motion, overflow/pageerror/business commands0. После CSS матрица повторена;
+пояснение mobile измеренно занимает≥90% action region. Вручную просмотрены4финальных
+panel screenshots simple/detailed×390/1440. Synthetic205/error fixtures отдельно
+проверяют UI trust/order/retry/empty, не объявляются реальными объектами проекта.
+Большой server set — транзакционные synthetic PostgreSQL rows, не наполненный стенд.
+Новые200%zoom/secondPC/независимая UX/предметная/нагрузочная приёмка не выполнялись.
+
+Preview http://localhost:3227. Изменён только изолированный QA saq-tabs-pdf-20261018
+API8227/DB55667, api/worker image saq-priority-api:local-20261018, конфиг
+.local/tabs-pdf-20261018/priority.compose.json. Сохранены qa_search_* schema/storage
+и прежние QA public schema/storage/credentials; public containers/tunnel не заменены.
+Логи priority-backend-tests.log,priority-targeted.log,priority-full.log,
+priority-final-targeted.log и captures output/qa/dashboard-priority-20261018 ignored.
+
+Блокеров данного блока нет. OPEN: UX-06 серверный поиск сигналов, UX-16 SQL-scale,
+подтверждённое наполнение parent_id и независимая приёмка. Точный следующий связный
+блок — заменить поиск текущих25сигналов на серверный поиск по всему разрешённому
+набору с контрактом/URL/page/error-state; сохранить frozen snapshots и роли.
+Перед локальным commit — self-review и проверки выше, ревизия базыbd78bba.
+
 ## Навигация ЖК/очередей/корпусов ·18.10.2026 · LOCAL VERIFIED / NOT DEPLOYED
 
 Пользователь «гоу», Codex root, один исполнитель; ветка codex/audit-workflow-fixes,

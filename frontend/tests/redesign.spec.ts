@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import { login } from "./support";
-import { comparePropertyWork } from "../lib/property-priority";
 import type { Advertisement, Page as ResultPage, Property } from "../lib/types";
 
 test("dossier return retains registry search, page, and view after reload", async ({
@@ -25,9 +24,9 @@ test("dashboard scopes its priority list and displays the unchanged server score
 }) => {
   await login(page);
   const registry: ResultPage<Property> = await (
-    await page.request.get("/api/v1/properties?page_size=100")
+    await page.request.get("/api/v1/properties?order=work_priority&page_size=5")
   ).json();
-  const rows = [...registry.items].sort(comparePropertyWork).slice(0, 5);
+  const rows = registry.items;
   await expect(page.locator(".priority-list li")).toHaveCount(rows.length);
   for (const [index, row] of rows.entries()) {
     const item = page.locator(".priority-list li").nth(index);

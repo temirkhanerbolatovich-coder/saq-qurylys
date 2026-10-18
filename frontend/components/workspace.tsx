@@ -56,10 +56,7 @@ import { PropertyStructure } from "@/components/property-structure";
 import { clearReviewDrafts } from "@/lib/use-review-draft";
 import { clearDossierFormDrafts } from "@/lib/use-dossier-form-draft";
 import { statusLabel } from "@/lib/status-labels";
-import {
-  comparePropertyWork,
-  propertyNextAction,
-} from "@/lib/property-priority";
+import { propertyNextAction } from "@/lib/property-priority";
 import {
   clearRegistryContext,
   useRegistryContext,
@@ -780,13 +777,10 @@ function SimpleDashboard({
             )}
             <p className="collection-note">
               Показано {Math.min(rows.length, 3)} из {registry.data.total}{" "}
-              объектов по приоритету проверки
-              {registry.data.total > registry.data.items.length
-                ? ` среди первых ${registry.data.items.length} записей`
-                : ""}
-              . Балл не является правовым заключением. Сначала ожидающее
-              решение, затем неизвестное основание; внутри группы — давность
-              проверки и балл. Сроки задач не установлены.
+              объектов по приоритету проверки по всему доступному реестру. Балл
+              не является правовым заключением. Сначала ожидающее решение, затем
+              неизвестное основание; внутри группы — отсутствие даты, более
+              давняя проверка и балл. Сроки задач не установлены.
             </p>
           </>
         )}
@@ -903,7 +897,9 @@ function DashboardPublicationOverview() {
 export function DashboardView() {
   const { detailed } = useInterfaceMode();
   const summary = useData<Dashboard>("/dashboard/summary");
-  const registry = useData<Page<Property>>("/properties?page_size=100");
+  const registry = useData<Page<Property>>(
+    "/properties?order=work_priority&page_size=5",
+  );
   const signals = useData<Page<Signal>>("/signals?page_size=1");
   const riskTotal = summary.data?.property_count || 0;
   const reviewedLegal = summary.data
@@ -924,9 +920,7 @@ export function DashboardView() {
         },
       ]
     : [];
-  const priorityRows = registry.data
-    ? [...registry.data.items].sort(comparePropertyWork).slice(0, 5)
-    : [];
+  const priorityRows = registry.error ? [] : registry.data?.items || [];
   if (!detailed)
     return (
       <>
@@ -1096,15 +1090,15 @@ export function DashboardView() {
               <h2>С чего начать проверку</h2>
               <p>
                 Сначала решение по основанию, затем недостающие сведения. Внутри
-                группы — более давняя проверка, затем балл. Сроки задач не
-                установлены.
+                группы — отсутствие даты, более давняя проверка, затем балл.
+                Сроки задач не установлены.
               </p>
             </div>
             <Link className="text-link" href="/properties">
               Весь реестр <ArrowRight size={15} />
             </Link>
           </div>
-          {registry.data ? (
+          {registry.data && !registry.error ? (
             <>
               <ol className="priority-list">
                 {priorityRows.map((row, index) => (
@@ -1154,10 +1148,9 @@ export function DashboardView() {
               )}
               <p className="queue-scope">
                 Показано {priorityRows.length} из {registry.data.total}{" "}
-                объектов.{" "}
-                {registry.data.total > registry.data.items.length
-                  ? `По необходимому действию среди первых ${registry.data.items.length} объектов реестра; это не глобальный рейтинг.`
-                  : "По необходимому действию и давности проверки; балл используется при равенстве."}
+                объектов. Порядок рассчитан по всему доступному реестру:
+                необходимое действие и давность проверки; балл используется при
+                равенстве.
               </p>
             </>
           ) : (

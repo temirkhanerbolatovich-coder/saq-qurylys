@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Query
@@ -19,6 +19,20 @@ PROPERTY_SEARCH_DESCRIPTION = (
     'Outer whitespace is trimmed. Percent, underscore and backslash are literal characters, not wildcards. '
     'Search does not confirm identity or legal applicability.'
 )
+PROPERTY_ORDER_DESCRIPTION = (
+    'name: name then ID (default). work_priority: across all filtered properties before pagination, '
+    'PENDING legal basis first, UNKNOWN or REJECTED next, all other legal statuses last; '
+    'within each group missing review date first, then oldest last_reviewed_at, '
+    'then current server risk score descending, then ID ascending. '
+    'This is work ordering, not a legal conclusion or a deadline.'
+)
+
+
+def property_work_priority(row: dto.PropertyOut):
+    """Order current server views without changing their risk or legal status."""
+    status = row.legal_verification_status
+    action_order = {'PENDING': 0, 'UNKNOWN': 1, 'REJECTED': 1}.get(status, 2)
+    return (action_order, row.last_reviewed_at is not None, row.last_reviewed_at, -row.risk.score, row.id.int)
 
 
 def filtered_properties(db, city=None, zone=None, legal_status=None, q=None, is_demo=None):
@@ -73,8 +87,11 @@ def properties(
     legal_status: dto.LegalStatus | None = None,
     q: str | None = Query(None, max_length=300, description=PROPERTY_SEARCH_DESCRIPTION),
     is_demo: bool | None = None,
+    order: Literal['name', 'work_priority'] = Query('name', description=PROPERTY_ORDER_DESCRIPTION),
 ):
     rows = filtered_properties(db, city, zone, legal_status, q, is_demo)
+    if order == 'work_priority':
+        rows.sort(key=property_work_priority)
     start = (page - 1) * page_size
     return {'items': rows[start : start + page_size], 'page': page, 'page_size': page_size, 'total': len(rows)}
 

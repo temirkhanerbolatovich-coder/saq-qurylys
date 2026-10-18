@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.16.0-mvp",
+    "version": "0.17.0-mvp",
     "description": "SAQ QURYLYS contract. Registry/OCR, dated legal review, manual R1-R6, immutable signals/human decisions/PDF export and passive supporting PDF upload implemented. Commercial advertising collector remains planned. JSON is valid YAML 1.2. Manual monitoring candidates, immutable DEMO registry snapshots, comparisons and preliminary incident decisions are additive; the closed customer registry remains unavailable. Explicit licensed Primeminister.kz information import is implemented through leased jobs. Operator-provided KHC public PDF versions and page-text search preserve provenance and never establish legal applicability or modify risk. Authenticated read-only exports return exact saved PDFs or bounded derived copies; signal exports retain frozen snapshots."
   },
   "servers": [
@@ -560,6 +560,22 @@
               "type": "boolean"
             },
             "description": ""
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "name",
+                "work_priority"
+              ],
+              "type": "string",
+              "description": "name: name then ID (default). work_priority: across all filtered properties before pagination, PENDING legal basis first, UNKNOWN or REJECTED next, all other legal statuses last; within each group missing review date first, then oldest last_reviewed_at, then current server risk score descending, then ID ascending. This is work ordering, not a legal conclusion or a deadline.",
+              "default": "name",
+              "title": "Order"
+            },
+            "description": "name: name then ID (default). work_priority: across all filtered properties before pagination, PENDING legal basis first, UNKNOWN or REJECTED next, all other legal statuses last; within each group missing review date first, then oldest last_reviewed_at, then current server risk score descending, then ID ascending. This is work ordering, not a legal conclusion or a deadline."
           }
         ],
         "x-implementation-status": "IMPLEMENTED_FIRST_SLICE"

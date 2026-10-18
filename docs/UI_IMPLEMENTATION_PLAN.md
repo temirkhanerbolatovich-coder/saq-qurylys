@@ -1,5 +1,16 @@
 # SAQ QURYLYS — внедрение и поддержка UI/UX
 
+## Четвёртый блок после аудита18.10: глобальный приоритет
+
+Пользователь «гоу», базаbd78bba, локальная codex/audit-workflow-fixes.
+UX-03: order=work_priority в существующем listProperties, контракт0.17.0-mvp.
+Полный filtered набор сортируется перед pagination, defaultname/ID сохраняется.
+Обзор получает5 серверных items, simple показывает3; comparator клиента удалён.
+Критерии: запись за первой100 попадает в начало, action/date/score/ID стабильны,
+фильтры и risk прежние, ошибка отдельно от empty, оба режима/responsive/retry.
+Нагрузочная SQL-оптимизация не включена: UX-16 открыт. Далее UX-06 server signal q
+и независимая UX/предметная приёмка. Результаты — UI_AUDIT/PROJECT_STATUS.
+
 ## Третий блок после аудита18.10: связи объектов
 
 Пользователь «гоу», база9e7f195, локальная codex/audit-workflow-fixes.

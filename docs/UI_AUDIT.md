@@ -1,5 +1,46 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Глобальный приоритет обзора ·18.10.2026 · локальный блок
+
+UX-03, базаbd78bba, codex/audit-workflow-fixes; пользователь «гоу», один Codex.
+Раньше список сортировался из первых100, теперь существующий listProperties
+получает order=work_priority перед pagination. Default name/ID и фильтры прежние.
+Приоритет использует текущие серверные legal views и score: PENDING, затем
+UNKNOWN/REJECTED, затем остальные; внутри NULL review date/более давняя дата/score DESC/
+ID ASC. Это не юридический рейтинг/дедлайн. В detailed5, simple3; клиентский
+comparator удалён. Error имеет отдельный alert/retry, не false empty.
+
+Backend **57PASS/50.62s**: priority/structure/search/dashboard/contract/API,
+транзакционные synthetic rows в собственной случайной test schema QA PostgreSQL.
+101 алфавитный filler перед важными записями, порядок/NULL/tie/page/filter,
+эффективный legal status вместо raw status, unchanged detail, viewer/auth,
+полный live/manual order parameter. Ruff check/format93files PASS.
+Production build/lint/typecheck/format PASS; related browser **21PASS/46.7s**,
+full **124PASS/4.0m**, workers1/retries0, реальные Linux QA OCR/PDF/review сохранены.
+Полная backend suite и масштабная нагрузка заново не выполнялись.
+
+14свежих наблюдений настоящего обзора:2режима×360/375/390/768/1024/1440/1920,
+overflow/pageerror/business commands0, reduced-motion. Presentation205 и503
+проверяют только UI trust/order/error; это не205 настоящих объектов стенда.
+Ручная проверка обнаружила сжатие mobile пояснения между баллом и ссылкой:
+priority-action≤639px переведён на grid с полноширинным пояснением во второй строке.
+В regression добавлено измерение ширины пояснения≥90% области действия.
+После CSS-правки production build/typecheck/lint/format PASS; повтор новых
+dashboard и integrated-layout tests **6PASS/22.6s**. Матрица14наблюдений повторена,
+включая новое измерение ширины, overflow/errors/commands0. Вручную просмотрены
+4итоговых crop самого priority panel: simple/detailed ×390/1440, без перекрытия
+sticky header при подготовке артефакта. Это ручной просмотр выбранных кадров,
+не независимая UX-приёмка. Snapshot папка output/qa/dashboard-priority-20261018
+и helper/logs ignored. Новый200%zoom/secondPC/предметная приёмка не выполнялись.
+Финальные diff/hygiene/UTF8/local-links/private-literal проверки PASS.
+
+Контракт0.17.0-mvp добавляет только параметр существующего endpoint; response,
+роли/auth/данные/решения/snapshots/формула риска не меняются. Нет migration/
+dependency/seed правок. Сортировка текущих filtered views идёт в памяти до slice:
+логическая полнота исправлена, прежний N+1 и SQL-scale UX-16 остаются OPEN.
+Публикация не выполнялась. Следующий самостоятельный блок — UX-06 server signal q;
+внешняя UX/предметная приёмка и подтверждённое наполнение parent_id остаются OPEN.
+
 ## Структура ЖК/очередей/корпусов ·18.10.2026 · локальный блок
 
 База9e7f195, согласование «гоу», codex/audit-workflow-fixes, один Codex.

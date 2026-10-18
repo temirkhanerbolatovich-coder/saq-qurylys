@@ -1,5 +1,15 @@
 # SAQ QURYLYS — архитектура MVP
 
+18.10.2026, локальный контракт0.17.0-mvp: существующий properties list принимает
+order=name(default)|work_priority. Сначала текущие filtered PropertyOut, затем
+глобальная сортировка по действию/last_reviewed_at(NULL first)/server score DESC/
+UUID ASC, потом pagination. Сортировщик использует эффективный legal status,
+не сырое поле БД; risk.as_of не используется как дата проверки. Dashboard получает
+page_size5, simple показывает3, клиентский comparator исключён. Остальные вызовы
+без order сохраняют прежний name/ID. Нет нового endpoint/DTO/слоя/dependency/ADR.
+Ограничение: прежнее построение всех views/N+1 не оптимизировано для большого
+реестра; UX-16 отдельно. [Поведение и проверка](FEATURE_PROPERTY_PRIORITY.md).
+
 18.10.2026, локальный контракт0.16.0-mvp: GET properties/{id}/structure читает
 существующие parent_id/level и возвращает lightweight references. Ancestors
 ограничены16чтениями, циклы/некорректная цепочка дают409; children и siblings
