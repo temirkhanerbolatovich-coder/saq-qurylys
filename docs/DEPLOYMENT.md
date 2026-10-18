@@ -1,5 +1,57 @@
 # Публичное размещение SAQ QURYLYS
 
+## Все накопленные изменения ·18.10.2026
+
+По явному запросу «опубликуй все изменения» обновлены API, worker и frontend.
+Текущий адрес: **https://voice-cultures-brandon-independence.trycloudflare.com**.
+Прежний contacted-string-quiz-kinda туннель был остановлен; новый создан штатным
+`scripts/share_site.ps1 -Action Start`, HTTPS Origin/Secure cookie сохранены.
+Ссылка требует работающего компьютера, Docker и сети; это временный tunnel, не VPS.
+
+На входе db/api/frontend были остановлены, worker работал. Восстановлена прежняя
+DB; до установки создана копия
+`.local/backups/20261018T163635Z-9b3940c63f384e0196f0b92e3a34b6c8`.
+`backup_local.py create/verify` PASS, restore в отдельных временных контейнерах.
+Рабочую БД из копии не восстанавливали. Прежние image IDs сохранены tags
+`saq-qurylys-{api,worker,frontend}:rollback-before-875e288`; не удалять до приёмки.
+
+Candidate images собраны из875e288:
+`saq-qurylys-api:publish-875e288` (API/worker) и
+`saq-qurylys-frontend:publish-875e288`. Установка — прежние compose/dev/tunnel
+файлы + private candidate image override, `up -d --no-build --no-deps --wait
+api worker frontend`. После локальной health/data проверки candidate также
+помечены стандартными api/worker/frontend latest, затем helper применил новый
+публичный Origin. Приватная `.env`, DB container/image/volume и storage mounts
+сохранены. Новых миграций между рабочим backend и этим срезом нет.
+Позднейшие2f40242/4b8a665 меняют только тесты/статус, runtime875e288 им соответствует.
+
+До публичных auth-проверок fingerprints всех24таблиц совпали с backup,555Assets
+сохранены. После HTTPS smoke совпали23таблицы; sessions изменились ожидаемо от
+тестовых входов, бизнес-таблицы/audit/сигналы/источники прежние. Чужие сессии
+не удалялись. Полный DB/storage образ не подменялся QA schema или seed fixtures.
+
+Публичный Chromium:11страниц×375/768/1024/1440=44наблюдения, overflow0,
+pageerrors0/businesswrites0; anonymous401/login200/Secure cookie/wrong Origin403/
+logout204. Проверены новые tabs6/4, GREEN+UNKNOWN, mobile focus/Escape/draft,
+читаемый выбор версии, серверные поиск/priority/structure/signals. Исходный Asset
+SHA и historical READY PDF SHA из backup совпали; read-only PDF properties/assets/
+signals фактически вернули21308/19477/25381bytes с PDF signature.
+Первый smoke helper ошибочно ожидал tbody в кратком карточном виде; исправлен
+только locator helper, повторный44PASS. Это не ошибка рабочего списка.
+
+Код отправлен в отдельную GitHub-ветку `codex/audit-workflow-fixes`, main без merge.
+Первый чистый CI выявил fixture/race ошибки тестов, исправленные2f40242/4b8a665:
+собственный DEMO-кандидат/typed snapshot в chooser, property scope status-search,
+ожидание URL reset до reload. Runtime code не менялся. Финальный результат CI
+и PR записывается в PROJECT_STATUS; публичный smoke не заменяет записывающий E2E.
+Локально до публикации full browser130PASS; после test-only fixes12PASS repeated,
+backend57PASS/1Windows native-Pango SKIP52.92s; Linux PDF подтверждён выше.
+
+Приватные evidence/config/logs: `.local/publish-all-20261018/`, public PNG
+`output/qa/publish-all-20261018/` — ignored. Исходный аудит/открытые требования
+не закрыты фактом установки; [сверка20пунктов](audits/SAQ_QURYLYS_UI_UX_RECONCILIATION_2026-10-18.md).
+Старые адреса и утверждения о неопубликованном срезе ниже исторические.
+
 ## Установлен интерфейс B0–B3 · 18.10.2026
 
 Текущий адрес: **https://contacted-string-quiz-kinda.trycloudflare.com**. Прежний туннель был

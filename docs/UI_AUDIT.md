@@ -1,5 +1,21 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Публичная установка всех изменений ·18.10.2026
+
+Пользователь разрешил публикацию. Runtime875e288 установлен на рабочий
+HTTPS [сайт](https://voice-cultures-brandon-independence.trycloudflare.com);
+позднейшие2f40242/4b8a665 — только test/status fixes после чистого CI.
+Публичный read-only Chromium:44наблюдения11страниц×375/768/1024/1440,
+overflow/errors/businesswrites0;6вкладок досье/4мониторинга, новый search/priority/
+structure, mobile focus/Escape/draft и читаемый snapshot chooser проверены.
+Original Asset SHA и historical READY PDF SHA совпали с backup; три новых
+read-only PDF экспорта вернули действительные Linux PDF. Auth401/200/Secure/
+wrong Origin403/logout204 PASS. PNG output/qa/publish-all-20261018, private
+report .local/publish-all-20261018/public-smoke.json.
+Это технический smoke рабочей установки; полные записывающие E2E выполняются
+на отдельных QA/CI данных, не на публичной БД. Матрица10/5/5 ниже сохраняется:
+новой независимой UX/предметной/источниковой/масштабной приёмки не проводилось.
+
 ## Финальная локальная сверка и стабилизация ·18.10.2026
 
 Базаa3afdf0, codex/audit-workflow-fixes, один Codex; пользователь «гоу гоу».

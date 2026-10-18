@@ -1,5 +1,16 @@
 # Changelog
 
+## Published ·18.10.2026 · Analyst workflow updates
+
+- Publish the accumulated dossier/monitoring tabs, read-only PDF, whole-registry
+  search/priority/structure and UI stabilization to the working HTTPS instance.
+- Preserve the database/storage, verify a fresh backup by isolated restore, retain
+  rollback images, and check44public read-only browser observations plus source/PDF SHA.
+- Publish source on codex/audit-workflow-fixes; main remains unmerged.
+- Make chooser fixtures independent, await URL reset before reload and scope status
+  search assertions to their own property; runtime behavior is unchanged.
+- Record the new temporary URL and remaining acceptance boundaries in deployment docs.
+
 ## Unreleased · Local UI stabilization and audit reconciliation
 
 - Show the legal-basis limitation next to GREEN property scores without changing risk.

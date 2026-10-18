@@ -1,5 +1,65 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## Все изменения опубликованы ·18.10.2026 · HTTPS VERIFIED / CI FINALIZING
+
+Разрешение пользователя: «опубликуй все изменения». Один Codex; ветка
+codex/audit-workflow-fixes, main aefb72f не объединялся. Все исходные14локальных
+коммитов до875e288 отправлены в GitHub, затем2f40242/4b8a665 исправили только
+CI test fixtures/ожидания. Runtime app/backend/contracts/data с875e288 идентичны.
+Новая публикация не означает закрытие UX10/5/5, C-01 или внешней приёмки.
+
+Рабочий сайт: https://voice-cultures-brandon-independence.trycloudflare.com .
+Туннель contacted-string-quiz-kinda был остановлен; штатный share_site.ps1 Start
+создал новый и применил к API правильный HTTPS Origin/Secure cookie.
+На входе db/api/frontend были остановлены; запущена прежняя DB, volumes/хранилище
+сохранены. Перед установкой backup create/verify PASS:
+.local/backups/20261018T163635Z-9b3940c63f384e0196f0b92e3a34b6c8,
+restore .local/restore-checks/20261018T163742Z-f85441f9bf254c92bf3a437402236233/result.json.
+Рабочая БД из backup не восстанавливалась и не заменялась QA schema.
+
+Build api/worker/frontend PASS, runtime images:
+saq-qurylys-api:publish-875e288 (api/worker),
+saq-qurylys-frontend:publish-875e288. Установка прежними compose/dev/tunnel +
+private candidate override, up -d --no-build --no-deps --wait api worker frontend.
+После health/invariants проверки новые images также назначены стандартным
+saq-qurylys-api/worker/frontend:latest; rollback-before-875e288 tags прежних image
+IDs сохранены. Env file hash/DB container+image/mounts прежние; новых migration нет.
+
+До auth smoke fingerprints24таблиц полностью совпали с backup;555Assets сохранены.
+После auth smoke23таблицы совпали, только sessions изменены тестовыми входами
+(один ранний helper завершился до logout); бизнес-данные/audit/сигналы не менялись.
+Чужие сессии не удалялись. Fresh HTTPS Chromium public-smoke.cjs:
+11страниц×375/768/1024/1440=44наблюдения, overflow/pageerrors/businesswrites0;
+anonymous401/login200/Secure cookie/wrong Origin403/logout204 PASS.
+6tabs dossier/4monitoring, mobile Escape/focus/draft, GREEN+UNKNOWN, readable
+snapshot chooser, server search/work_priority/structure/signal q PASS.
+Original Asset SHA и historical READY PDF SHA совпали с backup;3read-only PDF
+properties/assets/signals21308/19477/25381bytes, PDF MIME/signature PASS.
+Первый smoke helper ожидал tbody в кратком карточном виде; locator helper исправлен,
+новый44PASS. Приложение ради этой проверки не менялось.
+
+Локальная валидация runtime875e288 до публикации:130browser PASS3.9m,
+build/typecheck/lint/format PASS. CI39145832806 выявил890backend PASS/3FAIL и
+128browser PASS/2FAIL: global status count включал чужие записи, chooser зависел
+от прошлых кандидатов/версий, reload выполнялся до URL reset. Исправлены тестовые
+предусловия/ожидания; runtime неизменён. После test-only fixes4tests×3=12PASS36.3s,
+backend signal/signals/PDF/exports/contract57PASS/1Windows Pango SKIP52.92s;
+Ruff test check/format PASS, frontend typecheck/lint/format повторяются перед push.
+Run4b8a665 дополнительно выявил формат длинной строки нового ожидания; Prettier
+исправлен до текущей публикации. Итоговые CI/PR результаты фиксируются отдельно
+после завершения; не считать промежуточные красные проверки успешными.
+
+Source publication preflight: ancestor/remote SHA, git diff --check, history
+262new blobs prohibited paths/known-private-literals/token patterns PASS;
+repository hygiene PASS. Secrets/env/DB/storage/images/logs в Git не отправляются.
+Private evidence .local/publish-all-20261018 (preflight,before,build,apply,
+pre/post-tunnel/post-smoke-invariants,public-smoke,GitHub logs); PNG
+output/qa/publish-all-20261018. Docs README/CHANGELOG/DEPLOYMENT/UI_AUDIT/
+сверка/этот статус обновлены, старые local-only записи ниже исторические.
+Следующий шаг: дождаться чистого CI текущего head, создать/проверить PR и remote SHA.
+Main merge отдельно не выполняется. Следующая разработка остаётся UX-14/15,
+clean DEMO/независимая приёмка; source C-01/holdout/второйПК остаются OPEN.
+
 ## Публикация всех изменений ·18.10.2026 · IN PROGRESS
 
 Уточнение после первого чистого CI39145832806:890backend PASS/3FAIL и128browser

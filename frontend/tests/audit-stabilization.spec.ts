@@ -41,7 +41,9 @@ test("registry coalesces text filters without losing either field or Enter/reset
   await expect(city).toHaveValue("");
   await expect(input).toBeFocused();
   await expect.poll(() => new URL(page.url()).searchParams.get("q")).toBeNull();
-  await expect.poll(() => new URL(page.url()).searchParams.get("city")).toBeNull();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("city"))
+    .toBeNull();
   await page.reload();
   await expect(input).toHaveValue("");
   expect(new URL(page.url()).searchParams.get("q")).toBeNull();
