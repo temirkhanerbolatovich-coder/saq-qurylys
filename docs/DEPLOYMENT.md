@@ -1,5 +1,29 @@
 # Публичное размещение SAQ QURYLYS
 
+## Установлен интерфейс B0–B3 · 18.10.2026
+
+Текущий адрес: **https://contacted-string-quiz-kinda.trycloudflare.com**. Прежний туннель был
+остановлен; штатный share_site.ps1 Start создал новый и применил к API публичный
+origin/Secure cookie. .env/образы backend/worker и рабочие DB/storage сохранены.
+После этого baseline API/worker/DB IDs/start times/env hashes/mounts не менялся:
+обновлён только frontend из source e2dfefd, включая709a0be/f7e8358.
+
+Docker candidate `saq-qurylys-frontend:ui-b0-b3-e2dfefd`, image5199009d9fad…,
+установлен прежними compose/dev/tunnel файлами и private image override через
+`up -d --no-build --no-deps --wait frontend`. Прежний image сохранён rollback tag
+в .local/deploy-ui-b0-b3-20261018/rollback-tag.txt. После успешной проверки новый
+image также помечен `saq-qurylys-frontend:latest`; future standard startup использует
+его. Не удалять rollback image до завершения приёмки. Приватная конфигурация/QA
+не входят в Git, новых миграций и изменения business state не требовалось.
+
+Публичный Chromium:11страниц×4ширины=44PASS, overflow0/pageerrors0/businesswrites0;
+anonymous401/login200/Secure cookie/wrong Origin403/logout204, новые секции/
+черновик/группировка, прежний Asset SHA и PDF62384bytes PASS.
+Это read-only smoke;103browser E2E проверены ранее отдельно на изолированной БД,
+не на рабочей установке. Полный статус/границы — PROJECT_STATUS. Новый source
+ещё не опубликован через GitHub; установка сайта и GitHub-публикация различаются.
+Сервисы и временный туннель включены. Старые URL ниже исторические.
+
 ## Текущее восстановление · 17.10.2026
 
 После остановки Docker Desktop восстановлены прежние четыре SAQ сервиса

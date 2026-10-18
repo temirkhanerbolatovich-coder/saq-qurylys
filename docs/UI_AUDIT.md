@@ -1,5 +1,23 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## Установленная публичная версия B0–B3 · 18.10.2026
+
+Source e2dfefd (включая709a0be/f7e8358), Docker image5199009d9fad… установлен
+после отдельного103PASS. Туннель восстановлен по разрешению пользователя;
+текущий HTTPS адрес — DEPLOYMENT. Сам frontend update сохранил baseline
+API/worker/DB IDs/env hashes/mounts, .env SHA-256 и новый origin; rollback сохранён.
+
+Public Chromium smoke:11страниц×375/768/1024/1440=44PASS, overflow0/pageerrors0/
+businesswrites0. Anonymous401/login200/Secure cookie/Origin403/logout204 PASS.
+Семь секций досье и три вспомогательных блока «Сверки» присутствуют; причина R4
+восстанавливается после menu return, Threads query сохраняется локально, logout
+чистит draft namespace. Старый исходник скачан с совпавшим SHA-256, старый
+PDF200/%PDF-/62384bytes. Посмотрен public monitoring screenshot.
+Первая проверка перепутала постоянный role=status пагинации с loading; исправлен
+только private verifier, затем все44наблюдения повторены успешно. Это read-only
+public smoke, не записывающая приёмка или новые данные на рабочей БД. Полная
+backend suite/независимая OCR/UX/второй ПК остаются отдельными проверками.
+
 ## B3: группировка инструментов «Сверки» · 18.10.2026
 
 Локальная ветка codex/monitoring-tools, базаf7e8358, master1.4. Основная работа

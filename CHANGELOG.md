@@ -1,17 +1,22 @@
 # Changelog
 
-## Unreleased · Monitoring task layout
+## 2026-10-18 · B0–B3 frontend installation
+
+- Installed the reviewed dossier drafts, seven dossier sections and monitoring task layout on the working site; retained a rollback image and existing application data/configuration.
+- Restored the stopped temporary tunnel, then replaced only the frontend. Public HTTPS smoke passed 44 responsive observations, authentication/CSRF, draft preservation and retained source/PDF reads without business writes.
+
+## 2026-10-18 · Monitoring task layout
 
 - Put candidate queue, selected comparison and preliminary incidents before auxiliary tools; group KHC reference search, Threads preview and DEMO registry versions in mounted native disclosures.
 - Preserve existing deep links, query context, forms, file selection and explicit commands; keep REAL/DEMO limits visible and prevent sticky headers from obscuring anchor targets.
 
-## Unreleased · Seven dossier sections
+## 2026-10-18 · Seven dossier sections
 
 - Organize the dossier into overview, legal bases, publications, risk factors, evidence, history and signals; keep all seven destinations available in both interface modes.
 - Open factor editors locally without unmounting forms, drafts or file inputs; retain deep editor links and keyboard focus.
 - Reuse existing evidence reads on selection and existing filtered publication/signal routes. Preserve backend risk, legal guards, roles and historical snapshots.
 
-## Unreleased · Dossier draft protection
+## 2026-10-18 · Dossier draft protection
 
 - Preserve R1/R4/construction/legal-basis form input across object navigation, Back and reload with scoped tab drafts and explicit restore notices.
 - Keep selected files and retry state in tab memory during SPA navigation; require and explain file reselection after reload. Clear text and memory on logout/401; never store file bytes in Web Storage or submit restored decisions automatically.

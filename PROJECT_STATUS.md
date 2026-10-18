@@ -1,5 +1,53 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## B0–B3 установлены в рабочий frontend · 18.10.2026
+
+**DEPLOYED / PUBLIC HTTPS VERIFIED; GITHUB NOT UPDATED.** Пользователь
+«установи изменеия» разрешил установку. Codex root, ветка codex/monitoring-tools;
+установленный UI source — e2dfefdf0bc830b2579a341033d90408d6f63b3c (включает
+709a0be/f7e8358). Git на входе clean; исходники интерфейса не менялись.
+
+Текущий адрес: **https://contacted-string-quiz-kinda.trycloudflare.com**. Старый туннель был остановлен;
+`powershell -NoProfile -File scripts/share_site.ps1 -Action Start` восстановил
+публикацию и пересоздал API с новым HTTPS APP_ORIGIN/Secure cookie. Образ API,
+worker/DB и приватная .env сохранены. Старый honey-identity адрес исторический.
+После восстановления снят baseline: дальнейшее обновление заменило только
+frontend. API/worker/DB IDs/start times/image/environment hashes/mounts и
+.env SHA-256 совпали до/после обновления и после smoke; origin также сохранён.
+
+Новый Docker image `saq-qurylys-frontend:ui-b0-b3-e2dfefd`, image ID5199009d9fad…,
+собран через существующие compose/dev/tunnel настройки и private image override.
+Rollback tag прежнего image сохранён локально. Команда установки: `docker compose
+-f docker-compose.yml -f docker-compose.dev.yml -f .local/tunnel/compose.json
+-f .local/deploy-ui-b0-b3-20261018/frontend.compose.json up -d --no-build --no-deps
+--wait frontend`. После проверки стандартный frontend:latest указывает на тот же
+установленный image. Новых миграций, DB/storage replacements и изменения
+backend/API/ролей/риска/снимков нет.
+
+Публичный Chromium smoke:11страниц×375/768/1024/1440=**44наблюдения PASS**,
+pageerrors0/page overflow0/business mutations0. Anonymous401/login200/Secure cookie,
+чужой Origin403/logout204 PASS. Проверены семь разделов досье, новая группировка
+«Сверки», восстановление причины R4 после menu return, сохранность Threads input
+между блоками и очистка draft namespace после logout. SHA-256 существующего
+исходного Asset совпал; сохранённый PDF200/%PDF-/62384bytes PASS.
+Это read-only public smoke, не повтор103записывающих E2E на рабочей БД;103PASS
+на отдельном стенде относятся к установленному исходному source. Полная backend
+suite/remote CI/независимая OCR/UX/второй ПК этим действием не проверялись.
+Первый private smoke ошибочно считал status пагинации незавершённой загрузкой;
+уточнено ожидание загруженного server total, приложение не менялось. Финальный
+повтор всех44наблюдений PASS. Вручную просмотрен текущий public monitoring capture.
+
+Обновлены README/CHANGELOG/DEPLOYMENT/UI_AUDIT/UI_IMPLEMENTATION_PLAN и статус.
+Evidence ignored `.local/deploy-ui-b0-b3-20261018` и
+`output/qa/deploy-ui-b0-b3-20261018`; секреты/полные env не выводились и не входят
+в Git. Финальная проверка6Markdown/132локальных ссылок/UTF-8 и четырёх приватных
+literals без совпадений PASS; repository/candidate hygiene и `git diff --check`
+PASS. Новый ADR не нужен: применён существующий frontend-only deployment.
+Рабочие четыре сервиса и туннель оставлены включёнными; ссылка временная и зависит
+от этого компьютера/сети. GitHub push/PR/merge не выполнялись. Следующий этап —
+стабилизация сдаваемой версии, независимая UX/предметная приёмка и второй ПК;
+KZ OCR fidelity и разрешённый коммерческий C01 остаются OPEN.
+
 ## B3: рабочий путь в «Сверке» · 18.10.2026
 
 **IMPLEMENTED / LOCAL VERIFIED / NOT PUBLISHED.** Codex root, один исполнитель,
