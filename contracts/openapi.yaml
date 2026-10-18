@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "SAQ QURYLYS API",
-    "version": "0.18.0-mvp",
+    "version": "0.19.0-mvp",
     "description": "SAQ QURYLYS contract. Registry/OCR, dated legal review, manual R1-R6, immutable signals/human decisions/PDF export and passive supporting PDF upload implemented. Commercial advertising collector remains planned. JSON is valid YAML 1.2. Manual monitoring candidates, immutable DEMO registry snapshots, comparisons and preliminary incident decisions are additive; the closed customer registry remains unavailable. Explicit licensed Primeminister.kz information import is implemented through leased jobs. Operator-provided KHC public PDF versions and page-text search preserve provenance and never establish legal applicability or modify risk. Authenticated read-only exports return exact saved PDFs or bounded derived copies; signal exports retain frozen snapshots."
   },
   "servers": [
@@ -11411,6 +11411,19 @@
             },
             "type": "array",
             "title": "Evidence Ids"
+          },
+          "property_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Property Name",
+            "default": null,
+            "description": "Current registry name of this exact target ID; never the material current binding or a historical frozen name."
           }
         },
         "additionalProperties": false,

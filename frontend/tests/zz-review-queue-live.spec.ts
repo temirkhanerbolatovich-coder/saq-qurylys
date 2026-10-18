@@ -250,6 +250,7 @@ test("real reassignment retains historical pending R2 and the exact inline rejec
   expect(work.r2_reviews).toEqual([
     {
       property_id: old!.property.id,
+      property_name: old!.property.name,
       factor_id: factor.id,
       evidence_ids: [evidence.id],
     },
@@ -261,9 +262,11 @@ test("real reassignment retains historical pending R2 and the exact inline rejec
   });
   await queue
     .locator("summary")
-    .filter({ hasText: `Проверить решение R2 по объекту ${old!.property.id}` })
+    .filter({
+      hasText: `Проверить решение R2 по объекту ${old!.property.name}`,
+    })
     .click();
-  const form = page.getByLabel(`Решение R2: ${old!.property.id}`, {
+  const form = page.getByLabel(`Решение R2: ${old!.property.name}`, {
     exact: true,
   });
   await expect(form).toContainText(
@@ -271,7 +274,7 @@ test("real reassignment retains historical pending R2 and the exact inline rejec
   );
   await expect(form).toContainText(evidence.id);
   await form
-    .getByLabel(`Обоснование решения R2 по объекту ${old!.property.id}`, {
+    .getByLabel(`Обоснование решения R2 по объекту ${old!.property.name}`, {
       exact: true,
     })
     .fill(

@@ -10,6 +10,7 @@ from app.api.reviews import property_locked
 from app.commands import begin_command, finish_command
 from app.dependencies import DB, Actor, check_csrf
 from app.models import AnalysisJob, Asset, Signal
+from app.pdf_filenames import pdf_content_disposition, signal_pdf_filename
 from app.signal_pdf import enqueue_signal_pdf
 from app.signals import signal_locked
 from app.storage import read_asset
@@ -46,7 +47,7 @@ def download_pdf(id: UUID, request: Request, actor: Actor, db: DB):
             content,
             media_type='application/pdf',
             headers={
-                'Content-Disposition': f'attachment; filename="saq-signal-{id}-v{row.version}-r{row.revision}.pdf"',
+                'Content-Disposition': pdf_content_disposition(signal_pdf_filename(row)),
             },
         )
     if row.pdf_state == 'QUEUED' and row.pdf_job_id:

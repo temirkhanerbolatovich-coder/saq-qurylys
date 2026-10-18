@@ -1,5 +1,61 @@
 # SAQ QURYLYS — PROJECT STATUS
 
+## F-08/F-09 · понятные задачи и PDF ·19.10.2026 · LOCAL VERIFIED
+
+База ee6605e, codex/audit-workflow-fixes, на входе clean. Пользователь разрешил
+продолжить и запустить нужные сервисы. Root: F-08/frontend/контракт/runtime;
+агент: F-09 backend filenames/tests, затем независимый read-only review.
+F-08: optional nullable r2_reviews.property_name точного target ID, один batch
+SELECT по именам. Исторические ID/evidence/команды/draft scope/counts/порядок
+прежние. UI явно показывает текущее реестровое имя и прежний объект; UUID
+доступен вторым уровнем/fallback. STAGE переведён только при отображении,
+сохранённый код и редактор прежние. Контракт0.19.0-mvp, master1.5.
+F-09: PDF name включает тип, название, дату записи, полный ID и v/r сигнала.
+Unicode/ASCII Content-Disposition и безопасный клиентский parser. Имя сигнала
+только frozen snapshot; исходные/готовые PDF не переписываются. Неизвестный MIME
+имеет нейтральную подпись с пояснением оригинала/копии. Риск/роли/решения прежние.
+
+Проверки: полный Linux backend914 PASS239.49s; focused PDF38 PASS9.42s.
+Selected frontend37 PASS/2 gated SKIP1.2m; затем оба live-сценария и настоящий
+PDF3 PASS15.5s на явно изолированном стенде. Live проверяет анализ, явные решения,
+перепривязку и отдельное отклонение прежнего R2. Production13 новых parser/
+presentation tests PASS5.9s. Build/TypeScript/ESLint/Prettier/Ruff PASS.
+Два R2-варианта на375/768/1024/1440 без page overflow;375/1440 просмотрены
+визуально. Unicode/fallback/MIME/signature/error/retry, GET без бизнес-команд,
+точные target/evidence и сохранность причин проверены. Полный browser suite и
+внешняя приёмка не выполнялись. Снимки: output/qa/review-pdf-20261019;
+реальный PDF — output/qa/tabs-pdf-20261018/property-report.pdf.
+
+Docker Desktop запущен. QA saq-review-pdf-20261019: отдельный DB volume и
+.local/review-pdf-20261019/storage, API8247/UI3000, внешние интеграции выключены.
+Рабочие DB/storage не использовались. Полный pytest сначала не собрался из-за
+отсутствующего mount scripts; QA-конфигурация исправлена, финальный run чистый.
+Ruff readonly-cache заменён host Ruff. QA процессы остановлены; volumes/storage
+сохранены. Туннель не запускался. Автозапущенные Docker worker рабочего стенда
+и посторонний PostgreSQL остановлены перед QA, без удаления данных; рабочая
+БД оставалась остановленной.
+
+Основные пути: review_queue.py/analysis_dto.py/pdf_filenames.py/document_exports.py,
+api/exports.py/signal_pdf.py; review-queue.tsx/analysis-workspace.tsx/pdf-download.tsx,
+presentation.ts/types.ts, contract и связанные tests/docs. Команды: QA Compose
+exec api python -m pytest -q -p no:cacheprovider; Playwright review-language-pdf,
+review-queue, zz-review-queue-live, dossier-tabs, supporting-pdf, analyst-composition,
+functional-safety (для двух live: SAQ_ISOLATED_ACCEPTANCE=1 на localhost).
+npm run build/typecheck/lint/format:check; host Ruff check/format; repository
+hygiene и git diff --check PASS. Конфигурация QA — локальный ignored
+.local/review-pdf-20261019/acceptance.compose.json; в Git secrets не добавлены.
+
+Автопроверка отклонила production start с адресом тестового API: только
+«blocked by policy», без подробной причины. Повторного обхода нет: обычный
+production start использован с полным HTTP-mock; реальная связка проверена на dev.
+Отклонён также длинный shell-скрипт обновления docs; ограниченные изменения
+документации внесены структурированным apply_patch. Это ограничения исполнения,
+не провал сборки. Публикации/push/merge/туннеля нет.
+
+Следующий шаг: F-02 — черновики сверки; затем независимая UX/предметная приёмка,
+C-01 и второй ПК. Новый ADR не требуется: расширено существующее представление
+и скачивание без новой архитектуры. Полная готовность проекта не заявляется.
+
 ## Согласованная композиция приложения ·19.10.2026 · LOCAL VERIFIED / PRESENTATION
 
 Пользователь «окок» согласовал три макета. База a473941, ветка

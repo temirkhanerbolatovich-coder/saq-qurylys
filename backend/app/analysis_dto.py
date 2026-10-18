@@ -140,6 +140,7 @@ ReviewAction = Literal['REVIEW_HYPOTHESES', 'REVIEW_MATCH', 'CREATE_PAYMENT_EVID
 
 class PaymentReviewTarget(DTO):
     property_id: UUID
+    property_name: str | None = None
     factor_id: UUID | None
     evidence_ids: list[UUID]
 

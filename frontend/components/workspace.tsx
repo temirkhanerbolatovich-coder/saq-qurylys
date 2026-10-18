@@ -1550,7 +1550,8 @@ function EvidenceItem({ id }: { id: string }) {
       <PdfDownload
         kind="assets"
         id={item.data.asset_id}
-        label="Источник в PDF"
+        label="Получить источник в PDF"
+        description="Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия."
       />
       <PdfDownload kind="evidence" id={id} label="PDF доказательства" />
     </div>
@@ -1997,7 +1998,8 @@ export function PropertyView({ id }: { id: string }) {
                 <PdfDownload
                   kind="assets"
                   id={basis.asset_id}
-                  label="Скачать документ в PDF"
+                  label="Получить документ в PDF"
+                  description="Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия."
                 />
                 <PdfDownload
                   kind="legal-bases"

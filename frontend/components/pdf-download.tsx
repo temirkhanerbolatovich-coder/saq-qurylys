@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { pdfDownloadFilename } from "@/lib/presentation";
 
 /** Read-only export: downloads real PDF bytes; never confirms or saves a business record. */
 export function PdfDownload({
@@ -8,12 +9,15 @@ export function PdfDownload({
   id,
   label = "Скачать PDF",
   query = "",
+  description,
 }: {
   kind: string;
   id: string;
   label?: string;
   query?: string;
+  description?: string;
 }) {
+  const descriptionId = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const pending = useRef<AbortController | null>(null);
@@ -43,10 +47,10 @@ export function PdfDownload({
           "%PDF-"
       )
         throw new Error("Сервер не вернул PDF. Повторите скачивание.");
-      const filename =
-        response.headers
-          .get("content-disposition")
-          ?.match(/filename="?([^";]+)"?/i)?.[1] || `saq-${kind}-${id}.pdf`;
+      const filename = pdfDownloadFilename(
+        response.headers.get("content-disposition"),
+        `saq-${kind}-${id}.pdf`,
+      );
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -65,9 +69,19 @@ export function PdfDownload({
   }
   return (
     <span className="pdf-download">
-      <Button variant="outline" disabled={busy} onClick={() => void download()}>
+      <Button
+        variant="outline"
+        disabled={busy}
+        aria-describedby={description ? descriptionId : undefined}
+        onClick={() => void download()}
+      >
         {busy ? "Готовим PDF…" : label}
       </Button>
+      {description && (
+        <span id={descriptionId} className="field-help">
+          {description}
+        </span>
+      )}
       {busy && <span role="status">Подготовка файла</span>}
       {error && <span role="alert">{error}</span>}
     </span>

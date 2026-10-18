@@ -86,6 +86,7 @@ export type AdvertisementReviewItem = {
   payment_hypothesis_ids: string[];
   r2_reviews: {
     property_id: string;
+    property_name?: string | null;
     factor_id: string | null;
     evidence_ids: string[];
   }[];

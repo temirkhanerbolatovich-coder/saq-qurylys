@@ -382,9 +382,25 @@ function QueueR2Target({
   onChange: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const historical =
+    target.property_id !== item.advertisement.confirmed_property_id;
   return (
     <details onToggle={(event) => setOpen(event.currentTarget.open)}>
-      <summary>Проверить решение R2 по объекту {target.property_id}</summary>
+      <summary>
+        Проверить решение R2 по объекту{" "}
+        {target.property_name || target.property_id}
+        {historical && <span className="status"> · Прежний объект</span>}
+      </summary>
+      {target.property_name && (
+        <p className="field-help">
+          Название из текущего реестра. Задача и доказательства относятся к
+          этому объекту, а не к новой привязке материала.
+        </p>
+      )}
+      <details className="field-help">
+        <summary>Идентификатор объекта</summary>
+        <code>{target.property_id}</code>
+      </details>
       {open && (
         <QueueR2Decision
           key={`${item.advertisement_id}:${target.property_id}:${target.factor_id || "new"}`}
@@ -407,6 +423,7 @@ function QueueR2Decision({
   onChange: () => void;
 }) {
   const { user } = useContext(Auth);
+  const objectName = target.property_name || target.property_id;
   const detail = useData<PropertyDetail>(`/properties/${target.property_id}`);
   const draft = useReviewDraft(
     user?.id || "",
@@ -484,10 +501,7 @@ function QueueR2Decision({
     }
   }
   return (
-    <div
-      className="review-form"
-      aria-label={`Решение R2: ${target.property_id}`}
-    >
+    <div className="review-form" aria-label={`Решение R2: ${objectName}`}>
       <p>
         {historical
           ? "Исторический R2 относится к прежнему объекту. Доказательства текущей привязки сюда не подставляются."
@@ -538,7 +552,7 @@ function QueueR2Decision({
               <label
                 htmlFor={`queue-r2-reason-${item.advertisement_id}-${target.property_id}`}
               >
-                Обоснование решения R2 по объекту {target.property_id}
+                Обоснование решения R2 по объекту {objectName}
               </label>
               <textarea
                 id={`queue-r2-reason-${item.advertisement_id}-${target.property_id}`}

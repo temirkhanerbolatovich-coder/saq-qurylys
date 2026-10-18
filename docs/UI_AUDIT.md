@@ -1,5 +1,26 @@
 # Аудит интерфейса SAQ QURYLYS
 
+## F-08/F-09 ·19.10 · LOCAL VERIFIED
+
+Имена точных R2-target, пометка прежнего объекта и явно текущее реестровое имя;
+UUID доступен вторым уровнем/fallback. Стадия «Строится» сохраняет исходный код
+в details/редакторе. PDF различимы до скачивания; filename* с безопасным fallback,
+контекст/дата/ID/v/r; frozen signal и исходные байты прежние. Контракт0.19/master1.5.
+
+Linux914 backend PASS239.49s; focused PDF38 PASS9.42s. Frontend37 PASS/2 gated SKIP;
+затем оба live-теста + настоящий PDF3 PASS15.5s. Production13 новых parser/
+presentation tests PASS5.9s. Build/TypeScript/lint/format/Ruff PASS. Имена/fallback
+и draft R2:375/768/1024/1440 без page overflow,375/1440 просмотрены визуально.
+Unicode/повреждённый header/путь/MIME/signature/error/retry, GET без review-команд,
+точные ID/evidence и прежние safety/composition сценарии проверены.
+Полный browser suite/внешняя приёмка не выполнялись. Снимки — ignored
+output/qa/review-pdf-20261019. Независимый read-only review без замечаний.
+
+Real API/DB/worker работали на отдельном QA volume/storage. Production start с
+адресом тестового API отклонён автопроверкой; production tests полностью mock,
+реальная связка подтверждена на dev. Ошибка первого QA mount и ограничения
+запуска отражены в PROJECT_STATUS. F-02 monitoring/C-01/внешняя приёмка OPEN.
+
 ## Перенос согласованной композиции ·19.10 · LOCAL VERIFIED / PRESENTATION
 
 База a473941. Обзор/реестр/досье используют согласованную плотную композицию,

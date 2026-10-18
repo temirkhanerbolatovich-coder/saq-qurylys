@@ -1,5 +1,15 @@
 # SAQ QURYLYS — внедрение и поддержка UI/UX
 
+## F-08/F-09 завершены локально ·19.10
+
+Имена точных исторических R2-target, понятные стадии и типы/имена PDF реализованы.
+Контракт0.19 добавляет только optional property_name; master1.5 прежний.
+Linux914 backend PASS,37 selected frontend +3 integration PASS, production13
+presentation/parser PASS. Build/TS/lint/format/Ruff PASS. Ограничение production
+API startup и фактические границы — PROJECT_STATUS/UI_AUDIT. Без push/deploy.
+Следующий блок — F-02: черновики сверки без автоматического compare/решения;
+независимая пользовательская и предметная приёмка остаётся открытой.
+
 ## Согласованная композиция перенесена ·19.10 · LOCAL VERIFIED
 
 Пользователь «окок» утвердил макеты. Завершён локальный presentation-блок:

@@ -28,6 +28,7 @@ from app.models import (
 )
 from app.monitoring import candidate_view
 from app.open_registry import OpenRegistryDocument
+from app.pdf_filenames import pdf_filename, signal_pdf_filename
 from app.publication_comparison import compare_publications
 from app.signal_pdf import pdf_payload
 from app.storage import read_asset
@@ -132,6 +133,7 @@ def export_payload(db, kind, id, settings, *, right_id=None, left_extraction_id=
         'images': [],
     }
     prop = None
+    source_context = ''
     if kind in {'assets', 'open-registry'}:
         asset = (
             require(db, Asset, id)
@@ -142,8 +144,14 @@ def export_payload(db, kind, id, settings, *, right_id=None, left_extraction_id=
             content = source_bytes(asset, settings)
             if not content.startswith(b'%PDF-'):
                 raise HTTPException(409, 'Сохранённый файл не является PDF')
-            return content, f'saq-source-{asset.id}.pdf'
+            return content, pdf_filename(
+                'source',
+                asset.id,
+                context=(asset.source_details or {}).get('source_label', ''),
+                saved_at=asset.captured_at,
+            )
         payload['is_demo'] = asset.is_demo
+        source_context = (asset.source_details or {}).get('source_label', '')
         payload['record'] = {'kind': asset.kind, 'captured_at': asset.captured_at}
         if asset.advertisement_id:
             ad = require(db, Advertisement, asset.advertisement_id)
@@ -161,14 +169,14 @@ def export_payload(db, kind, id, settings, *, right_id=None, left_extraction_id=
         signal = require(db, Signal, id)
         if signal.pdf_state == 'READY':
             try:
-                return saved_pdf(db, signal, settings), f'saq-signal-{id}-v{signal.version}-r{signal.revision}.pdf'
+                return saved_pdf(db, signal, settings), signal_pdf_filename(signal)
             except OSError:
                 raise HTTPException(409, 'Сохранённый PDF недоступен. Исторический снимок не изменён.') from None
         # Same frozen source as the existing durable renderer; no current-property recalculation.
         return {
             'signal_payload': pdf_payload(signal),
             'exported_at': utcnow().isoformat(),
-        }, f'saq-signal-{id}-v{signal.version}-r{signal.revision}.pdf'
+        }, signal_pdf_filename(signal)
     elif kind in {'evidence', 'legal-bases', 'risk-factors'}:
         model = {'evidence': Evidence, 'legal-bases': LegalBasis, 'risk-factors': RiskFactor}[kind]
         row = require(db, model, id)
@@ -279,4 +287,28 @@ def export_payload(db, kind, id, settings, *, right_id=None, left_extraction_id=
                 append_source(payload, asset, settings, include_content=False)
     if prop is not None:
         payload['object'] = {'name': prop.name, 'city': prop.city, 'address': prop.address}
-    return jsonable_encoder(payload), f'saq-{kind}-{id}.pdf'
+    record = payload['record']
+    context = (
+        (prop.name if prop is not None else None)
+        or record.get('name')
+        or record.get('source_label')
+        or record.get('label')
+        or record.get('candidate_name')
+        or (record.get('identity_snapshot') or {}).get('name')
+        or source_context
+        or ''
+    )
+    saved_at = next(
+        (
+            record.get(field)
+            for field in ['reviewed_at', 'captured_at', 'created_at', 'occurred_at']
+            if record.get(field)
+        ),
+        prop.last_reviewed_at if prop is not None else None,
+    )
+    if kind == 'publication-comparison':
+        context = f'{record["left"]["source_label"]}-{record["right"]["source_label"]}'
+        saved_at = record['left']['captured_at']
+    return jsonable_encoder(payload), pdf_filename(
+        'source-copy' if kind in {'assets', 'open-registry'} else kind, id, context=context, saved_at=saved_at
+    )

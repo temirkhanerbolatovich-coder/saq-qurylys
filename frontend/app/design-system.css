@@ -1315,6 +1315,11 @@ input[type="checkbox"] {
   flex-basis: 100%;
   color: var(--color-danger);
 }
+.pdf-download > .field-help {
+  flex-basis: 100%;
+  max-width: 62ch;
+  margin: 0;
+}
 
 .dossier-document > summary {
   cursor: pointer;

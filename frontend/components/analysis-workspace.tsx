@@ -828,12 +828,12 @@ function ReviewMaterial({
               <PdfDownload
                 kind="extractions"
                 id={extraction.id}
-                label="PDF результатов анализа"
+                label="Результаты анализа в PDF"
               />
               <PdfDownload
                 kind="advertisements"
                 id={ad.id}
-                label="PDF публикации"
+                label="PDF-копия публикации"
               />
               <h3>
                 {image
@@ -1124,6 +1124,12 @@ const fieldLabels: Record<string, string> = {
   AMOUNT: "Сумма",
   STAGE: "Стадия",
 };
+const stageValueLabels: Record<string, string> = {
+  UNKNOWN: "Стадия не установлена",
+  PLANNED: "Планируется строительство",
+  UNDER_CONSTRUCTION: "Строится",
+  COMPLETED: "Строительство завершено",
+};
 function HypothesisCard({
   hypothesis: h,
   writable,
@@ -1172,7 +1178,17 @@ function HypothesisCard({
         <strong>{fieldLabels[h.field] || h.field}</strong>
         <span className="status">{statusLabel(h.review_status)}</span>
       </div>
-      <p>{value.text}</p>
+      <p>
+        {h.field === "STAGE" && value.text
+          ? stageValueLabels[value.text] || value.text
+          : value.text}
+      </p>
+      {h.field === "STAGE" && value.text && (
+        <details className="field-help">
+          <summary>Сохранённое значение стадии</summary>
+          <code>{value.text}</code>
+        </details>
+      )}
       {value.money && (
         <p>
           <b>

@@ -218,7 +218,14 @@ def test_queue_lifecycle_only_explicit_decisions_remove_work(signed, cases):
     source = evidence(signed, case)
     item = queue(signed)['items'][0]
     assert item['actions'] == ['REVIEW_R2']
-    assert item['r2_reviews'] == [{'property_id': str(case.prop.id), 'factor_id': None, 'evidence_ids': [source['id']]}]
+    assert item['r2_reviews'] == [
+        {
+            'property_id': str(case.prop.id),
+            'property_name': case.prop.name,
+            'factor_id': None,
+            'evidence_ids': [source['id']],
+        }
+    ]
     factor(signed, case, source)
     assert queue(signed)['total'] == 0
     assert signed.get(f'/api/v1/advertisements/{case.ad.id}').json()['status'] == 'READY_FOR_REVIEW'
@@ -449,6 +456,33 @@ def test_pending_r2_does_not_add_unrelated_material_from_same_property(signed, c
     result = queue(signed)
     assert result['total'] == 1
     assert result['items'][0]['advertisement_id'] == str(case.ad.id)
+
+
+def test_r2_display_name_resolves_exact_historical_target_without_changing_work(signed, cases):
+    case = cases([('PAYMENT_TERM', 'CONFIRMED')], matched=True)
+    source = evidence(signed, case)
+    pending = factor(signed, case, source, 'PENDING')
+    other = cases([])
+    case.prop.name = 'DEMO Өркен · прежний объект'
+    other.prop.name = 'DEMO новый объект привязки'
+    case.ad.confirmed_property_id = other.prop.id
+    case.db.flush()
+    before = case.db.scalar(select(func.count()).select_from(AuditEvent))
+    item = queue(signed)['items'][0]
+    assert item['r2_reviews'] == [
+        {
+            'property_id': str(case.prop.id),
+            'property_name': case.prop.name,
+            'factor_id': pending['id'],
+            'evidence_ids': [source['id']],
+        }
+    ]
+    assert item['advertisement']['confirmed_property_id'] == str(other.prop.id)
+    assert case.db.scalar(select(func.count()).select_from(AuditEvent)) == before
+    case.prop.name = 'DEMO переименованный прежний объект'
+    case.db.flush()
+    assert queue(signed)['items'][0]['r2_reviews'][0]['property_name'] == case.prop.name
+    assert case.db.get(RiskFactor, pending['id']).status == 'PENDING'
 
 
 def test_filter_totals_and_pagination_cover_full_work_set(signed, cases):

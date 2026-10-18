@@ -1,5 +1,11 @@
 # SAQ QURYLYS — каталог компонентов
 
+19.10, F-08/F-09: QueueR2Target/Decision используют optional property_name точного
+target ID, прежние payload/draft scope. HypothesisCard переводит STAGE только
+при чтении и раскрывает исходный код. PdfDownload использует pdfDownloadFilename
+из presentation.ts и optional description с useId/aria-describedby; прежние
+MIME/signature/abort/error/retry сохранены. Нового компонента-аналога нет.
+
 ## Согласованная композиция ·19.10
 
 - DashboardPriority заменяет два представления очереди одним: серверные rows,

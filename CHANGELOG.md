@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased ·19.10.2026 · Readable review tasks and PDF names
+
+- Resolve exact R2 target names in one batch read; preserve historical IDs,
+  evidence, commands and drafts. Contract0.19 adds optional display metadata.
+- Translate known stage values for reading and retain saved codes separately.
+- Name PDF downloads by type, saved context/date/full ID and frozen signal v/r;
+  provide safe Unicode/ASCII headers and fallback without changing stored bytes.
+- Verify914 Linux backend,37 selected frontend plus3 live integration tests,
+  and13 production presentation/parser cases. No publication or push.
+
 ## Unreleased ·19.10.2026 · Approved analyst composition
 
 - Move the shared server-ordered3/5 property queue ahead of secondary analytics;

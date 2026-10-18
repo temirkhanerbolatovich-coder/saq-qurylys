@@ -10,6 +10,7 @@ from starlette.responses import Response
 from app.dependencies import DB, Actor
 from app.document_exports import export_payload
 from app.document_pdf_render import render_document_pdf
+from app.pdf_filenames import pdf_content_disposition
 
 router = APIRouter()
 ExportKind = Literal[
@@ -72,7 +73,7 @@ def download_record_pdf(
         content,
         media_type='application/pdf',
         headers={
-            'Content-Disposition': f'attachment; filename="{filename}"',
+            'Content-Disposition': pdf_content_disposition(filename),
             'Cache-Control': 'no-store',
             'X-Content-Type-Options': 'nosniff',
             'Content-Security-Policy': "default-src 'none'; sandbox",

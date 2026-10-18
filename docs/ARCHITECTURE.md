@@ -1,5 +1,12 @@
 # SAQ QURYLYS — архитектура MVP
 
+19.10.2026, контракт0.19: PaymentReviewTarget получает nullable display name.
+review_work одним batch SELECT читает имена точных target IDs после вычисления
+работы. Counts/порядок/команды/решения прежние. Общий pdf_filenames обслуживает
+generic export и direct saved signal; frozen имя/дата/v/r не зависят от текущего
+Property. Header/parser меняют только имя скачивания, без хранения/рендера/
+снимков. Новых зависимостей/миграций/архитектурного решения нет.
+
 18.10.2026, локальный контракт0.18.0-mvp: listSignals q≤300 добавляет SQL predicate
 к текущему/сохранённому имени, signalUUID, version label и state code/label.
 EXISTS current Property.name не дублирует строки; JSON path только frozen name,

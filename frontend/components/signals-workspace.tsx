@@ -1000,7 +1000,8 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                 <PdfDownload
                   kind="assets"
                   id={basis.asset_id}
-                  label="Источник в PDF"
+                  label="Получить источник в PDF"
+                  description="Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия."
                 />
               </article>
             ))}
@@ -1080,7 +1081,8 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                     <PdfDownload
                       kind="assets"
                       id={evidence.asset_id}
-                      label="Источник в PDF"
+                      label="Получить источник в PDF"
+                      description="Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия."
                     />
 
                     {evidence.source_url && (

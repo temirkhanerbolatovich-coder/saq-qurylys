@@ -53,7 +53,8 @@ def test_original_pdf_is_exact_and_not_rendered(signed, settings, monkeypatch):
     assert response.status_code == 200
     assert response.content == content
     assert response.headers['content-type'] == 'application/pdf'
-    assert response.headers['content-disposition'].endswith('.pdf"')
+    assert 'filename="saq-source-' in response.headers['content-disposition']
+    assert "filename*=UTF-8''" in response.headers['content-disposition']
     assert response.headers['cache-control'] == 'no-store'
 
 
@@ -140,15 +141,17 @@ def test_signal_export_uses_frozen_snapshot_and_does_not_queue_pdf(signed, setti
     signal = create(signed).json()
     id = UUID(signal['id'])
     with signed.app.state.sessions() as db:
-        old, _ = export_payload(db, 'signals', id, settings)
+        old, old_name = export_payload(db, 'signals', id, settings)
     with signed.app.state.sessions.begin() as db:
         prop = db.get(Property, UUID(signal['property_id']))
         name = prop.name
         prop.name = 'DEMO Changed after snapshot'
     try:
         with signed.app.state.sessions() as db:
-            new, _ = export_payload(db, 'signals', id, settings)
+            new, new_name = export_payload(db, 'signals', id, settings)
             assert new['signal_payload'] == old['signal_payload']
+            assert new_name == old_name
+            assert 'Changed-after-snapshot' not in new_name
             assert db.get(Signal, id).pdf_state == 'NOT_REQUESTED'
     finally:
         with signed.app.state.sessions.begin() as db:

@@ -1,5 +1,10 @@
 # SAQ QURYLYS
 
+19.10: локально завершены понятные R2-задачи/стадии и имена PDF с названием,
+датой и версией. Linux914 backend PASS; selected frontend37 +3 integration PASS,
+production13 presentation/parser PASS. Контракт0.19, master1.5. Публикации нет;
+[проверки, ограничение запуска и следующий шаг](PROJECT_STATUS.md).
+
 19.10.2026: согласованная композиция макетов перенесена в приложение локально:
 компактный рабочий обзор, таблица реестра, действие первым в ходе проверки досье.
 Master1.5;19 production presentation tests и build/typecheck/lint/format PASS.
