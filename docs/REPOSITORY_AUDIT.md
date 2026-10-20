@@ -654,3 +654,9 @@ KEEP — код, миграции, fixtures, API, ADR, данные синтет
 | `scripts/verify_intake_journey.py` | KEEP | Действующий код, конфигурация, тест, reference, документация или provenance |
 | `scripts/verify_ocr.py` | KEEP | Действующий код, конфигурация, тест, reference, документация или provenance |
 | `Кейс Codemasters 8.0. SAQ (1).pdf` | MOVE | Первичный источник; сохранить bytes/SHA в docs/reference |
+
+## Закрытие замечаний независимого review
+
+Cookie example соответствует saq_session; native/restore DB ожидает health; trap стоит до остановки; Windows/Linux storage подготовка разделена. Hygiene проверяет key/PowerShell/text files и существование именно versioned targets, regressions включены. Compose minimum уточнён2.35. Сигнатуры не заменяют полноценный historic secret scan; старые credentials/PR refs OPEN.
+
+Проверка reference bytes выполнялась не только в рабочем дереве, но и по Git blobs/fresh clone. Для оригинального текста ТЗ и raw diagnostic logs заданы узкие -text/-whitespace правила; владельческий code diff остаётся под обычной проверкой whitespace.

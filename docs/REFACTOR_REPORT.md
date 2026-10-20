@@ -1,51 +1,83 @@
 # Repository cleanup — отчёт
 
-Статус IN_PROGRESS, дата21.10.2026. Фактическая ревизия будет зафиксирована после проверок. Ветка codex/repository-cleanup; deployment/реальная БД не изменяются.
+Дата:21.10.2026, Asia/Qyzylorda. Исполнитель:Codex и независимый read-only reviewer.
+Ветка [codex/repository-cleanup](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/tree/codex/repository-cleanup), [PR5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5).
+Рабочий deployment/БД/storage не изменялись; merge/settings/history rewrite не выполнялись.
 
-## Проблема и результат
+## Исходное состояние
 
-GitHub отставал от текущих локальных исходников: main aefb72f, feature f5c6387, локальный HEAD b156086 плюс620файлов полного source snapshot. README и статус смешивали текущие инструкции с длинной историей; scripts CI был неполным, E2E использовал обычный рабочий порт.
+GitHub main aefb72f (контракт0.13), feature f5c6387 (0.18), локальный HEAD b156086 (0.19) плюс полный рабочий source0.34. Сохранены620файлов:401tracked/219новых и101изменённый tracked. Snapshot/manifest остались приватно; после работ SHA всех620файлов первоначального checkout совпали.
 
-Сохранены backend/frontend/contracts/scripts/data/.github и закреплённый Skill. Runtime-код массово не перемещается. docs/reference содержит исходники, docs/archive — прежние входные документы, docs/operations — backup/restore; тематические руководства индексируются docs/README.md.
+PR включает ранее неопубликованный продуктовый срез (Social Monitor/SQ fixes) и cleanup. Сравнение с main содержит эти продуктовые изменения; непосредственно cleanup бизнес-код/API/миграции/DTO/UI components относительно сохранённого снимка не менял.
 
-## Перемещения и удаления
+## Итоговая структура и решения
 
-Исходный DOCX/PDF moved с сохранением bytes/SHA, SOURCES.json фиксирует hashes. Старые README/PROJECT_STATUS/ARCHITECTURE/DEPLOYMENT полностью архивированы с актуализированными относительными ссылками. Исторические OCR fixtures/результаты, миграции, OpenAPI, лицензии сохранены. REMOVE исходных файлов нет; дубли evidence остаются REVIEW. Кэши исключены из image context.
+backend/frontend/contracts/scripts/data/.github сохранены. Нужные root Compose/configs остаются на месте. docs/README индексирует developer/API/architecture/deployment/operations guides; docs/reference хранит источники с SHA; docs/archive — полные прежние README/статус/архитектуру/deployment-журнал. Миграции, fixtures, synthetic evaluation evidence, OpenAPI и UI Skill/лицензии сохранены.
 
-## Изменения качества
+Исходные DOCX/PDF moved с неизменными bytes/SHA. Текст нового ТЗ сохранён точно с CRLF; узкий -text/-whitespace исключает его и raw diagnostic logs из нормализации. README сокращён примерно с518до105строк, статус — с4257до короткого checkpoint. REMOVE исходных файлов нет; неоднозначный screenshot duplicate остаётся REVIEW. Полный исходный реестр — [REPOSITORY_AUDIT](REPOSITORY_AUDIT.md).
 
-Общий opt-in/loopback guard для recording E2E/OCR. CI должен проверять все scripts, docs/hygiene и Compose overlays, сохраняя текущие jobs. Требования безопасности/предметные guards не ослабляются.
+Новых runtime dependencies, архитектурных слоёв, framework или проектной лицензии нет. EditorConfig/PR/issue templates/SECURITY и документация добавлены. Значимое новое архитектурное решение не принималось; существующие ADR сохранены.
+
+## Docker и CI
+
+Кэши/логи/build outputs исключены из contexts; разделённые local/dev/public/HTTPS/prebuilt overlays сохранены. E2E/OCR требуют явный disposable loopback/opt-in и отдельный порт; это не заменяет изоляцию БД/storage оператором.
+
+Существующий CI дополнен repository job (versioned links/JSON/private paths/narrow signatures/Compose), Ruff охватывает scripts целиком. Markdown-only changes теперь проверяются. Concurrency отменяет устаревшие runs. Новых внешних сервисов нет.
 
 ## Проверки
 
-| Проверка | Результат |
+| Проверка | Фактический результат |
 |---|---|
-| Исходный snapshot620files/SHA | PASS |
-| Static/tools/ссылки/Compose | PASS: Ruff backend144/scripts27, frontend lint/type/format, tools101 (1SKIP), Node20, hygiene, 4Compose variants |
-| Docker build/new DB install | PASS: api/worker/frontend, новая DB/storage, loopback3093, реальный RU/KZ OCR; remote fresh clone впереди |
-| Backend/Linux/native PDF | PENDING |
-| Browser acceptance | PENDING |
-| GitHub CI точного SHA | PENDING |
+| Python tool tests | PASS:102tests,101PASS/1SKIP; ожидаемое ru-01 ValueError относится к negative test |
+| Backend Ruff/format | PASS:144files |
+| Scripts Ruff/format | PASS:27files |
+| Frontend lint/typecheck/format | PASS |
+| Node tests | PASS:20 |
+| npm audit | PASS:0vulnerabilities на момент запуска |
+| Hygiene/JSON/versioned links/narrow secret scan | PASS; все UTF-8 source files, включая key/PowerShell; не полный historic audit |
+| Compose config | PASS:base/dev/public/HTTPS+prebuilt с подставными environment, без раскрытия .env |
+| Docker build | PASS:api/worker/frontend, настоящий Next production build; cache использовался |
+| Новый isolated DB/storage install | PASS:base-only3093; migrations/bootstrap/health/API/UI/worker |
+| Linux full pytest | PASS:1252tests,335.46s,0FAIL/0SKIP |
+| Alembic | PASS:upgrade на новой БД,16migrations/одинhead ef90fc78b461; check без drift |
+| Свежий remote GitHub clone | PASS:clone a49a9d7→ff982705c, npm ci, build, новая DB/storage3090, actual RU/KZ OCR |
+| Fresh full browser | PASS:311PASS/6SKIP/0FAIL,409.88s,workers1/retries0 |
+| CSV→human review→signal/PDF | PASS:отдельные решения, R2/25, UNKNOWN R1, historical snapshot и downloaded bytes |
+| Downloaded PDF | PASS:offline verifier,3pages/24230bytes; все страницы визуально просмотрены |
+| Restart persistence | PASS:повторный login, прежние snapshot/decisions и PDF SHA совпали |
+| QA backup/restore | PASS:37tables/60assets,162audit rows,4signals,2архивных PDF; authenticated downloads/SHA |
+| Source integrity | PASS:620исходных файлов в первоначальном checkout сохранили SHA; reference Git blobs/fresh clone SHA совпадают |
+| diff --check / staged hygiene | PASS перед публикацией |
+| GitHub CI | Статус точного SHA — [Checks PR5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5/checks); локальные результаты выше не подменяют CI |
+| Новый Linux VPS/HTTPS/production deploy | NOT_RUN:изменение реального deployment исключено заданием; инструкции проверены по коду/isolated containers |
 
-Непроверенные сценарии не считаются PASS. Полная матрица будет обновлена фактическими командами/результатами.
+6browser SKIP:2typography A/B,2V2 external fixture,1manual two-analyst dedicated fixture,1network measurement. Эти специальные пути не выдаются за покрытые этим прогоном.
 
-## Запуск и ограничения
+PDF SHA:a36e4a46ae5114c4691d94593397bcc76333d72dc9fdafa734bc8e9c84038464.
+DEMO/UNKNOWN/веса/цитата/SHA читаются на всех3страницах; существующий перенос label решения между страницами сохранён. Poppler сообщил предупреждения о supplementary nameToUnicode files из Unicode Windows path, PNG всех страниц созданы и просмотрены.
 
-Quick Start — [README](../README.md), собственный сервер — [DEPLOYMENT](DEPLOYMENT.md). Риск/API/роли/исторические snapshots сохраняются; новые архитектурные слои/пакеты/лицензия не вводятся.
+## Команды и среда проверки
 
-Старые credentials/PR/cache refs остаются open по SECURITY; автоматический off-host backup, официальный REAL-реестр, live access и внешняя приёмка не закрываются реорганизацией. Merge/deploy/settings не выполняются без отдельного разрешения.
+- Python:unittest discover scripts; Ruff backend/app backend/tests backend/alembic; scripts с backend/pyproject.toml; hygiene.
+- Frontend:npm ci, lint/typecheck/format:check, node --test scripts/test-*.mjs, audit; build внутри Docker.
+- docker compose -p saq-cleanup-20261021 build/up:новые DB/storage,порт3093; verify_ocr при SAQ_ISOLATED_ACCEPTANCE=1.
+- Linux pytest в одноразовом api container с contracts/scripts/evaluation fixtures и новым venv, APP_ORIGIN=http://localhost:3000; после него alembic check.
+- Fresh clone:project saq-cleanup-fresh-20261021,порт3090, флаги isolated/query-profiles/url-schedules; npx playwright test --reporter=list,json.
+- Offline verify_intake_journey и Poppler pdftoppm для реального downloaded PDF.
+- QA backup создан только из собственных контейнеров после label/working_dir проверки и остановки собственных writers. Штатный verify_backup использовал network-none disposable DB и restored storage read-only. Private wrappers/evidence не публикуются.
 
-## Зафиксированные команды и промежуточные ошибки
+## Диагностированные промежуточные отказы
 
-- npm ci --no-audit; npm run lint/typecheck/format:check; node --test scripts/test-*.mjs: PASS, Node20. npm audit --audit-level=high:0 vulnerabilities на момент проверки.
-- python -m unittest discover -s scripts -p "test_*.py" -q:101tests,100PASS/1SKIP. Сообщение ru-01 failed(ValueError) — ожидаемый negative test, итог unittest OK.
-- python scripts/check_repository_hygiene.py: PASS после staging; signatures сканируют все UTF-8 source files, включая key/PowerShell; regression добавлен. Проверка не является полным историческим security audit.
-- docker compose -p saq-cleanup-20261021 build; up --no-build -d --wait: PASS. Используется Docker cache, это не полностью offline/no-cache проверка установки зависимостей.
-- SAQ_ISOLATED_ACCEPTANCE=1, APP_ORIGIN3093: verify_ocr PASS настоящих двух RU/KZ jobs; source files/PDF не подменяются seed-ответами.
-- Первая Linux dev-dependency установка получила PyPI ReadTimeout; retry с90s завершился. Первый pytest collection выявил отсутствующий scripts/evaluate_publications.py в тестовом контейнере; scripts и evaluation fixtures добавлены в одноразовый test container, приложение не исправлялось ради тестового harness. Полный pytest теперь исполняется.
+Первая dev-dependency установка:PyPI ReadTimeout, retry90s прошёл. Первый pytest collection:harness не содержал scripts/evaluate_publications.py; scripts/evaluation fixtures добавлены в одноразовый container, затем единый full1252PASS.
 
-## Independent review
+Первый browser на3093:308PASS/2FAIL/7SKIP. Два opt-in tests требовали3090; guards не ослаблялись. Полный повтор на новом clone3090 дал311PASS/6SKIP/0FAIL.
 
-Read-only reviewer проверил deployment/backup/CI/security. Исправлены cookie saq_session, DB --wait, trap перед stop, Windows/Linux storage порядок, .pem/.ps1 scanner coverage и minimum Compose2.35. Схема/поведение runtime не менялись. Старые credentials/cache refs и off-host backup сохранены OPEN.
+Fresh up:host Docker исчерпал default address pools (32existing networks). Выбран non-overlapping10.203.91.0/24 только в private QA override; чужие networks/daemon не менялись. Поэтому remote fresh run использовал этот override; base-only новый install отдельно прошёл на3093.
 
-Первый полный browser на3093:308PASS/2FAIL/7SKIP,6.8min. Два opt-in live tests требуют точный3090; application failures не обнаружены, фикстуры портом не ослаблялись. Финальный полный прогон будет на fresh clone3090 как в CI. Первый source commit cd94984 опубликован; до итоговой docs/CI приёмки завершение не заявляется.
+## Открытые ограничения и передача
+
+Off-host encrypted backup/retention/monitoring и полная pilot-hardening не настроены этим cleanup. Старые credentials/PR/cache refs по SECRET_CLEANUP остаются OPEN; история не переписывалась. Независимая RU/KZ/OCR/UX/предметная приёмка, второй физический ПК, live social access и принятый REAL-реестр остаются внешними условиями.
+
+Helper backup_local требует Git metadata и своего Compose identity/working_dir; пустая БД без оригинала/аудита не покрывается его HTTP verify. Linux VPS/manual backup shell recipe здесь не исполнялся на реальном сервере.
+
+[Quick Start](../README.md), [deployment](DEPLOYMENT.md), [backup/restore](operations/BACKUP_RESTORE.md), [troubleshooting](TROUBLESHOOTING.md). Тестовые volumes/storage/приватные receipts сохраняются; собственные QA services останавливаются после приёмки. Следующее действие — review/согласованное слияние PR5; production deployment отдельно.

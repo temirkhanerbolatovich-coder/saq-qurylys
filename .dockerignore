@@ -18,3 +18,5 @@ tmp
 **/.coverage
 **/test-results
 **/playwright-report
+
+**/*.log

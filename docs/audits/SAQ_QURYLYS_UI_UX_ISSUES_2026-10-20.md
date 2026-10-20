@@ -118,7 +118,7 @@
 - **Маршрут:** `/properties/[id]`, статистика факторов.
 - **Компонент:** `DossierRiskStatistics`.
 - **Доказательство:** PENDING показан отдельно и входит в `risk.unknown_codes`; 5 CONFIRMED + 1 PENDING дают 5+1+0+1=7 при шести кодах.
-- **Файлы/строки:** [dossier-overview.tsx](../../frontend/components/dossier-overview.tsx#L302):302,313; [views.py](../../backend/app/views.py#L25):25. Предыдущая runtime фиксация [UI_AUDIT.md](../UI_AUDIT.md#L49):49 и `.local/r1-r6-20261020/statistics-pending.jpg`.
+- **Файлы/строки:** [dossier-overview.tsx](../../frontend/components/dossier-overview.tsx#L302):302,313; [views.py](../../backend/app/views.py#L25):25. Предыдущая runtime фиксация [UI_AUDIT.md](../UI_AUDIT.md) (на момент прежней фиксации — строка49) и `.local/r1-r6-20261020/statistics-pending.jpg`.
 - **Неправильное поведение:** несогласованная декомпозиция; серверный score остаётся правильным.
 - **Влияние на пользователя:** сложно оценить остаток проверки.
 - **Влияние на доверие:** простая сумма выглядит ошибочной и ставит под сомнение соседний score.

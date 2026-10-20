@@ -4,6 +4,7 @@
 
 | Симптом | Проверка и действие |
 |---|---|
+| Docker address pools exhausted | Не prune чужие сети. Проверить все network IPAM и выбрать непересекающуюся подсеть только для собственного QA override; это настройка окружения |
 | Docker unavailable | docker info, Linux engine/WSL2, доступ пользователя; не system prune |
 | Port занят | Windows Get-NetTCPConnection -LocalPort 3000; Linux ss -ltn; другой порт генератором в новой копии |
 | API unhealthy | DB health и API logs; /health выполняет SELECT 1 |

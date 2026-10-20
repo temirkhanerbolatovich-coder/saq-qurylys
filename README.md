@@ -10,7 +10,7 @@ Live-доступ к социальным платформам, принятый
 
 ## Быстрый запуск через Docker
 
-Нужны Git, Python 3.12+ и Docker с Linux engine / Compose v2.35+; Windows: Docker Desktop с WSL2. Для контейнерного запуска Node.js и локальный Tesseract не нужны. Используйте новую отдельную папку:
+Нужны Git, Python 3.12+ и Docker с Linux engine / Compose v2.35+; Windows: Docker Desktop с WSL2. Для контейнерного запуска Node.js и локальный Tesseract не нужны. Используйте новую отдельную папку. На Linux/WSL в командах ниже замените python на python3:
 
 ```sh
 git clone https://github.com/temirkhanerbolatovich-coder/saq-qurylys.git

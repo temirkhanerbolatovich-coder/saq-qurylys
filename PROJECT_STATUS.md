@@ -1,29 +1,23 @@
 # SAQ QURYLYS — текущий статус
 
-## Repository cleanup · 21.10.2026 · IN_PROGRESS
+## Repository cleanup ·21.10.2026 ·локальная приёмка завершена
 
-Исполнитель: Codex, отдельный read-only reviewer deployment/security. Рабочая ветка codex/repository-cleanup в изолированном managed checkout. База b15608664f271367b3cc63505def5041f1c69117 плюс сохранённые 620 исходных файлов (401 tracked/219 новых); исходная рабочая папка/.env/DB/storage не изменяются.
+Исполнитель:Codex, независимый read-only review deployment/security. Ветка codex/repository-cleanup, [PR5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5). База b156086 плюс620файлов сохранённого рабочего снимка; первоначальный checkout/.env/DB/storage не изменены.
 
-Поручение пользователя: привести GitHub/репозиторий в порядок по полному ТЗ, сохранить бизнес-логику, данные, API/роли/OCR/PDF/историю. Отдельного merge/deploy разрешения нет. Подготовка ветки/PR входит в задачу.
+Полный source0.34 опубликован в ветке; текущий main исторический до отдельного merge. Подготовлены краткий README, тематические guides, index/archive/reference с SHA, scripts-wide CI/hygiene, recording E2E/OCR guards, Docker context exclusions и review templates. Код бизнеса/API/миграций/UI относительно исходного рабочего снимка cleanup не меняет.
 
-## Продуктовый checkpoint
+## Проверки
 
-Контракт0.34.0; 16 миграций, head ef90fc78b461. Источники включают текущий Social Monitor V2 и SQ-01—SQ-15. Предыдущая сессия сообщила Linux1252PASS и browser307PASS/1FAIL/9SKIP + targeted1PASS; это исторические результаты, не единый зелёный full run cleanup.
+Linux backend1252PASS/0SKIP; tools102(1SKIP); Node20PASS; Ruff/lint/type/format/build/hygiene/Compose PASS. Fresh GitHub clone → новые DB/storage → actual RU/KZ OCR → единый browser311PASS/6SKIP/0FAIL. CSV→отдельные решения→R2/25→архивныйPDF проверен;3страницы просмотрены; snapshot/decisions/PDF SHA сохранены после restart. QA backup/restore37tables/60assets и authenticated historical downloads PASS.
 
-Текущий production не обновлён этим cleanup. Live social access, принятый REAL-реестр, независимая RU/KZ/OCR/предметная/UX приёмка, второй физический ПК, масштабирование и автоматический off-host backup остаются открытыми.
+Точные команды, промежуточные failures, пропуски и environmental QA subnet override — [REFACTOR_REPORT](docs/REFACTOR_REPORT.md). GitHubCI точного опубликованного SHA — [Checks PR5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5/checks); локальный PASS не заменяет его.
 
-## Завершённые блоки этой сессии
+## Границы и следующий шаг
 
-- Сохранён приватный source snapshot/manifest SHA до изменений; dirty исходники не потеряны.
-- Создан пофайловый REPOSITORY_AUDIT с KEEP/MOVE/MERGE/REVIEW; доказанных REMOVE нет.
-- Root README/архитектура/статус/deployment history сохранены в docs/archive; исходные PDF/DOCX moved в docs/reference с неизменным SHA.
-- Добавляются тематические developer/API/deployment/operations/troubleshooting docs и навигация.
-- E2E/OCR require disposable loopback/opt-in, caches исключены из Docker context, CI расширяется.
+Контракт0.34,16миграций/head ef90fc78b461; Social Monitor V2 и SQ-01—SQ-15 включены как ранее реализованный продуктовый срез. Cleanup не обновлял production, не менял repository settings и не переписывал историю.
 
-## Проверки и следующий шаг
+Следующее действие: review и согласованное merge PR5. Deployment — отдельное разрешённое действие с backup/проверкой схемы. Остаются live social access, REAL-реестр, независимая RU/KZ/OCR/UX/предметная приёмка, второйПК, off-host backup/monitoring и историческая credential rotation.
 
-Результаты cleanup вносятся в [REFACTOR_REPORT](docs/REFACTOR_REPORT.md). Следующий шаг: завершить CI/hygiene, Ruff scripts, ссылки и isolated Docker build/fresh install/backend/browser acceptance. До фактического результата PASS не заявляется.
+## История и документы
 
-История, полные старые ограничения и receipts сохранены в [архиве статуса](docs/archive/PROJECT_STATUS_2026-10-20.md). [SQ fixes receipt](docs/implementation/SQ_FIX_PROGRESS.md), [чеклист](docs/REMAINING_CHECKLIST.md), [аудит репозитория](docs/REPOSITORY_AUDIT.md).
-
-21.10: tools101(1SKIP),Node20,lint/type/format/Ruff/hygiene/4Compose configs PASS; Docker build/start на новых DB/storage3093 и реальный RU/KZ OCR PASS. Full backend/browser выполняются; первое network timeout и harness missing scripts сохранены в REFACTOR_REPORT. Следующий шаг: завершить full runs, опубликовать branch/PR, проверить точный CI SHA и remote fresh clone.
+[Полная прежняя история](docs/archive/PROJECT_STATUS_2026-10-20.md), [SQ fixes](docs/implementation/SQ_FIX_PROGRESS.md), [чеклист](docs/REMAINING_CHECKLIST.md), [пофайловый аудит](docs/REPOSITORY_AUDIT.md), [документация](docs/README.md). Завершённые длинные журналы сохраняются в archive; текущий checkpoint не дублирует хронологию.
