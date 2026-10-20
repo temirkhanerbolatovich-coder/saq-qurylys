@@ -33,6 +33,14 @@ class RepositoryHygieneTests(unittest.TestCase):
             (root / 'deploy.ps1').write_text('ghp_' + 'a' * 36, encoding='utf-8')
             self.assertEqual(len(inspect_files(root, ['deploy.pem', 'deploy.ps1'])), 2)
 
+    def test_existing_but_unversioned_link_target_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'README.md').write_text('[guide](untracked.md)', encoding='utf-8')
+            (root / 'untracked.md').write_text('not committed', encoding='utf-8')
+            self.assertEqual(len(inspect_files(root, ['README.md'])), 1)
+            self.assertEqual(inspect_files(root, ['README.md', 'untracked.md']), [])
+
     def test_private_files_are_rejected_in_any_subdirectory(self):
         paths = [
             '.env',

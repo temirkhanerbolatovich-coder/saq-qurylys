@@ -66,7 +66,7 @@ def secret_findings(content):
     ]
 
 
-def missing_markdown_targets(root, name, content):
+def missing_markdown_targets(root, name, content, allowed=None):
     """Check local file targets; external URLs, anchors and fenced examples are not fetched."""
     content = re.sub(r'(?ms)^```.*?^```[^\n]*', '', content)
     missing = []
@@ -77,14 +77,27 @@ def missing_markdown_targets(root, name, content):
         path = unquote(target.path)
         if any(character in path for character in '<>*{}'):
             continue
-        if not (root / name).parent.joinpath(path).exists():
+        resolved = (root / name).parent.joinpath(path).resolve()
+        if not resolved.exists():
             missing.append(path)
+        elif allowed is not None:
+            try:
+                relative = resolved.relative_to(root.resolve()).as_posix()
+            except ValueError:
+                missing.append(path)
+                continue
+            if relative not in allowed and not any(
+                candidate.startswith(relative.rstrip('/') + '/') for candidate in allowed
+            ):
+                missing.append(path)
+
     return missing
 
 
 def inspect_files(root, names):
     """Inspect the current source tree; diagnostics contain paths and categories only."""
     problems = []
+    allowed = set(names)
     for name in names:
         path = root / name
         if not path.is_file():
@@ -109,7 +122,7 @@ def inspect_files(root, names):
         if path.suffix == '.md' and not name.startswith('.agents/'):
             problems.extend(
                 f'{name}: missing local link target {target}'
-                for target in missing_markdown_targets(root, name, content)
+                for target in missing_markdown_targets(root, name, content, allowed)
             )
     return problems
 

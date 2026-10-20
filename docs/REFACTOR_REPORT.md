@@ -47,3 +47,5 @@ Quick Start — [README](../README.md), собственный сервер — 
 ## Independent review
 
 Read-only reviewer проверил deployment/backup/CI/security. Исправлены cookie saq_session, DB --wait, trap перед stop, Windows/Linux storage порядок, .pem/.ps1 scanner coverage и minimum Compose2.35. Схема/поведение runtime не менялись. Старые credentials/cache refs и off-host backup сохранены OPEN.
+
+Первый полный browser на3093:308PASS/2FAIL/7SKIP,6.8min. Два opt-in live tests требуют точный3090; application failures не обнаружены, фикстуры портом не ослаблялись. Финальный полный прогон будет на fresh clone3090 как в CI. Первый source commit cd94984 опубликован; до итоговой docs/CI приёмки завершение не заявляется.
