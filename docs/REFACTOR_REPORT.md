@@ -48,7 +48,7 @@ backend/frontend/contracts/scripts/data/.github сохранены. Нужные
 | QA backup/restore | PASS:37tables/60assets,162audit rows,4signals,2архивных PDF; authenticated downloads/SHA |
 | Source integrity | PASS:620исходных файлов в первоначальном checkout сохранили SHA; reference Git blobs/fresh clone SHA совпадают |
 | diff --check / staged hygiene | PASS перед публикацией |
-| GitHub CI | Статус точного SHA — [Checks PR5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5/checks); локальные результаты выше не подменяют CI |
+| GitHub CI | PASS всех4jobs на982705c: [run39482577231](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39482577231). Последующие runtime paths не менялись; статус последнего SHA — [Checks PR5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5/checks); локальные результаты выше не подменяют CI |
 | Новый Linux VPS/HTTPS/production deploy | NOT_RUN:изменение реального deployment исключено заданием; инструкции проверены по коду/isolated containers |
 
 6browser SKIP:2typography A/B,2V2 external fixture,1manual two-analyst dedicated fixture,1network measurement. Эти специальные пути не выдаются за покрытые этим прогоном.

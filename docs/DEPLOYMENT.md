@@ -34,7 +34,7 @@ python3 scripts/configure_server.py --public-host saq.example.org
 chmod 600 .env .local/server-credentials.txt
 ```
 
-saq.example.org заменить своим DNS. Для воспроизводимого release зафиксировать проверенный commit SHA, затем git switch --detach VERIFIED_SHA. Пока branch не опубликована, remote clone этой branch невозможен; состояние публикации — PROJECT_STATUS.
+saq.example.org заменить своим DNS. Для воспроизводимого release зафиксировать проверенный commit SHA, затем git switch --detach VERIFIED_SHA. Состояние публикации и согласованного merge — PROJECT_STATUS.
 
 Генератор создаёт независимые DB/session secrets, HTTPS Origin/Secure cookie, DEMO_SEED_ENABLED=false и отключённые Threads/Telegram. Existing .env не перезаписывается. Пароль аналитика хранится только в .local/server-credentials.txt. Для восстановления прежней БД порядок credentials описан в [BACKUP_RESTORE](operations/BACKUP_RESTORE.md).
 
