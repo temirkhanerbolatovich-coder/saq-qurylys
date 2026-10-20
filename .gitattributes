@@ -6,4 +6,7 @@
 .agents/skills/ui-ux-pro-max/** -whitespace
 
 # Historical diagnostic evidence is preserved byte-for-byte.
-docs/audits/assets/**/validation/*.log -whitespace
+docs/audits/assets/**/validation/*.log -text -whitespace
+
+# Preserve the user-provided specification bytes used by SOURCES.json.
+docs/reference/REPOSITORY_CLEANUP_TZ_2026-10-20.md -text
