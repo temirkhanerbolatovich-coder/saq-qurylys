@@ -94,15 +94,47 @@ def missing_markdown_targets(root, name, content, allowed=None):
     return missing
 
 
-def inspect_files(root, names):
+def index_contents(root):
+    """Read staged blobs in one Git batch; never echo their data or credential values."""
+    entries = subprocess.run(
+        ['git', 'ls-files', '--stage', '-z'], cwd=root, capture_output=True, check=True
+    ).stdout.split(b'\0')
+    objects = {}
+    for entry in filter(None, entries):
+        metadata, name = entry.split(b'\t', 1)
+        _mode, object_id, stage = metadata.split()
+        if stage != b'0':
+            raise ValueError('Resolve the unmerged index before staged hygiene.')
+        objects[name.decode('utf-8')] = object_id
+    hashes = sorted(set(objects.values()))
+    result = subprocess.run(
+        ['git', 'cat-file', '--batch'],
+        cwd=root,
+        input=b'\n'.join(hashes) + b'\n',
+        capture_output=True,
+        check=True,
+    ).stdout
+    offset, blobs = 0, {}
+    for object_id in hashes:
+        end = result.index(b'\n', offset)
+        _actual, kind, size = result[offset:end].split()
+        offset = end + 1
+        length = int(size)
+        if kind == b'blob':
+            blobs[object_id] = result[offset : offset + length]
+        offset += length + 1
+    return {name: blobs[object_id] for name, object_id in objects.items() if object_id in blobs}
+
+
+def inspect_files(root, names, contents=None):
     """Inspect the current source tree; diagnostics contain paths and categories only."""
     problems = []
     allowed = set(names)
     for name in names:
         path = root / name
-        if not path.is_file():
+        if contents is None and not path.is_file():
             continue
-        raw = path.read_bytes()
+        raw = path.read_bytes() if contents is None else contents.get(name, b'')
         if b'\0' in raw:
             continue
         try:
@@ -131,7 +163,12 @@ def main():
     sys.stdout.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--include-untracked', action='store_true', help='Also inspect non-ignored new source files.')
+    parser.add_argument(
+        '--staged', action='store_true', help='Inspect Git index blobs rather than working file contents.'
+    )
     args = parser.parse_args()
+    if args.staged and args.include_untracked:
+        parser.error('--staged cannot include untracked files.')
     command = ['git', 'ls-files', '-z', '--cached']
     if args.include_untracked:
         command += ['--others', '--exclude-standard']
@@ -143,7 +180,7 @@ def main():
         for name in rejected:
             print(name)
         return 1
-    problems = inspect_files(ROOT, names)
+    problems = inspect_files(ROOT, names, index_contents(ROOT) if args.staged else None)
     if problems:
         print('\n'.join(problems))
         return 1

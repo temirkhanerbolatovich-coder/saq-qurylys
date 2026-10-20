@@ -1,11 +1,31 @@
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from check_repository_hygiene import inspect_files, missing_markdown_targets, prohibited_paths, secret_findings
+from check_repository_hygiene import (
+    index_contents,
+    inspect_files,
+    missing_markdown_targets,
+    prohibited_paths,
+    secret_findings,
+)
 
 
 class RepositoryHygieneTests(unittest.TestCase):
+    def test_staged_secret_is_detected_even_after_working_file_is_redacted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(['git', 'init', '-q'], cwd=root, check=True, capture_output=True)
+            path = root / 'deploy.ps1'
+            path.write_text('ghp_' + 'a' * 36, encoding='utf-8')
+            subprocess.run(['git', 'add', 'deploy.ps1'], cwd=root, check=True, capture_output=True)
+            path.write_text('redacted working copy', encoding='utf-8')
+            self.assertEqual(inspect_files(root, ['deploy.ps1']), [])
+            problems = inspect_files(root, ['deploy.ps1'], index_contents(root))
+            self.assertEqual(len(problems), 1)
+            self.assertIn('value suppressed', problems[0])
+
     def test_caches_dumps_and_browser_outputs_are_rejected(self):
         paths = ['backend/__pycache__/a.pyc', 'db.dump', 'frontend/test-results/result.json']
         self.assertEqual(prohibited_paths(paths), sorted(paths))

@@ -22,13 +22,13 @@ backend/frontend/contracts/scripts/data/.github сохранены. Нужные
 
 Кэши/логи/build outputs исключены из contexts; разделённые local/dev/public/HTTPS/prebuilt overlays сохранены. E2E/OCR требуют явный disposable loopback/opt-in и отдельный порт; это не заменяет изоляцию БД/storage оператором.
 
-Существующий CI дополнен repository job (versioned links/JSON/private paths/narrow signatures/Compose), Ruff охватывает scripts целиком. Markdown-only changes теперь проверяются. Concurrency отменяет устаревшие runs. Новых внешних сервисов нет.
+Существующий Staged hygiene читает именно Git index blobs: regression ловит secret, даже если рабочая копия уже отредактирована. CI дополнен repository job (versioned links/JSON/private paths/narrow signatures/Compose), Ruff охватывает scripts целиком. Markdown-only changes теперь проверяются. Concurrency отменяет устаревшие runs. Новых внешних сервисов нет.
 
 ## Проверки
 
 | Проверка | Фактический результат |
 |---|---|
-| Python tool tests | PASS:102tests,101PASS/1SKIP; ожидаемое ru-01 ValueError относится к negative test |
+| Python tool tests | PASS:103tests,102PASS/1SKIP; ожидаемое ru-01 ValueError относится к negative test |
 | Backend Ruff/format | PASS:144files |
 | Scripts Ruff/format | PASS:27files |
 | Frontend lint/typecheck/format | PASS |

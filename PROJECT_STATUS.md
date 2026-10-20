@@ -8,7 +8,7 @@
 
 ## Проверки
 
-Linux backend1252PASS/0SKIP; tools102(1SKIP); Node20PASS; Ruff/lint/type/format/build/hygiene/Compose PASS. Fresh GitHub clone → новые DB/storage → actual RU/KZ OCR → единый browser311PASS/6SKIP/0FAIL. CSV→отдельные решения→R2/25→архивныйPDF проверен;3страницы просмотрены; snapshot/decisions/PDF SHA сохранены после restart. QA backup/restore37tables/60assets и authenticated historical downloads PASS.
+Linux backend1252PASS/0SKIP; tools103(1SKIP); Node20PASS; Ruff/lint/type/format/build/hygiene/Compose PASS. Fresh GitHub clone → новые DB/storage → actual RU/KZ OCR → единый browser311PASS/6SKIP/0FAIL. CSV→отдельные решения→R2/25→архивныйPDF проверен;3страницы просмотрены; snapshot/decisions/PDF SHA сохранены после restart. QA backup/restore37tables/60assets и authenticated historical downloads PASS.
 
 Точные команды, промежуточные failures, пропуски и environmental QA subnet override — [REFACTOR_REPORT](docs/REFACTOR_REPORT.md). GitHubCI точного опубликованного SHA — [Checks PR5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5/checks); локальный PASS не заменяет его.
 

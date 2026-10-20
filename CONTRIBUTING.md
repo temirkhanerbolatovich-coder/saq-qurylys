@@ -18,7 +18,7 @@ Scope минимальный и связный. При параллельной 
 
 ## Проверки и готовность
 
-Команды — [DEVELOPMENT](docs/DEVELOPMENT.md). Backend: pytest на отдельной DB, Ruff, Alembic; frontend: lint/type/format, Node tests, build/start и isolated E2E. scripts проверяются целиком. После явного git add: git diff --cached --check и python scripts/check_repository_hygiene.py. Новые пути/секреты проверить до staging.
+Команды — [DEVELOPMENT](docs/DEVELOPMENT.md). Backend: pytest на отдельной DB, Ruff, Alembic; frontend: lint/type/format, Node tests, build/start и isolated E2E. scripts проверяются целиком. После явного git add: git diff --cached --check и python scripts/check_repository_hygiene.py --staged. Новые пути/секреты проверить до staging.
 
 Контракт меняется вместе с DTO/OpenAPI/types/tests/FEATURE. Significant решения — ADR. README — вход, DEVELOPMENT — работа, DEPLOYMENT — сервер, PROJECT_STATUS — checkpoint, archive — история. PR содержит проблему/результат, реальные проверки, scope и ограничения. Targeted retest не выдавать за единый full PASS.
 
