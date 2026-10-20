@@ -1,0 +1,165 @@
+- alert
+- link "Перейти к содержимому":
+  - /url: "#main-content"
+- banner:
+  - link "SAQ QURYLYS":
+    - /url: /dashboard
+    - text: SAQ QURYLYS
+    - generic: Аналитика строительства
+  - search "Поиск объекта":
+    - generic: Найти объект или адрес
+    - searchbox "Найти объект или адрес"
+    - button "Найти объект":
+  - generic: Язык интерфейса
+  - combobox "Язык интерфейса":
+    - option "RU" [selected]
+    - option "KZ"
+  - generic: А
+  - strong: Аналитик
+  - generic: Аналитик
+  - button "Выйти":
+- complementary:
+  - navigation "Основная навигация":
+    - link "Обзор":
+      - /url: /dashboard
+      - generic: Обзор
+    - link "Объекты":
+      - /url: /properties
+      - generic: Объекты
+    - link "Реклама":
+      - /url: /advertisements
+      - generic: Реклама
+    - link "Проверка":
+      - /url: /review?queue=actions
+      - generic: Проверка
+    - link "Сигналы":
+      - /url: /signals
+      - generic: Сигналы
+  - link "Источники":
+    - /url: /sources
+    - generic: Источники
+  - button "Подробный вид":
+    - generic: Подробный вид
+- generic: Рабочее место аналитика
+- main:
+  - paragraph: РАБОЧЕЕ ПРОСТРАНСТВО
+  - heading "Рабочий обзор" [level=1]
+  - paragraph: Продолжите проверку материалов, разберите ошибки или откройте сохранённые сигналы.
+  - link "Добавить публикацию":
+    - /url: /advertisements/new
+    - text: Добавить публикацию
+  - link "Найти объект":
+    - /url: /properties
+    - text: Найти объект
+  - group "Следующие действия":
+    - link "Открыть новые материалы":
+      - /url: /advertisements?status=NEW
+      - heading "Новые публикации" [level=2]
+      - strong: "42"
+    - generic "Что учитывается"
+    - link "Открыть очередь решений":
+      - /url: /review?queue=actions
+      - heading "Материалы с нерешёнными действиями" [level=2]
+      - strong: "7"
+    - generic "Что учитывается"
+    - link "Открыть ошибки":
+      - /url: /review?status=FAILED
+      - heading "Ошибки обработки" [level=2]
+      - strong: "0"
+    - generic "Что учитывается"
+    - link "Рассмотреть сигналы":
+      - /url: /signals?state=DRAFT
+      - heading "Сигналы без решения" [level=2]
+      - strong: "0"
+    - generic "Что учитывается"
+  - heading "С чего начать проверку" [level=2]
+  - paragraph: Сначала решение по основанию, затем недостающие сведения. Внутри группы — отсутствие даты, более давняя проверка, затем балл. Сроки задач не установлены.
+  - link "Весь реестр":
+    - /url: /properties
+    - text: Весь реестр
+  - list:
+    - link "Grand Residence / Dala SK":
+      - /url: /properties/026b9c7b-fa93-563d-a7a2-c4a21202e1a4
+    - generic: Усть-Каменогорск · Точный адрес и идентичность проекта не установлены
+    - paragraph: Подтверждённых факторов нет. Проверьте полноту материалов.
+    - strong: "0"
+    - text: Зелёная
+    - generic: Основание не проверено
+    - paragraph: Установить применимое основание и полноту источников
+    - link "Открыть досье":
+      - /url: /properties/026b9c7b-fa93-563d-a7a2-c4a21202e1a4
+      - text: Открыть досье
+    - link "BELGRAVIA":
+      - /url: /properties/0d011ac2-766f-5fa8-b49a-da895f1336d2
+    - generic: ВКО, город не подтверждён · не найден надёжный адрес для ВКО
+    - paragraph: Подтверждённых факторов нет. Проверьте полноту материалов.
+    - strong: "0"
+    - text: Зелёная
+    - generic: Основание не проверено
+    - paragraph: Установить применимое основание и полноту источников
+    - link "Открыть досье":
+      - /url: /properties/0d011ac2-766f-5fa8-b49a-da895f1336d2
+      - text: Открыть досье
+    - link "Riverside":
+      - /url: /properties/0e9be214-296e-5cef-a378-41c76c499487
+    - generic: Усть-Каменогорск · ул. Пермитина, 11/3
+    - paragraph: Подтверждённых факторов нет. Проверьте полноту материалов.
+    - strong: "0"
+    - text: Зелёная
+    - generic: Основание не проверено
+    - paragraph: Установить применимое основание и полноту источников
+    - link "Открыть досье":
+      - /url: /properties/0e9be214-296e-5cef-a378-41c76c499487
+      - text: Открыть досье
+  - paragraph: "Показано 3 из 26 объектов. Порядок рассчитан по всему доступному реестру: необходимое действие и давность проверки; балл используется при равенстве."
+  - complementary "Продолжить работу":
+    - navigation "Основные рабочие сценарии":
+      - link "Проверить факты Оригинал, гипотезы и точная очередь":
+        - /url: /review?queue=actions
+        - text: Проверить факты
+        - generic: Оригинал, гипотезы и точная очередь
+      - link "Сигналы и PDF Сохранённые версии и решения":
+        - /url: /signals
+        - text: Сигналы и PDF
+        - generic: Сохранённые версии и решения
+      - link "Открыть карту":
+        - /url: /properties?view=map
+        - text: Открыть карту
+        - generic: Расположение объектов реестра
+    - paragraph:
+      - text: Гипотеза помогает найти факт. Окончательное решение принимает аналитик.
+  - region "Статус публикаций":
+    - paragraph: СОСТОЯНИЕ ОБРАБОТКИ
+    - heading "Статус публикаций" [level=2]
+    - link "Открыть":
+      - /url: /advertisements
+      - text: Открыть
+    - paragraph: Показано 50 из 50 публикаций. Распределение по сохранённым материалам.
+    - generic: Новый материал
+    - strong: "42"
+    - generic: Анализируется
+    - strong: "0"
+    - generic: Готово к проверке
+    - strong: "8"
+    - generic: Проверено
+    - strong: "0"
+    - generic: Ошибка обработки
+    - strong: "0"
+    - paragraph: Готовность обработки не означает завершения решений аналитика. Точные оставшиеся действия — в очереди проверки.
+  - region "Материалы по источникам":
+    - paragraph: ИСТОЧНИКИ
+    - heading "Материалы по источникам" [level=2]
+    - link "Открыть":
+      - /url: /advertisements
+      - text: Открыть
+    - paragraph: Показано 50 из 50 публикаций. Распределение по сохранённым материалам.
+    - generic: Сайты и ссылки
+    - strong: "44"
+    - generic: Текстовые материалы
+    - strong: "0"
+    - generic: Изображения
+    - strong: "0"
+    - generic: DEMO-материалы
+    - strong: "6"
+    - paragraph: "Каждый материал учтён один раз: DEMO, затем изображение, сайт или текст. Тип источника не подтверждает его достоверность."
+- contentinfo: SAQ QURYLYS · Прототип · Сигнал не устанавливает факт правонарушенияDEMO отмечено отдельно

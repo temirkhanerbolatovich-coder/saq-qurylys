@@ -8,16 +8,19 @@ from fastapi.testclient import TestClient
 from sqlalchemy import delete, func, select
 from test_analysis import contract
 
+from app.api import monitoring as monitoring_api
 from app.models import (
     Advertisement,
     AuditEvent,
     Command,
+    Developer,
     MonitoringCandidate,
     MonitoringComparison,
     MonitoringIncident,
     MonitoringIncidentComparison,
     MonitoringObservation,
     MonitoringRegistrySnapshot,
+    Property,
     RiskFactor,
     Signal,
     TelegramNotification,
@@ -27,6 +30,129 @@ from app.models import (
 
 PREFIX = '/api/v1/monitoring'
 IDENTITY = {'name': 'DEMO Новый ЖК', 'city': 'Өскемен', 'address': 'DEMO ул. Тестовая, 1', 'phase': '1'}
+
+
+def dossier_payload(row, **updates):
+    return {
+        'expected_revision': row['revision'],
+        'name': row['name'],
+        'address': 'DEMO адрес 77',
+        'developer_name': 'DEMO застройщик ' + row['name'],
+        'developer_bin': None,
+        'identity_checked': True,
+        'reason': 'DEMO проверены источники и отсутствие дубля',
+    } | updates
+
+
+def test_dossier_creation_provenance_replay_and_independent_decisions(signed):
+    row, ad = candidate(signed, name='DEMO dossier ' + uuid4().hex)
+    path = f'/candidates/{row["id"]}/dossier'
+    body, key = dossier_payload(row), str(uuid4())
+    before = signed.get('/api/v1/advertisements/' + ad).json()
+    response = post(signed, path, body, key)
+    assert response.status_code == 201, response.text
+    result = response.json()
+    assert result['revision'] == row['revision'] + 1
+    assert post(signed, path, body, key).json() == result
+    assert post(signed, path, body | {'reason': 'другая причина'}, key).status_code == 409
+    assert post(signed, path, body | {'expected_revision': result['revision']}).status_code == 409
+    prop = signed.get('/api/v1/properties/' + result['property_id']).json()
+    assert prop['source_candidate_id'] == row['id']
+    assert prop['property']['stage'] == prop['property']['legal_verification_status'] == 'UNKNOWN'
+    assert prop['advertisement_ids'] == []
+    assert signed.get('/api/v1/advertisements/' + ad).json() == before
+    with signed.app.state.sessions() as db:
+        property_id = UUID(result['property_id'])
+        assert db.get(Property, property_id).is_demo is True
+        assert not list(db.scalars(select(RiskFactor).where(RiskFactor.property_id == property_id)))
+        events = list(db.scalars(select(AuditEvent).where(AuditEvent.entity_id == property_id)))
+        assert len(events) == 1 and events[0].reason == body['reason']
+        assert events[0].details['candidate_id'] == row['id']
+        assert events[0].details['observations'][0]['advertisement_id'] == ad
+    assert detail(signed, row)['candidate']['property_id'] == result['property_id']
+
+
+@pytest.mark.parametrize(
+    'change',
+    [
+        {'identity_checked': False},
+        {'identity_checked': 1},
+        {'name': '  '},
+        {'address': ' '},
+        {'developer_name': ' '},
+        {'developer_bin': '١٢٣٤٥٦٧٨٩٠١٢'},
+    ],
+)
+def test_dossier_invalid_identity(signed, change):
+    row, _ = candidate(signed, name='DEMO invalid ' + uuid4().hex)
+    assert post(signed, f'/candidates/{row["id"]}/dossier', dossier_payload(row, **change)).status_code == 422
+
+
+def test_dossier_stale_csrf_role_and_missing_candidate(signed):
+    row, _ = candidate(signed, name='DEMO security ' + uuid4().hex)
+    path = f'/candidates/{row["id"]}/dossier'
+    body = dossier_payload(row)
+    assert post(signed, path, body | {'expected_revision': 99}).status_code == 409
+    assert signed.post(PREFIX + path, json=body, headers={'Idempotency-Key': str(uuid4())}).status_code == 422
+    headers = mutation_headers(signed) | {'X-CSRF-Token': 'x' * 64}
+    assert signed.post(PREFIX + path, json=body, headers=headers).status_code == 403
+    assert post(signed, f'/candidates/{uuid4()}/dossier', body).status_code == 404
+    with signed.app.state.sessions.begin() as db:
+        actor = db.scalar(select(User).where(User.role == 'analyst'))
+        actor_id = actor.id
+        actor.role = 'viewer'
+    try:
+        assert post(signed, path, body).status_code == 403
+    finally:
+        with signed.app.state.sessions.begin() as db:
+            db.get(User, actor_id).role = 'analyst'
+
+
+def test_dossier_concurrent_duplicate_and_developer_reuse(signed):
+    name = 'DEMO concurrent ' + uuid4().hex
+    first, _ = candidate(signed, name=name, phase='1')
+    second, _ = candidate(signed, name=name, phase='2')
+    bodies = [dossier_payload(first), dossier_payload(second)]
+    results = concurrent_posts(signed, [(f'/candidates/{r["id"]}/dossier', b) for r, b in zip([first, second], bodies)])
+    assert sorted(r.status_code for r in results) == [201, 409]
+    third, _ = candidate(signed, name=name + ' other')
+    body = dossier_payload(third, developer_name=bodies[0]['developer_name'])
+    response = post(signed, f'/candidates/{third["id"]}/dossier', body)
+    assert response.status_code == 201, response.text
+    with signed.app.state.sessions() as db:
+        assert len(list(db.scalars(select(Developer).where(Developer.name == body['developer_name'])))) == 1
+
+
+def test_dossier_data_mode_bin_conflict_and_atomic_rollback(signed, monkeypatch):
+    name = 'DEMO atomic dossier ' + uuid4().hex
+    row, _ = candidate(signed, name=name)
+    body = dossier_payload(row, developer_bin='123456789012')
+    path = f'/candidates/{row["id"]}/dossier'
+    original_audit = monitoring_api.audit
+
+    def fail(*args):
+        raise RuntimeError('injected audit failure')
+
+    monkeypatch.setattr('app.api.monitoring.audit', fail)
+    assert post(signed, path, body).status_code == 500
+    with signed.app.state.sessions() as db:
+        assert db.get(MonitoringCandidate, UUID(row['id'])).property_id is None
+        assert not list(db.scalars(select(Property).where(Property.name == name)))
+        assert not list(db.scalars(select(Developer).where(Developer.name == body['developer_name'])))
+    monkeypatch.setattr('app.api.monitoring.audit', original_audit)
+    assert post(signed, path, body).status_code == 201
+    other, _ = candidate(signed, name=name + ' other')
+    conflict = dossier_payload(other, developer_bin=body['developer_bin'], developer_name='DEMO иной застройщик')
+    assert post(signed, f'/candidates/{other["id"]}/dossier', conflict).status_code == 409
+    # Same fixture identity in REAL mode remains independent of the DEMO developer/property.
+    real, _ = candidate(signed, name=name, is_demo=False)
+    response = post(
+        signed, f'/candidates/{real["id"]}/dossier', dossier_payload(real, developer_bin=body['developer_bin'])
+    )
+    assert response.status_code == 201, response.text
+    with signed.app.state.sessions() as db:
+        prop = db.get(Property, UUID(response.json()['property_id']))
+        assert not prop.is_demo and not db.get(Developer, prop.developer_id).is_demo
 
 
 @pytest.fixture(autouse=True)

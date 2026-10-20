@@ -1,6 +1,9 @@
 "use client";
+import { useLocale } from "@/lib/locale";
 
 import Link from "next/link";
+import { MaterialSearch } from "@/components/material-search";
+import { ManualAnnotation } from "@/components/manual-annotation";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
 import { api, command, date, upload } from "@/lib/api";
@@ -23,7 +26,12 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { PropertyHistory } from "@/components/property-history";
-import { RemainingReviewQueue } from "@/components/review-queue";
+import {
+  RemainingReviewQueue,
+  ReviewQueuePanel,
+} from "@/components/review-queue";
+import { PdfDownload } from "@/components/pdf-download";
+import { PropertyPicker } from "@/components/property-picker";
 import {
   Auth,
   Demo,
@@ -36,6 +44,7 @@ import {
 } from "@/components/workspace";
 
 export function FileUploadView() {
+  const { t } = useLocale();
   const { detailed } = useInterfaceMode();
   const router = useRouter();
   const [error, setError] = useState("");
@@ -71,14 +80,16 @@ export function FileUploadView() {
   return (
     <>
       <PageTitle
-        eyebrow="СБОР МАТЕРИАЛОВ"
-        title="Загрузить файл"
-        description="PNG/JPEG до 10 МБ и 25 млн пикселей или UTF-8 TXT до 100000 символов. Оригинал сохраняется без изменений."
+        eyebrow={t("СБОР МАТЕРИАЛОВ")}
+        title={t("Загрузить файл")}
+        description={t(
+          "PNG/JPEG до 10 МБ и 25 млн пикселей или UTF-8 TXT до 100000 символов. Оригинал сохраняется без изменений.",
+        )}
         action={false}
       />
       <section className="panel form-panel intake-advertisement-panel upload-advertisement-panel">
         <div className="form-tabs">
-          <Link href="/advertisements/new">Текст</Link>
+          <Link href="/advertisements/new">{t("Текст")}</Link>
           <strong>PNG / JPEG / TXT</strong>
         </div>
         <form
@@ -93,19 +104,23 @@ export function FileUploadView() {
               01
             </span>
             <div>
-              <h2>Оригинал и происхождение</h2>
+              <h2>{t("Оригинал и происхождение")}</h2>
               <p>Укажите источник и выберите один исходный файл.</p>
             </div>
           </div>
           <div className="upload-primary-fields">
-            <label htmlFor="image-source">Источник / происхождение</label>
+            <label htmlFor="image-source">
+              {t("Источник / происхождение")}
+            </label>
             <input
               id="image-source"
               name="source_label"
               required
               maxLength={300}
             />
-            <label htmlFor="image-file">Оригинальный PNG / JPEG / TXT</label>
+            <label htmlFor="image-file">
+              {t("Оригинальный PNG / JPEG / TXT")}
+            </label>
             <div className="upload-file-control">
               <input
                 id="image-file"
@@ -139,13 +154,13 @@ export function FileUploadView() {
             className="optional-context upload-context-panel"
             open={detailed || undefined}
           >
-            <summary>Ссылка и дата публикации · необязательно</summary>
+            <summary>{t("Ссылка и дата публикации · необязательно")}</summary>
             <div className="form-section-heading">
               <span className="section-index" aria-hidden="true">
                 02
               </span>
               <div>
-                <h2>Контекст публикации</h2>
+                <h2>{t("Контекст публикации")}</h2>
                 <p>
                   Ссылка и дата необязательны. Неизвестную дату оставьте пустой.
                 </p>
@@ -177,7 +192,7 @@ export function FileUploadView() {
           </details>
           <label className="checkbox">
             <input type="checkbox" name="is_demo" defaultChecked />
-            Демонстрационный материал (DEMO)
+            {t("Демонстрационный материал (DEMO)")}
           </label>
           {error && <Notice error={error} />}
           <div className="form-actions">
@@ -193,33 +208,36 @@ export function FileUploadView() {
 }
 
 export function ReviewView() {
+  const { t } = useLocale();
   const params = useSearchParams();
-  const actionQueue = params.get("queue") === "actions";
+  // Keep bookmarked processing filters/materials compatible; a fresh visit starts with work to do.
+  const actionQueue = params.get("queue") === "actions" || params.size === 0;
   function queueUrl(actions: boolean) {
     const next = new URLSearchParams(params);
-    for (const name of ["page", "action", "is_demo", "review_section"])
-      next.delete(name);
+    for (const name of ["page", "action", "review_section"]) next.delete(name);
     if (actions) {
       next.set("queue", "actions");
       next.delete("status");
-    } else next.delete("queue");
+    } else next.set("queue", "processing");
     return `/review?${next}`;
   }
   return (
     <>
       <PageTitle
-        eyebrow="РУЧНАЯ ПРОВЕРКА"
-        title="Оригинал → гипотезы → решение"
-        description="OCR и сходство названий помогают найти факты. Только аналитик подтверждает привязку, доказательство и фактор риска."
+        eyebrow={t("РУЧНАЯ ПРОВЕРКА")}
+        title={t("Оригинал → гипотезы → решение")}
+        description={t(
+          "OCR и сходство названий помогают найти факты. Только аналитик подтверждает привязку, доказательство и фактор риска.",
+        )}
         action={false}
       />
-      <nav className="review-actions" aria-label="Виды очереди проверки">
+      <nav className="review-actions" aria-label={t("Виды очереди проверки")}>
         <Button asChild variant={actionQueue ? "default" : "outline"}>
           <Link
             href={queueUrl(true)}
             aria-current={actionQueue ? "page" : undefined}
           >
-            Нерешённые действия
+            {t("Нерешённые действия")}
           </Link>
         </Button>
         <Button asChild variant={actionQueue ? "outline" : "default"}>
@@ -227,7 +245,7 @@ export function ReviewView() {
             href={queueUrl(false)}
             aria-current={!actionQueue ? "page" : undefined}
           >
-            Состояния обработки
+            {t("Состояния обработки")}
           </Link>
         </Button>
       </nav>
@@ -245,6 +263,7 @@ export function ReviewView() {
 }
 
 function ProcessingReviewQueue() {
+  const { t } = useLocale();
   const params = useSearchParams();
   const router = useRouter();
   const statuses = [
@@ -270,6 +289,10 @@ function ProcessingReviewQueue() {
     page_size: String(pageSize),
   });
   if (status) query.set("status", status);
+  for (const name of ["q", "is_demo", "property_id", "from", "to"]) {
+    const value = params.get(name);
+    if (value) query.set(name, value);
+  }
   const queuePath = `/advertisements?${query}`;
   const queue = useData<Page<Advertisement>>(queuePath);
   const data =
@@ -279,20 +302,19 @@ function ProcessingReviewQueue() {
   const selectedInQueue = data?.items.some((ad) => ad.id === id);
   function navigate(name: string, value: string) {
     const next = new URLSearchParams(params);
+    next.set("queue", "processing");
     if (value) next.set(name, value);
     else next.delete(name);
-    if (name === "status" || name === "page_size") next.delete("page");
+    if (["q", "is_demo", "status", "page_size"].includes(name))
+      next.delete("page");
     if (name === "advertisement_id") next.delete("history_page");
     router.push(`/review?${next}`, { scroll: false });
   }
   return (
     <>
-      <section
-        className="panel padded review-queue"
-        aria-label="Очередь проверки"
-      >
+      <ReviewQueuePanel label={t("Очередь проверки")} selectedId={id}>
         <div className="review-toolbar">
-          <h2>Очередь проверки</h2>
+          <h2>{t("Очередь проверки")}</h2>
           <span>
             {data
               ? `${data.total} материалов`
@@ -302,14 +324,30 @@ function ProcessingReviewQueue() {
           </span>
         </div>
         <div className="review-queue-filters">
+          <MaterialSearch
+            query={params.get("q") || ""}
+            onSearch={(value) => navigate("q", value)}
+          />
           <div>
-            <label htmlFor="review-status">Состояние материала</label>
+            <label htmlFor="processing-demo">{t("Режим материалов")}</label>
+            <select
+              id="processing-demo"
+              value={params.get("is_demo") || ""}
+              onChange={(event) => navigate("is_demo", event.target.value)}
+            >
+              <option value="">{t("DEMO и реальные")}</option>
+              <option value="true">{t("Только DEMO")}</option>
+              <option value="false">{t("Только реальные")}</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="review-status">{t("Состояние материала")}</label>
             <select
               id="review-status"
               value={status}
               onChange={(event) => navigate("status", event.target.value)}
             >
-              <option value="">Все состояния</option>
+              <option value="">{t("Все состояния")}</option>
               {statuses.map((value) => (
                 <option value={value} key={value}>
                   {statusLabel(value)}
@@ -318,7 +356,9 @@ function ProcessingReviewQueue() {
             </select>
           </div>
           <div>
-            <label htmlFor="review-page-size">Материалов на странице</label>
+            <label htmlFor="review-page-size">
+              {t("Материалов на странице")}
+            </label>
             <select
               id="review-page-size"
               value={pageSize}
@@ -339,7 +379,7 @@ function ProcessingReviewQueue() {
             <details
               key={id || "queue"}
               className="review-queue-materials"
-              open={!id}
+              open
             >
               <summary>
                 {id
@@ -353,6 +393,7 @@ function ProcessingReviewQueue() {
                     <button
                       type="button"
                       className="review-queue-item"
+                      data-advertisement-id={ad.id}
                       aria-current={id === ad.id ? "true" : undefined}
                       onClick={() => navigate("advertisement_id", ad.id)}
                     >
@@ -368,7 +409,10 @@ function ProcessingReviewQueue() {
                             ? "Изображение · оригинал доступен после выбора"
                             : "Файл · оригинал доступен после выбора"}
                       </span>
-                      <small>Зафиксировано: {date(ad.captured_at)}</small>
+                      <small>
+                        {t("Зафиксировано: ")}
+                        {date(ad.captured_at)}
+                      </small>
                     </button>
                   </li>
                 ))}
@@ -377,12 +421,12 @@ function ProcessingReviewQueue() {
                 <p className="empty">
                   {data.total
                     ? "На этой странице материалов нет. Вернитесь на предыдущую страницу."
-                    : "Материалов по выбранному состоянию нет. Измените фильтр или добавьте публикацию."}
+                    : "Материалов по запросу и фильтрам нет. Измените или сбросьте поиск и фильтры."}
                 </p>
               )}
             </details>
             <Pagination
-              label="Страницы очереди проверки"
+              label={t("Страницы очереди проверки")}
               page={data.page}
               pageSize={data.page_size}
               total={data.total}
@@ -400,7 +444,7 @@ function ProcessingReviewQueue() {
           Оригиналы идут в серверном порядке поступления. Выбор материала,
           фильтр и переход страницы не запускают анализ или подтверждение.
         </p>
-      </section>
+      </ReviewQueuePanel>
       {id ? (
         <ReviewMaterial key={id} id={id} onChange={queue.reload} />
       ) : data ? (
@@ -420,6 +464,7 @@ function ReviewMaterial({
   id: string;
   onChange: () => void;
 }) {
+  const { t } = useLocale();
   const params = useSearchParams();
   const router = useRouter();
   const { user } = useContext(Auth);
@@ -632,11 +677,13 @@ function ReviewMaterial({
   ];
   return (
     <>
-      <p className="field-help">
-        Черновик можно восстановить в текущей вкладке в течение 12 часов после
-        последнего изменения. Он не отправляется автоматически. Выход из
-        аккаунта удаляет черновики.
-      </p>
+      <details className="review-draft-help">
+        <summary>{t("О черновике проверки")}</summary>
+        <p className="field-help">
+          Черновик хранится в текущей вкладке 12 часов после изменения.
+          Восстановление не отправляет решения. Выход удаляет черновики.
+        </p>
+      </details>
       {draft.restored && (
         <p role="status" className="notice">
           Восстановлен локальный черновик этого материала. Сверьте актуальные
@@ -644,7 +691,7 @@ function ReviewMaterial({
         </p>
       )}
       {draft.storageError && <Notice error={draft.storageError} />}
-      <nav className="review-steps" aria-label="Этапы проверки материала">
+      <nav className="review-steps" aria-label={t("Этапы проверки материала")}>
         <ol>
           {reviewSteps.map((step, index) => (
             <li key={step.title}>
@@ -671,7 +718,7 @@ function ReviewMaterial({
       </nav>
       <div className="review-material-top">
         <div className="review-material-heading">
-          <p className="eyebrow">ТЕКУЩИЙ МАТЕРИАЛ</p>
+          <p className="eyebrow">{t("ТЕКУЩИЙ МАТЕРИАЛ")}</p>
           <h2>{ad.source_label}</h2>
           <p>
             <span className="review-material-status">
@@ -683,7 +730,7 @@ function ReviewMaterial({
         <div className="review-toolbar">
           <Demo value={ad.is_demo} />
           <Link className="text-link" href={`/advertisements/${id}`}>
-            Карточка и SHA-256
+            {t("Карточка и SHA-256")}
           </Link>
           {writable && (
             <Button
@@ -714,7 +761,7 @@ function ReviewMaterial({
       {error && <Notice error={error} />}
       {error && (
         <Button variant="outline" onClick={reload}>
-          Обновить данные материала
+          {t("Обновить данные материала")}
         </Button>
       )}
       {adData.error && <Notice error={adData.error} />}
@@ -744,7 +791,7 @@ function ReviewMaterial({
           ref={originalPanel}
           tabIndex={-1}
         >
-          <h2>Оригинал</h2>
+          <h2>{t("Оригинал")}</h2>
           {draft.values.transcriptionEditing &&
             extraction &&
             draft.values.transcriptionExtractionId !== extraction.id && (
@@ -755,17 +802,26 @@ function ReviewMaterial({
                   черновик перед новой правкой.
                 </p>
                 <Button variant="outline" onClick={clearTranscriptionDraft}>
-                  Отменить черновик расшифровки
+                  {t("Отменить черновик расшифровки")}
                 </Button>
               </div>
             )}
+          {ad.source_url === "https://www.angroups.kz/payment" &&
+            ad.assets.some((asset) => asset.kind === "HTML") && (
+              <p className="notice">
+                {t(
+                  "Текст извлечён из мобильных карточек условий оплаты. Настольная версия может отличаться — сверяйте HTML-оригинал. Дата публикации, ЖК и очередь не установлены.",
+                  "Мәтін төлем шарттарының мобильді карточкаларынан алынған. Компьютер нұсқасы өзгеше болуы мүмкін — HTML түпнұсқасымен салыстырыңыз. Жарияланған күні, ТК мен кезек анықталмаған.",
+                )}
+              </p>
+            )}
           <dl className="review-provenance">
             <div>
-              <dt>Источник</dt>
+              <dt>{t("Источник")}</dt>
               <dd>{ad.source_label}</dd>
             </div>
             <div>
-              <dt>URL источника</dt>
+              <dt>{t("URL источника")}</dt>
               <dd>
                 {ad.source_url && /^https?:\/\//i.test(ad.source_url) ? (
                   <a
@@ -782,20 +838,35 @@ function ReviewMaterial({
               </dd>
             </div>
             <div>
-              <dt>Опубликовано</dt>
-              <dd>{date(ad.published_at)}</dd>
+              <dt>{t("Опубликовано", "Жарияланған")}</dt>
+              <dd>
+                {ad.published_at
+                  ? date(ad.published_at)
+                  : t(
+                      "Дата публикации неизвестна",
+                      "Жарияланған күні белгісіз",
+                    )}
+              </dd>
             </div>
             <div>
-              <dt>Зафиксировано</dt>
+              <dt>{t("Зафиксировано", "Тіркелген")}</dt>
               <dd>{date(ad.captured_at)}</dd>
             </div>
           </dl>
+          {!ad.published_at && (
+            <p>
+              {t(
+                "Дата фиксации не подтверждает дату публикации.",
+                "Тіркелген күні жарияланған күнін растамайды.",
+              )}
+            </p>
+          )}
           {currentSelection && (
             <a
               className="text-link"
               href={`#hypothesis-${currentSelection.id}`}
             >
-              К выбранной гипотезе
+              {t("К выбранной гипотезе")}
             </a>
           )}
           {image ? (
@@ -807,12 +878,29 @@ function ReviewMaterial({
             <pre className="original-text">{ad.original_text}</pre>
           )}
           {image && (
+            <PdfDownload
+              kind="assets"
+              id={image.id}
+              label={t("PDF-копия изображения")}
+            />
+          )}
+          {image && (
             <a className="text-link" href={`/api/v1/assets/${image.id}`}>
-              Скачать оригинал
+              {t("Скачать оригинал")}
             </a>
           )}
           {extraction && (
             <>
+              <PdfDownload
+                kind="extractions"
+                id={extraction.id}
+                label={t("Результаты анализа в PDF")}
+              />
+              <PdfDownload
+                kind="advertisements"
+                id={ad.id}
+                label={t("PDF-копия публикации")}
+              />
               <h3>
                 {image
                   ? "Распознанный / проверяемый текст"
@@ -825,7 +913,7 @@ function ReviewMaterial({
               {image &&
                 extraction.original_ocr_text !== extraction.analysis_text && (
                   <details>
-                    <summary>Исходный OCR без исправлений</summary>
+                    <summary>{t("Исходный OCR без исправлений")}</summary>
                     <pre className="original-text">
                       {extraction.original_ocr_text}
                     </pre>
@@ -848,13 +936,13 @@ function ReviewMaterial({
                     })
                   }
                 >
-                  Исправить расшифровку
+                  {t("Исправить расшифровку")}
                 </Button>
               )}
               {transcription !== null && (
                 <div className="review-form">
                   <label htmlFor="transcription">
-                    Новая расшифровка по оригиналу
+                    {t("Новая расшифровка по оригиналу")}
                   </label>
                   <textarea
                     id="transcription"
@@ -866,7 +954,7 @@ function ReviewMaterial({
                     }
                   />
                   <label htmlFor="transcription-reason">
-                    Причина исправления
+                    {t("Причина исправления")}
                   </label>
                   <input
                     id="transcription-reason"
@@ -894,10 +982,10 @@ function ReviewMaterial({
                       }
                     }}
                   >
-                    Создать новую версию
+                    {t("Создать новую версию")}
                   </Button>
                   <Button variant="outline" onClick={clearTranscriptionDraft}>
-                    Отмена
+                    {t("Отмена")}
                   </Button>
                 </div>
               )}
@@ -909,13 +997,13 @@ function ReviewMaterial({
           id={`review-hypotheses-${id}`}
           tabIndex={-1}
         >
-          <h2>Извлечённые гипотезы</h2>
+          <h2>{t("Извлечённые гипотезы")}</h2>
           {extractions.error && <Notice error={extractions.error} />}
           {!extractions.data && !extractions.error ? (
             <LoadState error="" retry={extractions.reload} />
           ) : extraction ? (
             <>
-              <label htmlFor="extraction-version">Версия текста</label>
+              <label htmlFor="extraction-version">{t("Версия текста")}</label>
               <select
                 id="extraction-version"
                 value={extraction.id}
@@ -936,6 +1024,16 @@ function ReviewMaterial({
                   {w}
                 </p>
               ))}
+              <ManualAnnotation
+                key={extraction.id}
+                advertisementId={ad.id}
+                sourceLabel={ad.source_label}
+                extraction={extraction}
+                userId={user?.id || ""}
+                writable={writable && latest}
+                disabled={active || busy}
+                onChange={reload}
+              />
               {!extraction.hypotheses.length && (
                 <p>Гипотезы не найдены. Проверьте оригинал и расшифровку.</p>
               )}
@@ -961,7 +1059,7 @@ function ReviewMaterial({
             </>
           ) : extractions.error ? (
             <Button variant="outline" onClick={extractions.reload}>
-              Повторить загрузку гипотез
+              {t("Повторить загрузку гипотез")}
             </Button>
           ) : (
             <p className="empty">
@@ -977,14 +1075,14 @@ function ReviewMaterial({
           id={`review-match-${id}`}
           tabIndex={-1}
         >
-          <h2>Привязка к конкретному ЖК / очереди</h2>
+          <h2>{t("Привязка к конкретному ЖК / очереди")}</h2>
           <p className="muted">
             Сходство — подсказка, а не вероятность. Проверьте адрес, очередь и
             дату по оригиналу.
           </p>
           {ad.confirmed_property_id && (
             <p>
-              Подтверждён объект:{" "}
+              {t("Подтверждён объект:")}{" "}
               <Link
                 className="text-link"
                 href={`/properties/${ad.confirmed_property_id}`}
@@ -1014,7 +1112,7 @@ function ReviewMaterial({
                       disabled={busy}
                       onClick={() => setPropertyId(m.property_id)}
                     >
-                      Выбрать
+                      {t("Выбрать")}
                     </Button>
                     <Button
                       variant="outline"
@@ -1029,7 +1127,7 @@ function ReviewMaterial({
                         })
                       }
                     >
-                      Отклонить кандидата
+                      {t("Отклонить кандидата")}
                     </Button>
                   </div>
                 )}
@@ -1038,41 +1136,13 @@ function ReviewMaterial({
           </div>
           {writable && (
             <div className="review-form">
-              <label htmlFor="match-property">
-                ЖК / очередь · можно выбрать вручную
-              </label>
-              <select
-                id="match-property"
+              <PropertyPicker
                 value={propertyId}
-                onChange={(e) => setPropertyId(e.target.value)}
-              >
-                <option value="">Выберите точный объект</option>
-                {registry.data?.items
-                  .filter((p) => p.is_demo === ad.is_demo)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} · {p.address}
-                    </option>
-                  ))}
-              </select>
-              <p className="field-help">
-                Ручной выбор ограничен первыми 100 объектами реестра.
-                {registry.data
-                  ? ` Загружено ${registry.data.items.length} из ${registry.data.total}.`
-                  : " Загружаем варианты…"}{" "}
-                Это не поиск по всему набору; проверьте точный ЖК и очередь в
-                разделе «Объекты».
-              </p>
-              {registry.error && (
-                <>
-                  <Notice error={registry.error} />
-                  <Button variant="outline" onClick={registry.reload}>
-                    Повторить загрузку объектов
-                  </Button>
-                </>
-              )}
+                onChange={setPropertyId}
+                isDemo={ad.is_demo}
+              />
               <label htmlFor="match-reason">
-                Обоснование выбора / отклонения
+                {t("Обоснование выбора / отклонения")}
               </label>
               <input
                 id="match-reason"
@@ -1091,7 +1161,7 @@ function ReviewMaterial({
                   })
                 }
               >
-                Подтвердить привязку
+                {t("Подтвердить привязку")}
               </Button>
             </div>
           )}
@@ -1130,6 +1200,12 @@ const fieldLabels: Record<string, string> = {
   AMOUNT: "Сумма",
   STAGE: "Стадия",
 };
+const stageValueLabels: Record<string, string> = {
+  UNKNOWN: "Стадия не установлена",
+  PLANNED: "Планируется строительство",
+  UNDER_CONSTRUCTION: "Строится",
+  COMPLETED: "Строительство завершено",
+};
 function HypothesisCard({
   hypothesis: h,
   writable,
@@ -1149,8 +1225,12 @@ function HypothesisCard({
     reason: string,
   ) => Promise<boolean>;
 }) {
+  const { t } = useLocale();
   const { user } = useContext(Auth);
   const value = h.reviewed_value || h.value;
+  const manual = h.origin === "MANUAL";
+  const ownProposal = manual && h.proposed_by?.id === user?.id;
+  const independentReviewer = !manual || (!!h.proposed_by?.id && !ownProposal);
   const draft = useReviewDraft(
     user?.id || "",
     draftScope,
@@ -1178,7 +1258,85 @@ function HypothesisCard({
         <strong>{fieldLabels[h.field] || h.field}</strong>
         <span className="status">{statusLabel(h.review_status)}</span>
       </div>
-      <p>{value.text}</p>
+      {manual && (
+        <div className="field-help">
+          <p>
+            {t("Ручное предложение: ", "Қолмен берілген ұсыныс: ")}
+            {h.review_status === "PENDING"
+              ? t("ожидает независимой проверки", "тәуелсіз тексеруді күтуде")
+              : h.review_status === "CONFIRMED"
+                ? t(
+                    "принято независимым аналитиком",
+                    "тәуелсіз талдаушы қабылдаған",
+                  )
+                : t("отклонено", "қабылданбаған")}
+          </p>
+          <p>
+            {t("Предложил: ", "Ұсынған: ")}
+            {h.proposed_by?.display_name || t("Не указан", "Көрсетілмеген")}
+            {" · "}
+            {h.proposed_at
+              ? date(h.proposed_at)
+              : t("Дата не указана", "Күні көрсетілмеген")}
+          </p>
+          <p>
+            {t("Обоснование предложения: ", "Ұсыныс негіздемесі: ")}
+            {h.proposal_reason || t("Не указано", "Көрсетілмеген")}
+          </p>
+          {h.reviewed_by && (
+            <p>
+              {t("Проверил: ", "Тексерген: ")}
+              {h.reviewed_by.display_name}
+              {" · "}
+              {h.reviewed_at
+                ? date(h.reviewed_at)
+                : t("Дата не указана", "Күні көрсетілмеген")}
+            </p>
+          )}
+          {h.review_reason && (
+            <p>
+              {t("Обоснование решения: ", "Шешім негіздемесі: ")}
+              {h.review_reason}
+            </p>
+          )}
+          <p>
+            {t(
+              "Предложение и его проверка не подтверждают R2. Доказательство, привязка к объекту и решение по риску сохраняются отдельно.",
+              "Ұсыныс пен оны тексеру R2-ні растамайды. Дәлел, нысанмен байланыс және тәуекел шешімі бөлек сақталады.",
+            )}
+          </p>
+          {!independentReviewer && (
+            <p>
+              {ownProposal
+                ? t(
+                    "Собственное предложение проверять нельзя. Требуется другой уполномоченный аналитик.",
+                    "Өз ұсынысыңызды тексеруге болмайды. Басқа уәкілетті талдаушы қажет.",
+                  )
+                : t(
+                    "Автор предложения не указан; независимая проверка недоступна.",
+                    "Ұсыныс авторы көрсетілмеген; тәуелсіз тексеру қолжетімсіз.",
+                  )}
+            </p>
+          )}
+          <p>
+            {t(
+              "Для изменения цитаты создайте новое предложение.",
+              "Дәйексөзді өзгерту үшін жаңа ұсыныс жасаңыз.",
+            )}
+          </p>
+        </div>
+      )}
+      <p>
+        {h.field === "STAGE" && value.text
+          ? stageValueLabels[value.text] || value.text
+          : value.text}
+      </p>
+      {h.field === "STAGE" && value.text && (
+        <details className="field-help">
+          <summary>{t("Сохранённое значение стадии")}</summary>
+          <code>{value.text}</code>
+        </details>
+      )}
       {value.money && (
         <p>
           <b>
@@ -1198,23 +1356,23 @@ function HypothesisCard({
             </p>
           )}
           {draft.storageError && <Notice error={draft.storageError} />}
-          <label htmlFor={`reason-${h.id}`}>Обоснование проверки</label>
+          <label htmlFor={`reason-${h.id}`}>{t("Обоснование проверки")}</label>
           <input
             id={`reason-${h.id}`}
             maxLength={2000}
             value={reason}
             onChange={(e) => draft.update({ reason: e.target.value })}
           />
-          {editing && (
+          {editing && !manual && (
             <>
-              <label htmlFor={`value-${h.id}`}>Исправленный текст</label>
+              <label htmlFor={`value-${h.id}`}>{t("Исправленный текст")}</label>
               <textarea
                 id={`value-${h.id}`}
                 maxLength={2000}
                 value={text}
                 onChange={(e) => draft.update({ text: e.target.value })}
               />
-              <label htmlFor={`amount-${h.id}`}>Сумма</label>
+              <label htmlFor={`amount-${h.id}`}>{t("Сумма")}</label>
               <input
                 id={`amount-${h.id}`}
                 type="number"
@@ -1223,7 +1381,7 @@ function HypothesisCard({
                 value={amount}
                 onChange={(e) => draft.update({ amount: e.target.value })}
               />
-              <label htmlFor={`currency-${h.id}`}>Валюта</label>
+              <label htmlFor={`currency-${h.id}`}>{t("Валюта")}</label>
               <select
                 id={`currency-${h.id}`}
                 value={currency}
@@ -1241,7 +1399,7 @@ function HypothesisCard({
                   </option>
                 ))}
               </select>
-              <label htmlFor={`percent-${h.id}`}>Процент</label>
+              <label htmlFor={`percent-${h.id}`}>{t("Процент")}</label>
               <input
                 id={`percent-${h.id}`}
                 type="number"
@@ -1254,26 +1412,28 @@ function HypothesisCard({
           )}
           <div className="review-actions">
             <Button
-              disabled={busy || !reason.trim()}
+              disabled={busy || !reason.trim() || !independentReviewer}
               onClick={() => void review("CONFIRM")}
             >
-              Подтвердить гипотезу
+              {t("Подтвердить гипотезу")}
             </Button>
             <Button
               variant="outline"
-              disabled={busy || !reason.trim()}
+              disabled={busy || !reason.trim() || !independentReviewer}
               onClick={() => void review("REJECT")}
             >
-              Отклонить
+              {t("Отклонить")}
             </Button>
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => draft.update({ editing: !editing })}
-            >
-              Исправить
-            </Button>
-            {editing && (
+            {!manual && (
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => draft.update({ editing: !editing })}
+              >
+                {t("Исправить")}
+              </Button>
+            )}
+            {editing && !manual && (
               <Button
                 disabled={
                   busy ||
@@ -1295,7 +1455,7 @@ function HypothesisCard({
                   })
                 }
               >
-                Сохранить исправление
+                {t("Сохранить исправление")}
               </Button>
             )}
           </div>
@@ -1338,6 +1498,7 @@ function ImageOriginal({
   id: string;
   box?: Hypothesis["fragment"]["bbox"];
 }) {
+  const { t } = useLocale();
   const [size, setSize] = useState<{ width: number; height: number } | null>(
     null,
   );
@@ -1357,7 +1518,7 @@ function ImageOriginal({
       {box && size && (
         <svg
           viewBox={`0 0 ${size.width} ${size.height}`}
-          aria-label="Выделенный фрагмент OCR"
+          aria-label={t("Выделенный фрагмент OCR")}
         >
           <rect x={box.x} y={box.y} width={box.width} height={box.height} />
         </svg>
@@ -1379,6 +1540,7 @@ function PaymentRisk({
   onError: (s: string) => void;
   onChange: () => void;
 }) {
+  const { t } = useLocale();
   const { user } = useContext(Auth);
   const property = useData<PropertyDetail>(
     `/properties/${ad.confirmed_property_id}`,
@@ -1488,7 +1650,9 @@ function PaymentRisk({
             </p>
           )}
           {draft.storageError && <Notice error={draft.storageError} />}
-          <label htmlFor="risk-payment">Проверенное условие оплаты</label>
+          <label htmlFor="risk-payment">
+            {t("Проверенное условие оплаты")}
+          </label>
           <select
             id="risk-payment"
             value={hypothesisId}
@@ -1496,14 +1660,14 @@ function PaymentRisk({
               draft.update({ hypothesisId: e.target.value, evidenceId: "" });
             }}
           >
-            <option value="">Выберите гипотезу</option>
+            <option value="">{t("Выберите гипотезу")}</option>
             {payment.map((h) => (
               <option value={h.id} key={h.id}>
                 {(h.reviewed_value || h.value).text}
               </option>
             ))}
           </select>
-          <label htmlFor="risk-reason">Обоснование решения по R2</label>
+          <label htmlFor="risk-reason">{t("Обоснование решения по R2")}</label>
           <input
             id="risk-reason"
             value={reason}
@@ -1531,7 +1695,7 @@ function PaymentRisk({
                         fragment: h.fragment,
                         description: reason,
                         source_label: ad.source_label,
-                        event_at: ad.published_at || ad.captured_at,
+                        event_at: ad.published_at,
                         is_demo: ad.is_demo,
                       });
                   const id = evidence.id as string;
@@ -1566,7 +1730,7 @@ function PaymentRisk({
                 })
               }
             >
-              Сохранить доказательство R2
+              {t("Сохранить доказательство R2")}
             </Button>
             {factor && (
               <>
@@ -1590,7 +1754,7 @@ function PaymentRisk({
                     })
                   }
                 >
-                  Подтвердить R2 · +25
+                  {t("Подтвердить R2 · +25")}
                 </Button>
                 <Button
                   variant="outline"
@@ -1608,7 +1772,7 @@ function PaymentRisk({
                     })
                   }
                 >
-                  Отклонить R2
+                  {t("Отклонить R2")}
                 </Button>
               </>
             )}

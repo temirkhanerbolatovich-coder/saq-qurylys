@@ -33,3 +33,43 @@ export async function login(page: Page, options: { detailed?: boolean } = {}) {
     page.getByRole("heading", { name: "Рабочий обзор", exact: true }),
   ).toBeVisible();
 }
+
+/** Opens the real mounted dossier editor disclosure without submitting any command. */
+export async function openDossierTools(page: Page) {
+  await page
+    .getByRole("tab", { name: "Проверка и риски", exact: true })
+    .click();
+  const detailed = page.getByRole("button", {
+    name: "Подробный вид",
+    exact: true,
+  });
+  if (await detailed.isVisible()) await detailed.click();
+  const tools = page.locator("#dossier-materials");
+  await expect(tools).toBeVisible();
+  if ((await tools.getAttribute("open")) === null)
+    await tools.locator(":scope > summary").click();
+}
+
+/** Selects the real monitoring panel and opens its existing native tool. */
+export async function openMonitoringTool(
+  page: Page,
+  target: "threads" | "open" | "registry",
+) {
+  await page
+    .getByRole("tab", {
+      name: target === "registry" ? "Версии реестра" : "Источники",
+      exact: true,
+    })
+    .click();
+  const id =
+    target === "threads"
+      ? "monitoring-threads"
+      : target === "open"
+        ? "open-register-title"
+        : "monitoring-registry";
+  const tool = page
+    .locator(".monitoring-tool")
+    .filter({ has: page.locator(`#${id}`) });
+  if ((await tool.getAttribute("open")) === null)
+    await tool.locator(":scope > summary").click();
+}

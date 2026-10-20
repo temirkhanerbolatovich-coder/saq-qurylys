@@ -50,6 +50,7 @@ test("supporting PDF preserves original bytes and stays pending until human revi
   const pdf = demoPdf();
 
   await page.goto(`/properties/${property.id}`);
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
   await page
     .getByText("Ввести реквизиты и загрузить документ", { exact: true })
     .click();
@@ -88,15 +89,25 @@ test("supporting PDF preserves original bytes and stays pending until human revi
   await expect(
     page.getByRole("status").filter({ hasText: "Основание сохранено" }),
   ).toContainText("Основание сохранено");
-  const card = page
-    .locator(".document")
-    .filter({ has: page.getByRole("heading", { name: new RegExp(number) }) });
+  await page.getByLabel("Найти документ", { exact: true }).fill(number);
+  const record = page
+    .locator("#dossier-bases .dossier-records tbody tr")
+    .filter({
+      has: page.getByRole("button", { name: number, exact: true }),
+    });
+  await expect(record).toContainText("На проверке");
+  await record
+    .getByRole("button", { name: `Открыть документ: ${number}`, exact: true })
+    .click();
+  const card = page.getByRole("dialog", { name: number, exact: true });
   await expect(card).toContainText("На проверке");
   expect((await risk()).score).toBe(before.score);
   expect((await risk()).confirmed_codes).toEqual(before.confirmed_codes);
 
+  await card.getByRole("tab", { name: "Файлы (1)", exact: true }).click();
   const original = card.getByRole("link", {
-    name: "Открыть сохранённый материал",
+    name: "Скачать сохранённый оригинал",
+    exact: true,
   });
   const originalUrl = (await original.getAttribute("href"))!;
   const download = await page.request.get(originalUrl);
@@ -109,7 +120,13 @@ test("supporting PDF preserves original bytes and stays pending until human revi
   expect((await request.get(originalUrl)).status()).toBe(401);
 
   await page.reload();
+  await page.getByLabel("Найти документ", { exact: true }).fill(number);
+  await expect(record).toContainText("На проверке");
+  await record
+    .getByRole("button", { name: `Открыть документ: ${number}`, exact: true })
+    .click();
   await expect(card).toContainText("На проверке");
+  await card.getByRole("tab", { name: "Файлы (1)", exact: true }).click();
   await expect(original).toHaveAttribute("href", originalUrl);
   expect(await (await page.request.get(originalUrl)).body()).toEqual(pdf);
   await card

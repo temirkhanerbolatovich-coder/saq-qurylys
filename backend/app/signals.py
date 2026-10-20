@@ -7,8 +7,8 @@ from sqlalchemy import select
 from starlette.exceptions import HTTPException
 
 from app.analysis_dto import EvidenceOut
-from app.dto import AssetOut
-from app.models import Asset, Evidence, Signal
+from app.dto import AssetOut, UserOut
+from app.models import Asset, Evidence, Signal, User
 from app.signal_dto import SignalDetail, SignalOut, SignalSnapshot
 from app.storage import read_asset
 from app.views import factor_views, legal_views, property_view, unknown_information
@@ -47,6 +47,16 @@ def build_snapshot(db, prop, storage_root=None) -> SignalSnapshot:
                 read_asset(storage_root, row.storage_key, row.sha256)
             except OSError:
                 raise HTTPException(409, 'Исходник недоступен или не совпадает контрольная сумма') from None
+        # Freeze available reviewer names once, at signal creation. Legacy reads
+        # retain their saved ID and never resolve it through today's user profile.
+        reviewer_ids = {row.reviewed_by for row in [*factors, *bases] if row.reviewed_by}
+        reviewers = (
+            {row.id: UserOut.model_validate(row) for row in db.scalars(select(User).where(User.id.in_(reviewer_ids)))}
+            if reviewer_ids
+            else {}
+        )
+        factors = [row.model_copy(update={'reviewed_by_details': reviewers.get(row.reviewed_by)}) for row in factors]
+        bases = [row.model_copy(update={'reviewed_by_details': reviewers.get(row.reviewed_by)}) for row in bases]
     return SignalSnapshot(
         property=property_view(prop, factors),
         legal_bases=bases,
@@ -62,6 +72,15 @@ def comparable_snapshot(snapshot: dict) -> dict:
     # No-review properties report "now" as risk.as_of. Time passing alone is not
     # a source change; dated legal applicability remains part of the comparison.
     result['property']['risk'].pop('as_of', None)
+    # Output defaults clarify legacy dates without changing stored snapshots or
+    # making old signals stale merely because the DTO gained optional fields.
+    for evidence in result.get('evidence', []):
+        evidence.setdefault('published_at', None)
+        evidence.setdefault('date_basis', 'LEGACY_UNSPECIFIED')
+    # Presentation identity enrichments are not source/review changes. The ID,
+    # review time, assessment date and result remain meaningful comparisons.
+    for record in [*result.get('factors', []), *result.get('legal_bases', [])]:
+        record.pop('reviewed_by_details', None)
     return result
 
 

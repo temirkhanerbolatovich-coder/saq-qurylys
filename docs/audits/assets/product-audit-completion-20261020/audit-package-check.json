@@ -1,0 +1,26 @@
+{
+  "audit_sections_A_to_N": true,
+  "issues": {
+    "total": 15,
+    "P0": 0,
+    "P1": 5,
+    "P2": 9,
+    "P3": 1
+  },
+  "local_links_checked": true,
+  "broken_local_links": [],
+  "screenshots": 22,
+  "full_backend": {
+    "passed": 1180,
+    "skipped": 20,
+    "failed": 0,
+    "seconds": 520.18
+  },
+  "manifest_files": 449,
+  "changed_manifest_files_after_documentation": [
+    "PROJECT_STATUS.md"
+  ],
+  "runtime_changed": [],
+  "git_diff_check_exit": 0,
+  "scope": "local source compared with saved release manifest; not live remote filesystem"
+}

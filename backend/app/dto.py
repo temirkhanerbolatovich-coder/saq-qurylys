@@ -132,6 +132,7 @@ class RiskFactorOut(DTO):
     evidence_ids: list[UUID]
     revision: int
     reviewed_by: UUID | None
+    reviewed_by_details: UserOut | None = None
     reviewed_at: datetime | None
     reason: str | None
 
@@ -154,12 +155,15 @@ class LegalBasisOut(DTO):
     verification_status: LegalStatus
     revision: int
     reviewed_by: UUID | None
+    reviewed_by_details: UserOut | None = None
     reviewed_at: datetime | None
     verification_as_of: datetime | None = None
     evidence_ids: list[UUID] = Field(default_factory=list)
 
 
 class PropertyDetailOut(DTO):
+    source_candidate_id: UUID | None = None
+    linked_candidate_count: int = 0
     property: PropertyOut
     legal_bases: list[LegalBasisOut]
     factors: list[RiskFactorOut]
@@ -182,3 +186,18 @@ class Page(DTO, Generic[T]):
     page: int
     page_size: int
     total: int
+
+
+class PropertyReferenceOut(DTO):
+    id: UUID
+    parent_id: UUID | None
+    level: Literal['PROJECT', 'PHASE', 'BUILDING']
+    name: str
+    address: str
+    is_demo: bool
+
+
+class PropertyStructureOut(DTO):
+    ancestors: list[PropertyReferenceOut]
+    children: Page[PropertyReferenceOut]
+    siblings: Page[PropertyReferenceOut]

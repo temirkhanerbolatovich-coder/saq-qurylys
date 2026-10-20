@@ -16,6 +16,26 @@ def fields(values):
     return '<dl>' + ''.join(f'<dt>{text(label)}</dt><dd>{text(value)}</dd>' for label, value in values) + '</dl>'
 
 
+def evidence_dates(evidence):
+    if evidence.get('kind') not in {'ADVERTISEMENT_FRAGMENT', 'ADVERTISEMENT_PUBLICATION'}:
+        return [('Дата события', evidence.get('event_at')), ('Получен', evidence.get('captured_at'))]
+    basis = evidence.get('date_basis', 'LEGACY_UNSPECIFIED')
+    values = [
+        (
+            'Дата публикации',
+            evidence.get('published_at')
+            if basis == 'PUBLICATION' and evidence.get('published_at')
+            else 'Дата публикации неизвестна',
+        ),
+        ('Зафиксировано', evidence.get('captured_at')),
+    ]
+    if basis == 'LEGACY_UNSPECIFIED':
+        values.append(('Историческая дата', 'Дата публикации не подтверждена; тип даты исторически не определён'))
+        if evidence.get('event_at'):
+            values.append(('Сохранённое значение даты (тип не определён)', evidence['event_at']))
+    return values
+
+
 def signal_html(payload):
     """Render only escaped scalar values from the saved snapshot and decision."""
     snapshot, signal = payload['snapshot'], payload['signal']
@@ -63,6 +83,21 @@ def signal_html(payload):
             ]
         )
     )
+    pieces.append(
+        fields(
+            [
+                ('Подтверждённые коды', ', '.join(risk['confirmed_codes']) or 'Нет'),
+                ('Неустановленные коды', ', '.join(risk['unknown_codes']) or 'Нет'),
+            ]
+        )
+    )
+    pieces.append(
+        '<p>Баллы учитывают только подтверждённые факторы. Нулевой результат означает '
+        'отсутствие подтверждённых факторов, а не полноту проверки. '
+        'Список записей ниже может не содержать всех шести кодов.</p>'
+    )
+    if risk['zone'] == 'GREEN':
+        pieces.append('<p class="banner">Зелёная зона не подтверждает безопасность объекта</p>')
     pieces.append('<h2>Решение человека</h2>')
     for decision in payload['decisions']:
         pieces.append(
@@ -87,6 +122,8 @@ def signal_html(payload):
                     ('Код / статус / вес', f'{factor["code"]} / {factor["status"]} / {factor["weight"]}'),
                     ('Момент оценки', factor['as_of']),
                     ('Проверено', factor.get('reviewed_at')),
+                    ('Проверяющий (исторический ID)', factor.get('reviewed_by')),
+                    ('Имя проверяющего в снимке', (factor.get('reviewed_by_details') or {}).get('display_name')),
                     ('Обоснование', factor.get('reason')),
                     ('Доказательства', ', '.join(factor['evidence_ids'])),
                 ]
@@ -105,6 +142,12 @@ def signal_html(payload):
                     ('Область', basis['scope_description']),
                     ('Источник', basis.get('source_url')),
                     ('Получен', basis.get('captured_at')),
+                    ('Период действия с', basis.get('applies_from')),
+                    ('Период действия по', basis.get('applies_until')),
+                    ('Проверено на дату', basis.get('verification_as_of')),
+                    ('Решение принято', basis.get('reviewed_at')),
+                    ('Проверяющий (исторический ID)', basis.get('reviewed_by')),
+                    ('Имя проверяющего в снимке', (basis.get('reviewed_by_details') or {}).get('display_name')),
                 ]
             )
             + '</div>'
@@ -120,8 +163,7 @@ def signal_html(payload):
                     ('Описание', evidence['description']),
                     ('Источник', evidence.get('source_label')),
                     ('URL', evidence.get('source_url')),
-                    ('Получен', evidence.get('captured_at')),
-                    ('Дата события', evidence.get('event_at')),
+                    *evidence_dates(evidence),
                     ('Проверяемое отсутствие на', evidence.get('absence_as_of')),
                     ('Область', evidence.get('scope_description')),
                     ('Методика', evidence.get('methodology')),

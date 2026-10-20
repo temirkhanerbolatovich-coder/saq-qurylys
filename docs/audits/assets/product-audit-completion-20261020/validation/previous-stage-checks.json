@@ -1,0 +1,147 @@
+{
+  "frontend-pdf-proxy": {
+    "command": [
+      "node",
+      "--test",
+      "scripts/test-pdf-proxy.mjs"
+    ],
+    "cwd": "frontend",
+    "exit_code": 0,
+    "seconds": 0.22
+  },
+  "backend-ruff": {
+    "command": [
+      "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\.venv\\Scripts\\python.exe",
+      "-m",
+      "ruff",
+      "check",
+      "."
+    ],
+    "cwd": "backend",
+    "exit_code": 0,
+    "seconds": 0.56
+  },
+  "frontend-typecheck": {
+    "command": [
+      "npm.cmd",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "frontend",
+    "exit_code": 0,
+    "seconds": 4.75
+  },
+  "frontend-lint": {
+    "command": [
+      "npm.cmd",
+      "run",
+      "lint"
+    ],
+    "cwd": "frontend",
+    "exit_code": 0,
+    "seconds": 19.11
+  },
+  "database-guard": {
+    "command": [
+      "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\.venv\\Scripts\\python.exe",
+      "-c",
+      "from sqlalchemy.engine import make_url; from sqlalchemy import create_engine,text; import os,json; u=make_url(os.environ['DATABASE_URL']); assert u.host=='127.0.0.1' and u.port==int(os.environ['AUDIT_DB_PORT']) and u.database=='saq_audit'; e=create_engine(u); c=e.connect(); r=c.execute(text('SELECT current_database(), current_user')).one(); assert tuple(r)==('saq_audit','saq_audit'); print(json.dumps({'isolated_database_guard':'PASS','host':u.host,'port':u.port})); c.close(); e.dispose()"
+    ],
+    "cwd": ".",
+    "exit_code": 0,
+    "seconds": 0.61
+  },
+  "backend-focused": {
+    "command": [
+      "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\.venv\\Scripts\\python.exe",
+      "-m",
+      "pytest",
+      "tests/test_risk.py",
+      "tests/test_api.py",
+      "tests/test_contract.py",
+      "tests/test_property_search.py",
+      "tests/test_review_queue.py",
+      "tests/test_signals.py",
+      "tests/test_signal_pdf.py",
+      "tests/test_document_pdf_limits.py",
+      "tests/test_document_exports.py",
+      "tests/test_dossier_report.py",
+      "tests/test_legal_bases.py",
+      "tests/test_legal_absence.py",
+      "-q",
+      "-ra"
+    ],
+    "cwd": "backend",
+    "exit_code": 1,
+    "seconds": 125.31
+  },
+  "route-parity": {
+    "command": [
+      "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\.venv\\Scripts\\python.exe",
+      "-c",
+      "import json\nfrom app.config import Settings\nfrom app.main import create_app\nfrom pathlib import Path\ns=json.loads(Path('../contracts/openapi.yaml').read_text(encoding='utf-8'))\nl=create_app(Settings()).openapi()\nmethods={'get','put','post','delete','options','head','patch','trace'}\nops=lambda spec:{(p,m):v.get('operationId') for p,ms in spec['paths'].items() for m,v in ms.items() if m in methods}\na,b=ops(s),ops(l)\nout={'documented_operations':len(a),'live_operations':len(b),'undocumented_live':sorted(set(b)-set(a)),'unimplemented_documented':sorted(set(a)-set(b)),'operation_id_mismatch':[{'path':k[0],'method':k[1],'documented':a[k],'live':b[k]} for k in a.keys()&b.keys() if a[k]!=b[k]]}\nprint(json.dumps(out,indent=2))\n"
+    ],
+    "cwd": "backend",
+    "exit_code": 0,
+    "seconds": 2.19
+  },
+  "database-guard-legal-recheck": {
+    "command": [
+      "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\.venv\\Scripts\\python.exe",
+      "-c",
+      "from sqlalchemy.engine import make_url; from sqlalchemy import create_engine,text; import os,json; u=make_url(os.environ['DATABASE_URL']); assert u.host=='127.0.0.1' and u.port==int(os.environ['AUDIT_DB_PORT']) and u.database=='saq_audit'; e=create_engine(u); c=e.connect(); r=c.execute(text('SELECT current_database(), current_user')).one(); assert tuple(r)==('saq_audit','saq_audit'); print(json.dumps({'isolated_database_guard':'PASS','host':u.host,'port':u.port})); c.close(); e.dispose()"
+    ],
+    "cwd": ".",
+    "exit_code": 0,
+    "seconds": 0.53
+  },
+  "backend-focused-legal-recheck": {
+    "command": [
+      "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\.venv\\Scripts\\python.exe",
+      "-m",
+      "pytest",
+      "tests/test_legal_absence.py",
+      "-q",
+      "-ra",
+      "-k",
+      "matching_absence_and_payment_are_red_in_either_order or mixed_or_unknown_event_dates_cannot_confirm_a_red_pair"
+    ],
+    "cwd": "backend",
+    "exit_code": 0,
+    "seconds": 11.28
+  },
+  "database-guard-order-proof": {
+    "command": [
+      "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\.venv\\Scripts\\python.exe",
+      "-c",
+      "from sqlalchemy.engine import make_url; from sqlalchemy import create_engine,text; import os,json; u=make_url(os.environ['DATABASE_URL']); assert u.host=='127.0.0.1' and u.port==int(os.environ['AUDIT_DB_PORT']) and u.database=='saq_audit'; e=create_engine(u); c=e.connect(); r=c.execute(text('SELECT current_database(), current_user')).one(); assert tuple(r)==('saq_audit','saq_audit'); print(json.dumps({'isolated_database_guard':'PASS','host':u.host,'port':u.port})); c.close(); e.dispose()"
+    ],
+    "cwd": ".",
+    "exit_code": 1,
+    "seconds": 0.7
+  },
+  "database-guard-order-proof-retry": {
+    "command": [
+      "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\.venv\\Scripts\\python.exe",
+      "-c",
+      "from sqlalchemy.engine import make_url; from sqlalchemy import create_engine,text; import os,json; u=make_url(os.environ['DATABASE_URL']); assert u.host=='127.0.0.1' and u.port==int(os.environ['AUDIT_DB_PORT']) and u.database=='saq_audit'; e=create_engine(u); c=e.connect(); r=c.execute(text('SELECT current_database(), current_user')).one(); assert tuple(r)==('saq_audit','saq_audit'); print(json.dumps({'isolated_database_guard':'PASS','host':u.host,'port':u.port})); c.close(); e.dispose()"
+    ],
+    "cwd": ".",
+    "exit_code": 0,
+    "seconds": 0.55
+  },
+  "backend-focused-order-proof-retry": {
+    "command": [
+      "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\.venv\\Scripts\\python.exe",
+      "-m",
+      "pytest",
+      "tests/test_signal_pdf.py::test_pdf_get_is_read_only_and_queue_is_idempotent",
+      "tests/test_legal_absence.py::test_matching_absence_and_payment_are_red_in_either_order[absence-first]",
+      "-q",
+      "-ra"
+    ],
+    "cwd": "backend",
+    "exit_code": 1,
+    "seconds": 5.31
+  }
+}

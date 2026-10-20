@@ -12,6 +12,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import httpx
+from acceptance_safety import require_isolated_origin
 from PIL import Image, ImageDraw, ImageFont
 from rapidfuzz.distance import Levenshtein
 
@@ -22,6 +23,7 @@ from app.config import Settings  # noqa: E402
 
 def main():
     settings = Settings()
+    require_isolated_origin(settings.app_origin)
     output = ROOT / 'output/qa'
     output.mkdir(parents=True, exist_ok=True)
     font_path = next(

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login, testOrigin } from "./support";
+import { login, openDossierTools, testOrigin } from "./support";
 
 test("appeal document requires a separate R4 decision", async ({ page }) => {
   await login(page);
@@ -7,9 +7,18 @@ test("appeal document requires a separate R4 decision", async ({ page }) => {
     await page.request.get("/api/v1/properties?page_size=100")
   ).json();
   const id = registry.items.find((p: { name: string }) =>
-    p.name.includes("Ертіс"),
+    p.name.includes("Самал"),
   ).id;
+  // Samal has other confirmed factors: uploading R4 must preserve that baseline.
+  const risk = async () =>
+    (await (await page.request.get(`/api/v1/properties/${id}/risk`)).json())
+      .summary;
+  const before = await risk();
+  const withoutR4 =
+    before.score - (before.confirmed_codes.includes("R4") ? 15 : 0);
+  expect(withoutR4).toBeGreaterThan(0);
   await page.goto(`/properties/${id}`);
+  await openDossierTools(page);
   await page.getByLabel("Источник обращения").fill("DEMO browser appeal");
   await page.getByLabel("Документ обращения · TXT / PNG / JPEG").setInputFiles({
     name: "appeal.txt",
@@ -34,28 +43,35 @@ test("appeal document requires a separate R4 decision", async ({ page }) => {
       .getByRole("status")
       .filter({ hasText: "Документ и доказательство сохранены" }),
   ).toContainText("Документ и доказательство сохранены");
-  const risk = async () =>
-    (await (await page.request.get(`/api/v1/properties/${id}/risk`)).json())
-      .summary.score;
-  expect(await risk()).toBe(0);
+  const afterUpload = await risk();
+  expect(afterUpload.score).toBe(before.score);
+  expect(afterUpload.zone).toBe(before.zone);
+  expect(afterUpload.confirmed_codes).toEqual(before.confirmed_codes);
   await page
     .getByRole("button", { name: "Подтвердить R4 · +15", exact: true })
     .click();
   await expect(
     page.getByRole("status").filter({ hasText: "R4 подтверждён" }),
   ).toHaveText("R4 подтверждён: +15 баллов.");
-  expect(await risk()).toBe(15);
+  expect((await risk()).score).toBe(withoutR4 + 15);
+  expect((await risk()).confirmed_codes).toContain("R4");
   await page
     .locator(".factor-row")
     .filter({ hasText: "Коллективное обращение" })
     .getByRole("button", { name: "Доказательства", exact: true })
     .click();
   await expect(page.getByText("Заявителей: 2", { exact: false })).toBeVisible();
+  await page
+    .getByRole("tab", { name: "Проверка и риски", exact: true })
+    .click();
   await page.getByRole("button", { name: "Отклонить R4", exact: true }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "R4 отклонён" }),
   ).toHaveText("R4 отклонён: 0 баллов.");
-  expect(await risk()).toBe(0);
+  expect((await risk()).score).toBe(withoutR4);
+  expect((await risk()).confirmed_codes).toEqual(
+    before.confirmed_codes.filter((code: string) => code !== "R4"),
+  );
 });
 
 test("UTF-8 TXT upload keeps the original and creates payment hypotheses", async ({
@@ -109,6 +125,7 @@ test("unknown stage and R5 display their own labels", async ({ page }) => {
     await route.fulfill({ response, json: body });
   });
   await page.goto(`/properties/${id}`);
+  await openDossierTools(page);
   await expect(
     page.locator("dt").filter({ hasText: "Стадия" }).locator("+ dd"),
   ).toHaveText("Не проверена");

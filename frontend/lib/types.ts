@@ -14,7 +14,11 @@ export type Risk = {
   rules_version: string;
 };
 export type Property = {
+  revision: number;
   id: string;
+  parent_id: string | null;
+  level: "PROJECT" | "PHASE" | "BUILDING";
+  aliases: string[];
   name: string;
   city: string;
   address: string;
@@ -29,9 +33,19 @@ export type Property = {
   developer: { name: string; bin: string | null };
   risk: Risk;
 };
+export type PropertyReference = Pick<
+  Property,
+  "id" | "parent_id" | "level" | "name" | "address" | "is_demo"
+>;
+export type PropertyStructure = {
+  ancestors: PropertyReference[];
+  children: Page<PropertyReference>;
+  siblings: Page<PropertyReference>;
+};
 export type Asset = {
   id: string;
   kind: string;
+  mime_type?: string;
   sha256: string;
   byte_size: number;
   captured_at: string;
@@ -73,6 +87,7 @@ export type AdvertisementReviewItem = {
   payment_hypothesis_ids: string[];
   r2_reviews: {
     property_id: string;
+    property_name?: string | null;
     factor_id: string | null;
     evidence_ids: string[];
   }[];
@@ -95,6 +110,8 @@ export type AuditEvent = {
   details: Record<string, unknown>;
 };
 export type PropertyDetail = {
+  source_candidate_id?: string | null;
+  linked_candidate_count?: number;
   property: Property;
   factors: {
     id: string;
@@ -105,6 +122,9 @@ export type PropertyDetail = {
     as_of: string;
     evidence_ids: string[];
     reason: string | null;
+    reviewed_by?: string | null;
+    reviewed_by_details?: User | null;
+    reviewed_at?: string | null;
   }[];
   legal_bases: {
     id: string;
@@ -121,6 +141,8 @@ export type PropertyDetail = {
     applies_until: string | null;
     verification_as_of: string | null;
     reviewed_at: string | null;
+    reviewed_by?: string | null;
+    reviewed_by_details?: User | null;
     evidence_ids: string[];
   }[];
   advertisement_ids: string[];
@@ -142,6 +164,13 @@ export type Value = {
 export type Hypothesis = {
   id: string;
   field: string;
+  origin?: "AUTO" | "MANUAL";
+  proposed_by?: User | null;
+  proposed_at?: string | null;
+  proposal_reason?: string | null;
+  reviewed_by?: User | null;
+  reviewed_at?: string | null;
+  review_reason?: string | null;
   value: Value;
   reviewed_value: Value | null;
   review_status: string;
@@ -189,6 +218,8 @@ export type Evidence = {
   captured_at: string;
   is_demo: boolean;
   event_at?: string | null;
+  published_at?: string | null;
+  date_basis?: "PUBLICATION" | "CAPTURE_ONLY" | "LEGACY_UNSPECIFIED";
   methodology?: string | null;
   signatory_count?: number | null;
   construction_stage?: "UNDER_CONSTRUCTION" | "COMPLETED" | null;

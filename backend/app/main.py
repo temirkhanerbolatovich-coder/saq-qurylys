@@ -14,15 +14,22 @@ from app.api import (
     advertisements,
     analysis,
     auth,
+    csv_import,
+    exports,
     legal_bases,
     monitoring,
+    monitoring_dictionaries,
+    monitoring_findings,
+    monitoring_sources,
     open_registry,
     properties,
+    query_profiles,
     reviews,
     signal_pdf,
     signals,
     threads,
     url_import,
+    url_schedules,
 )
 from app.body_limit import BodyLimitMiddleware
 from app.config import Settings
@@ -79,6 +86,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {'status': 'ok'}
 
     app.include_router(auth.router)
+    app.include_router(csv_import.router)
+    app.include_router(monitoring_sources.router)
+    app.include_router(query_profiles.router)
+    app.include_router(monitoring_dictionaries.router)
+    app.include_router(monitoring_findings.router)
+    app.include_router(url_schedules.router)
+    app.include_router(exports.router)
     app.include_router(properties.router)
     app.include_router(advertisements.router)
     app.include_router(analysis.router)

@@ -39,13 +39,21 @@ export async function command<T>(
   });
 }
 
-export function date(value: string | null) {
-  if (!value) return "Не установлена";
-  return new Intl.DateTimeFormat("ru-RU", {
+export function date(
+  value: string | null,
+  locale: "ru" | "kk" = typeof document !== "undefined" &&
+  document.documentElement.lang === "kk"
+    ? "kk"
+    : "ru",
+) {
+  const instant = value ? new Date(value) : null;
+  if (!instant || !Number.isFinite(instant.getTime()))
+    return locale === "kk" ? "Анықталмаған" : "Не установлена";
+  return new Intl.DateTimeFormat(locale === "kk" ? "kk-KZ" : "ru-RU", {
     timeZone: "Asia/Qyzylorda",
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(instant);
 }
 
 export async function upload<T>(

@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, Field, HttpUrl, field_validator, model_validator
 
-from app.dto import DTO, AdvertisementOut, AssetOut, ErrorOut, Page, RiskCode, RiskFactorOut, RiskSummaryOut
+from app.dto import DTO, AdvertisementOut, AssetOut, ErrorOut, Page, RiskCode, RiskFactorOut, RiskSummaryOut, UserOut
 from app.legal_absence import LegalMechanismCheck
 
 
@@ -82,6 +82,13 @@ class Hypothesis(DTO):
     confidence: float | None = Field(ge=0, le=1)
     review_status: Literal['PENDING', 'CONFIRMED', 'CORRECTED', 'REJECTED']
     reviewed_value: HypothesisValue | None
+    origin: Literal['AUTO', 'MANUAL'] = 'AUTO'
+    proposed_by: UserOut | None = None
+    proposed_at: datetime | None = None
+    proposal_reason: str | None = None
+    reviewed_by: UserOut | None = None
+    reviewed_at: datetime | None = None
+    review_reason: str | None = None
 
 
 class ExtractionOut(DTO):
@@ -118,6 +125,23 @@ class ExtractionReview(ReviewInput):
         return self
 
 
+class ManualAnnotationCreate(ReviewInput):
+    expected_revision: int = Field(ge=1)
+    field: Literal['PAYMENT_TERM'] = 'PAYMENT_TERM'
+    start_offset: int = Field(ge=0, le=100000)
+    end_offset: int = Field(ge=1, le=100000)
+    quote: str = Field(min_length=1, max_length=2000)
+    reason: str = Field(min_length=1, max_length=2000)
+
+    @model_validator(mode='after')
+    def exact_fragment_range(self):
+        if not self.quote.strip() or self.end_offset <= self.start_offset:
+            raise ValueError('Укажите непустую точную цитату и её границы')
+        if self.end_offset - self.start_offset != len(self.quote):
+            raise ValueError('Границы должны соответствовать длине цитаты в символах Unicode')
+        return self
+
+
 class TranscriptionRequest(ReviewInput):
     expected_revision: int = Field(ge=1)
     text: str = Field(min_length=1, max_length=100000)
@@ -140,6 +164,7 @@ ReviewAction = Literal['REVIEW_HYPOTHESES', 'REVIEW_MATCH', 'CREATE_PAYMENT_EVID
 
 class PaymentReviewTarget(DTO):
     property_id: UUID
+    property_name: str | None = None
     factor_id: UUID | None
     evidence_ids: list[UUID]
 
@@ -250,6 +275,8 @@ class EvidenceOut(EvidenceCreate):
     id: UUID
     captured_at: datetime
     created_by: UUID
+    published_at: datetime | None = None
+    date_basis: Literal['PUBLICATION', 'CAPTURE_ONLY', 'LEGACY_UNSPECIFIED'] = 'LEGACY_UNSPECIFIED'
 
 
 class RiskFactorCreate(ReviewInput):

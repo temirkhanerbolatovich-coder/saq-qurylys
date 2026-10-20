@@ -1,0 +1,54 @@
+.report-options {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.report-options-object {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.report-options-fields {
+  display: grid;
+  gap: var(--space-2);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.report-options-fields legend {
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+.report-options-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding-block: var(--space-2);
+}
+.report-options-choice input {
+  flex: 0 0 auto;
+  margin-top: 0.2em;
+}
+.report-options-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.report-options-actions .button {
+  white-space: normal;
+}
+.report-spinner {
+  animation: report-spin 900ms linear infinite;
+}
+@keyframes report-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .report-spinner {
+    animation: none;
+  }
+}

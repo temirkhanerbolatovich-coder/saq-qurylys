@@ -91,7 +91,7 @@ test("dashboard and evidence come from authenticated API", async ({ page }) => {
     newQueue.getByRole("link", { name: "Открыть новые материалы" }),
   ).toHaveAttribute("href", "/advertisements?status=NEW");
   await expect(
-    page.getByRole("link", { name: "DEMO Бәйтерек · очередь 2", exact: true }),
+    page.getByRole("link", { name: "Открыть очередь решений", exact: true }),
   ).toBeVisible();
   await mkdir("../output/qa", { recursive: true });
   await page.screenshot({ path: "../output/qa/dashboard.png", fullPage: true });
@@ -105,6 +105,9 @@ test("dashboard and evidence come from authenticated API", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "DEMO Бәйтерек · очередь 2" }),
   ).toBeVisible();
+  await page
+    .getByRole("tab", { name: "Проверка и риски", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Доказательства", exact: true })
     .first()
@@ -146,9 +149,14 @@ test("new text draft survives navigation and saves exact input", async ({
     .click();
   await expect(page.getByRole("heading", { name: label })).toBeVisible();
   await expect(page.locator(".original-text")).toHaveText(text);
-  await expect(page.locator("dd").first()).toHaveText("Не установлена");
+  await expect(page.locator("dd").first()).toHaveText(
+    "Дата публикации неизвестна",
+  );
   await page.reload();
   await expect(page.locator(".original-text")).toHaveText(text);
+  await expect(page.locator("dd").first()).toHaveText(
+    "Дата публикации неизвестна",
+  );
   await page.screenshot({
     path: "../output/qa/new-advertisement.png",
     fullPage: true,

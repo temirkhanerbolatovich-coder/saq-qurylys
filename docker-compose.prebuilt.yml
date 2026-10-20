@@ -1,0 +1,14 @@
+# Load native images first; always use up --no-build with this override.
+services:
+  api:
+    image: ${SAQ_API_IMAGE:?Set the loaded API image tag or digest}
+    platform: linux/amd64
+    pull_policy: never
+  worker:
+    image: ${SAQ_API_IMAGE:?Set the loaded API image tag or digest}
+    platform: linux/amd64
+    pull_policy: never
+  frontend:
+    image: ${SAQ_FRONTEND_IMAGE:?Set the loaded frontend image tag or digest}
+    platform: linux/amd64
+    pull_policy: never

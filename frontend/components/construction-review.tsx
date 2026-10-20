@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ApiError, api, command, date, upload } from "@/lib/api";
 import type {
   Advertisement,
@@ -8,6 +8,8 @@ import type {
   PropertyDetail,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { useDossierFormDraft } from "@/lib/use-dossier-form-draft";
+import { DossierDraftNotice } from "@/components/dossier-draft-notice";
 
 type Code = "R3" | "R5" | "R6";
 type Saved = { id: string };
@@ -88,7 +90,9 @@ function SourceFields({ prefix, title }: { prefix: string; title: string }) {
 export function ConstructionReview({
   detail,
   onSaved,
+  userId,
 }: {
+  userId: string;
   detail: PropertyDetail;
   onSaved: () => void;
 }) {
@@ -106,6 +110,7 @@ export function ConstructionReview({
           code={code}
           detail={detail}
           onSaved={onSaved}
+          userId={userId}
         />
       ))}
     </section>
@@ -116,7 +121,9 @@ function ConstructionFactor({
   code,
   detail,
   onSaved,
+  userId,
 }: {
+  userId: string;
   code: Code;
   detail: PropertyDetail;
   onSaved: () => void;
@@ -127,16 +134,43 @@ function ConstructionFactor({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [reason, setReason] = useState("");
-  const [evidenceIds, setEvidenceIds] = useState<string[]>([]);
-  const [draftChanged, setDraftChanged] = useState(false);
   const [ads, setAds] = useState<Advertisement[]>([]);
   const [adError, setAdError] = useState("");
   const [delayStatus, setDelayStatus] = useState("NOT_COMPLETED");
-  const cache = useRef<RetryCache>({
-    keys: new Map(),
-    results: new Map(),
-    dates: new Map(),
-  });
+  const draft = useDossierFormDraft<HTMLDetailsElement>(
+    userId,
+    `${detail.property.id}:${code}`,
+    (fields, missingFiles) => {
+      setReason(fields[`${code}-reason`] || "");
+      setDelayStatus(
+        fields["r6-status"] === "COMPLETED_LATE"
+          ? "COMPLETED_LATE"
+          : "NOT_COMPLETED",
+      );
+      setDraftChanged(fields.$formChanged === "true" || missingFiles);
+    },
+  );
+  const selection = draft.remember("selection", () => ({
+    evidenceIds: [] as string[],
+    draftChanged: false,
+  }));
+  const [evidenceIds, updateEvidenceIds] = useState(selection.evidenceIds);
+  const [draftChanged, updateDraftChanged] = useState(selection.draftChanged);
+  function setEvidenceIds(value: string[]) {
+    selection.evidenceIds = value;
+    updateEvidenceIds(value);
+  }
+  function setDraftChanged(value: boolean) {
+    selection.draftChanged = value;
+    updateDraftChanged(value);
+  }
+  const cache = draft.remember("cache", () => ({
+    current: {
+      keys: new Map(),
+      results: new Map(),
+      dates: new Map(),
+    } as RetryCache,
+  }));
   const ids = evidenceIds.length ? evidenceIds : factor?.evidence_ids || [];
 
   useEffect(() => {
@@ -179,11 +213,13 @@ function ConstructionFactor({
     );
   }
   async function run(task: () => Promise<void>) {
+    draft.checkpoint();
     setBusy(true);
     setError("");
     setMessage("");
     try {
       await task();
+      if (!selection.draftChanged) draft.saved();
     } catch (failure) {
       setError(
         failure instanceof ApiError
@@ -409,8 +445,15 @@ function ConstructionFactor({
   }
 
   return (
-    <details className="document" data-testid={`construction-${code}`}>
+    <details
+      className="document"
+      data-testid={`construction-${code}`}
+      id={`dossier-editor-${code}`}
+      tabIndex={-1}
+      {...draft.containerProps}
+    >
       <summary>{definition.title}</summary>
+      <DossierDraftNotice draft={draft} />
       <p>{definition.explanation}</p>
       {factor && (
         <p>

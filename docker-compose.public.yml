@@ -1,16 +1,28 @@
 # Apply on the selected Linux server, behind its HTTPS reverse proxy.
 # Keep docker-compose.dev.yml out of the public deployment.
+x-public-logging: &public-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 services:
   db:
+    logging: *public-logging
     restart: unless-stopped
   api:
+    logging: *public-logging
     environment:
       APP_ORIGIN: https://${PUBLIC_HOST:?Set PUBLIC_HOST to the public DNS hostname}
       SESSION_COOKIE_SECURE: "true"
+      DEMO_SEED_ENABLED: "${DEMO_SEED_ENABLED:-false}"
     restart: unless-stopped
   worker:
+    logging: *public-logging
     environment:
       APP_ORIGIN: https://${PUBLIC_HOST:?Set PUBLIC_HOST to the public DNS hostname}
       SESSION_COOKIE_SECURE: "true"
   frontend:
+    logging: *public-logging
+    environment:
+      PDF_PROXY_TIMEOUT_MS: "${PDF_PROXY_TIMEOUT_MS:-75000}"
     restart: unless-stopped

@@ -9,7 +9,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException
 
 from app import analysis_dto as dto
-from app.api.analysis import Key, analyst, audit, latest_extraction, revision
+from app.api.analysis import Key, analyst, audit, independently_confirmed_manual_payment, latest_extraction, revision
 from app.commands import begin_command, finish_command
 from app.construction import (
     CONSTRUCTION_KINDS,
@@ -257,6 +257,8 @@ def scoped_evidence(body, request, actor, db, idempotency_key, digest):
             'source_label': ad.source_label,
             'source_url': ad.source_url,
             'event_at': ad.published_at.isoformat(),
+            'published_at': ad.published_at.isoformat(),
+            'date_basis': 'PUBLICATION',
             'captured_at': ad.captured_at.isoformat(),
             'methodology': None,
         }
@@ -364,8 +366,11 @@ def payment_hypothesis(db, evidence):
     ):
         raise HTTPException(422, 'Сначала подтвердите гипотезу об условиях оплаты')
     value = hypothesis['reviewed_value'] or hypothesis['value']
-    # A correction cannot turn an arbitrary amount/free booking into an R2 offer.
-    if not value.get('text') or not payment_offer(value['text']):
+    if hypothesis.get('origin') == 'MANUAL':
+        independently_confirmed_manual_payment(db, extraction, hypothesis)
+    # Automatic corrections retain the payment rule; manual false negatives need
+    # an independently authenticated decision and exact immutable source instead.
+    elif not value.get('text') or not payment_offer(value['text']):
         raise HTTPException(422, 'Исправленное условие не содержит прямого предложения платежа')
     if details.get('fragment') != hypothesis['fragment'] or evidence.asset_id != extraction.source_asset_id:
         raise HTTPException(422, 'Фрагмент должен точно соответствовать сохранённой версии оригинала')
@@ -418,7 +423,9 @@ def create_evidence(body: dto.EvidenceCreate, request: Request, actor: Actor, db
     row.details |= {
         'source_label': ad.source_label,
         'source_url': ad.source_url,
-        'event_at': (ad.published_at or ad.captured_at).isoformat(),
+        'event_at': ad.published_at.isoformat() if ad.published_at else None,
+        'published_at': ad.published_at.isoformat() if ad.published_at else None,
+        'date_basis': 'PUBLICATION' if ad.published_at else 'CAPTURE_ONLY',
         'captured_at': ad.captured_at.isoformat(),
         'created_by': str(actor.id),
     }

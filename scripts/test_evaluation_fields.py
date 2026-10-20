@@ -313,6 +313,26 @@ class StructuredFieldMetricsTests(unittest.TestCase):
             with self.subTest(metric=name):
                 self.assert_counts(result['scores'][name], tp=0, fp=1, fn=1)
 
+    def test_kazakh_ocr_dash_substitution_preserves_values_but_fails_strict_binding(self):
+        reference = 'Ақылы брондау — 100 ₸.'
+        labels = annotations(reference)
+        for punctuation in ['--', '-', '–']:
+            with self.subTest(punctuation=punctuation):
+                observed = reference.replace('—', punctuation)
+                predicted = hypotheses(labels)
+                for item in predicted:
+                    item['fragment'] = fragment(observed, item['fragment']['quote'].replace('—', punctuation))
+                rows = [record(reference, labels, observed=observed, predicted=predicted)]
+                before = copy.deepcopy(rows)
+                result = fields.structured_metrics(rows)
+                self.assertEqual(rows, before)
+                self.assertEqual(result['raw_fragment_count'], 2)
+                self.assertEqual(result['raw_fragment_valid'], 2)
+                for name in ['amount', 'currency', 'money', 'payment_value', 'amount_binding']:
+                    self.assert_counts(result['scores'][name], tp=1, fp=0, fn=0)
+                for name in ['payment_fragment', 'payment_binding']:
+                    self.assert_counts(result['scores'][name], tp=0, fp=1, fn=1)
+
     def test_invalid_raw_quotes_never_receive_grounding_credit(self):
         predicted = hypotheses(self.labels)
         for item in predicted:

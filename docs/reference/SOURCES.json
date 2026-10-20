@@ -1,0 +1,17 @@
+[
+  {
+    "file": "SAQ_QURYLYS_Full_Report.docx",
+    "sha256": "accedf779e236079548bef171917e923783addb5d0d847417b0e456b57f038a0",
+    "role": "Исследовательский отчёт R"
+  },
+  {
+    "file": "Кейс Codemasters 8.0. SAQ (1).pdf",
+    "sha256": "14335e6be4f866722d6c741888e1bafcb2fd01fc7f75150d611aa415053ce6da",
+    "role": "Первичный кейс организатора O"
+  },
+  {
+    "file": "REPOSITORY_CLEANUP_TZ_2026-10-20.md",
+    "sha256": "58f998bc6056a563ba8c88d2f5b6fcffc91ceb763b1b486f100c28fb3f9c5e46",
+    "role": "ТЗ repository cleanup, предоставленное пользователем"
+  }
+]

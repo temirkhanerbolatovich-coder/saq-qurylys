@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login, testOrigin } from "./support";
+import { login, openDossierTools, testOrigin } from "./support";
 
 test("R5 keeps partial uploads and compares fractional percentage points exactly", async ({
   page,
@@ -12,6 +12,7 @@ test("R5 keeps partial uploads and compares fractional percentage points exactly
     property.name.includes("Ертіс"),
   ).id;
   await page.goto(`/properties/${id}`);
+  await openDossierTools(page);
   const panel = page.getByTestId("construction-R5");
   await panel.getByText("R5 · сравнение готовности", { exact: true }).click();
   const suffix = Date.now();
@@ -111,6 +112,7 @@ test("R5 keeps partial uploads and compares fractional percentage points exactly
   );
   expect((await risk()).score).toBe(before + 10);
   await page.reload();
+  await openDossierTools(page);
   await panel.getByText("R5 · сравнение готовности", { exact: true }).click();
   await expect(panel).toContainText("Подтверждён");
   await panel
@@ -152,6 +154,7 @@ test("R6 stores dated delay evidence before human confirmation and rejection", a
     property.name.includes("Ертіс"),
   ).id;
   await page.goto(`/properties/${id}`);
+  await openDossierTools(page);
   const panel = page.getByTestId("construction-R6");
   await panel
     .getByText("R6 · документированная просрочка", { exact: true })
@@ -261,6 +264,7 @@ test("R3 joins a dated publication and an independent construction document befo
   ).toBeVisible();
 
   await page.goto(`/properties/${property.id}`);
+  await openDossierTools(page);
   const panel = page.getByTestId("construction-R3");
   await panel.getByText("R3 · реклама до ввода", { exact: true }).click();
   await panel.getByLabel("Публикация для R3").selectOption(ad.id);

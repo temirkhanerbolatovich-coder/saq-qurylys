@@ -136,6 +136,65 @@ def queue(signed, **params):
     return response.json()
 
 
+@pytest.mark.parametrize('q', ['құрылыс', '  ӨСКЕМЕН  ', '%', '_', '\\'])
+def test_material_search_literal_original_and_source(signed, cases, q):
+    target = cases()
+    target.ad.original_text = 'DEMO Құрылыс 20% _ \\ literal'
+    target.ad.source_label = 'DEMO Өскемен'
+    other = cases()
+    other.ad.original_text = 'DEMO unrelated'
+    target.db.flush()
+    for path in ['/api/v1/advertisements', PATH]:
+        response = signed.get(path, params=FILTER | {'q': q})
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data['total'] == 1
+        row = data['items'][0]
+        assert row.get('id', row.get('advertisement_id')) == str(target.ad.id)
+
+
+def test_material_search_counts_pagination_filters_and_no_mutations(signed, cases):
+    first, second = cases(), cases(is_demo=False)
+    cases()
+    for case in [first, second]:
+        case.ad.original_text = 'DEMO searchneedle'
+    first.db.flush()
+    before = signed.get(f'/api/v1/advertisements/{first.ad.id}').json()
+    for path in ['/api/v1/advertisements', PATH]:
+        pages = [
+            signed.get(path, params=FILTER | {'q': 'searchneedle', 'page_size': 1, 'page': n}).json() for n in [1, 2]
+        ]
+        assert [page['total'] for page in pages] == [2, 2]
+        assert pages[0]['items'] != pages[1]['items']
+        empty = signed.get(path, params=FILTER | {'q': "' OR 1=1 --"}).json()
+        assert empty['total'] == 0
+        blank = signed.get(path, params=FILTER | {'q': '   '}).json()
+        assert blank['total'] == 3
+        assert signed.get(path, params={'q': 'a' * 301}).status_code == 422
+    filtered = queue(signed, q='searchneedle', is_demo=True, action='REVIEW_HYPOTHESES')
+    assert filtered['total'] == filtered['action_totals']['REVIEW_HYPOTHESES'] == 1
+    assert filtered['items'][0]['advertisement_id'] == str(first.ad.id)
+    for demo, expected in [(True, first), (False, second)]:
+        library = signed.get('/api/v1/advertisements', params=FILTER | {'q': 'searchneedle', 'is_demo': demo}).json()
+        assert library['total'] == 1
+        assert library['items'][0]['id'] == str(expected.ad.id)
+    assert (
+        signed.get('/api/v1/advertisements', params=FILTER | {'q': 'searchneedle', 'status': 'NEW'}).json()['total']
+        == 0
+    )
+    assert signed.get(f'/api/v1/advertisements/{first.ad.id}').json() == before
+
+
+def test_material_search_excludes_analysis_and_external_url(signed, cases):
+    case = cases()
+    case.ad.source_url = 'https://example.invalid/notoriginalneedle'
+    case.extraction.analysis_text = 'notoriginalneedle'
+    case.extraction.original_ocr_text = 'notoriginalneedle'
+    case.db.flush()
+    for path in ['/api/v1/advertisements', PATH]:
+        assert signed.get(path, params=FILTER | {'q': 'notoriginalneedle'}).json()['total'] == 0
+
+
 def post(signed, path, body):
     response = signed.post('/api/v1' + path, json=body, headers=mutation_headers(signed))
     assert response.status_code in {200, 201}, response.text
@@ -218,7 +277,14 @@ def test_queue_lifecycle_only_explicit_decisions_remove_work(signed, cases):
     source = evidence(signed, case)
     item = queue(signed)['items'][0]
     assert item['actions'] == ['REVIEW_R2']
-    assert item['r2_reviews'] == [{'property_id': str(case.prop.id), 'factor_id': None, 'evidence_ids': [source['id']]}]
+    assert item['r2_reviews'] == [
+        {
+            'property_id': str(case.prop.id),
+            'property_name': case.prop.name,
+            'factor_id': None,
+            'evidence_ids': [source['id']],
+        }
+    ]
     factor(signed, case, source)
     assert queue(signed)['total'] == 0
     assert signed.get(f'/api/v1/advertisements/{case.ad.id}').json()['status'] == 'READY_FOR_REVIEW'
@@ -449,6 +515,33 @@ def test_pending_r2_does_not_add_unrelated_material_from_same_property(signed, c
     result = queue(signed)
     assert result['total'] == 1
     assert result['items'][0]['advertisement_id'] == str(case.ad.id)
+
+
+def test_r2_display_name_resolves_exact_historical_target_without_changing_work(signed, cases):
+    case = cases([('PAYMENT_TERM', 'CONFIRMED')], matched=True)
+    source = evidence(signed, case)
+    pending = factor(signed, case, source, 'PENDING')
+    other = cases([])
+    case.prop.name = 'DEMO Өркен · прежний объект'
+    other.prop.name = 'DEMO новый объект привязки'
+    case.ad.confirmed_property_id = other.prop.id
+    case.db.flush()
+    before = case.db.scalar(select(func.count()).select_from(AuditEvent))
+    item = queue(signed)['items'][0]
+    assert item['r2_reviews'] == [
+        {
+            'property_id': str(case.prop.id),
+            'property_name': case.prop.name,
+            'factor_id': pending['id'],
+            'evidence_ids': [source['id']],
+        }
+    ]
+    assert item['advertisement']['confirmed_property_id'] == str(other.prop.id)
+    assert case.db.scalar(select(func.count()).select_from(AuditEvent)) == before
+    case.prop.name = 'DEMO переименованный прежний объект'
+    case.db.flush()
+    assert queue(signed)['items'][0]['r2_reviews'][0]['property_name'] == case.prop.name
+    assert case.db.get(RiskFactor, pending['id']).status == 'PENDING'
 
 
 def test_filter_totals_and_pagination_cover_full_work_set(signed, cases):

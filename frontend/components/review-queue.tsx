@@ -1,6 +1,8 @@
 "use client";
+import { useLocale } from "@/lib/locale";
 
 import Link from "next/link";
+import { MaterialSearch } from "@/components/material-search";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useContext, useEffect, useState, type ReactNode } from "react";
 import { ApiError, command, date } from "@/lib/api";
@@ -32,12 +34,35 @@ const sections: Record<string, string> = {
   factor: "factor",
 };
 
+/** Keeps queue controls mounted while the selected material takes priority. */
+export function ReviewQueuePanel({
+  label,
+  selectedId,
+  children,
+}: {
+  label: string;
+  selectedId: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="panel review-queue" aria-label={label}>
+      <details key={selectedId || "queue"} open={!selectedId}>
+        <summary>
+          {selectedId ? "Сменить материал · очередь и фильтры" : label}
+        </summary>
+        <div className="padded">{children}</div>
+      </details>
+    </section>
+  );
+}
+
 /** Lists server-derived work; opening a target never submits a review command. */
 export function RemainingReviewQueue({
   renderMaterial,
 }: {
   renderMaterial: (id: string, onChange: () => void) => ReactNode;
 }) {
+  const { t } = useLocale();
   const params = useSearchParams();
   const router = useRouter();
   const id = params.get("advertisement_id") || "";
@@ -61,7 +86,7 @@ export function RemainingReviewQueue({
   if (action) query.set("action", action);
   if (demo) query.set("is_demo", demo);
   // A dossier may supply these server filters; preserve their precise semantics.
-  for (const name of ["property_id", "from", "to"]) {
+  for (const name of ["q", "property_id", "from", "to"]) {
     const value = params.get(name);
     if (value) query.set(name, value);
   }
@@ -99,6 +124,7 @@ export function RemainingReviewQueue({
 
   function navigate(name: string, value: string) {
     const next = new URLSearchParams(params);
+    next.set("queue", "actions");
     if (value) next.set(name, value);
     else next.delete(name);
     if (name !== "page") next.delete("page");
@@ -106,6 +132,7 @@ export function RemainingReviewQueue({
   }
   function materialUrl(advertisementId: string, target?: string) {
     const next = new URLSearchParams(params);
+    next.set("queue", "actions");
     next.set("advertisement_id", advertisementId);
     next.delete("history_page");
     if (target) next.set("review_section", target);
@@ -118,7 +145,9 @@ export function RemainingReviewQueue({
   }
   function resetFilters() {
     const next = new URLSearchParams(params);
+    next.set("queue", "actions");
     for (const name of [
+      "q",
       "action",
       "is_demo",
       "property_id",
@@ -131,14 +160,14 @@ export function RemainingReviewQueue({
   }
   return (
     <>
-      <section
-        className="panel padded review-queue"
-        aria-label="Нерешённые действия материалов"
+      <ReviewQueuePanel
+        label={t("Нерешённые действия материалов")}
+        selectedId={id}
       >
         <div className="review-toolbar">
-          <h2>Материалы с нерешёнными действиями</h2>
+          <h2>{t("Материалы с нерешёнными действиями")}</h2>
           <Button variant="outline" onClick={queue.reload}>
-            Обновить очередь решений
+            {t("Обновить очередь решений")}
           </Button>
         </div>
         <p className="field-help">
@@ -147,36 +176,40 @@ export function RemainingReviewQueue({
           «Состояниях обработки».
         </p>
         <div className="review-queue-filters">
+          <MaterialSearch
+            query={params.get("q") || ""}
+            onSearch={(value) => navigate("q", value)}
+          />
           <div>
-            <label htmlFor="review-action">Нерешённое действие</label>
+            <label htmlFor="review-action">{t("Нерешённое действие")}</label>
             <select
               id="review-action"
               value={action}
               onChange={(event) => navigate("action", event.target.value)}
             >
-              <option value="">Все действия</option>
+              <option value="">{t("Все действия")}</option>
               {actions.map((value) => (
                 <option key={value} value={value}>
-                  {actionLabels[value]}
+                  {t(actionLabels[value])}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label htmlFor="review-demo">Режим материалов</label>
+            <label htmlFor="review-demo">{t("Режим материалов")}</label>
             <select
               id="review-demo"
               value={demo}
               onChange={(event) => navigate("is_demo", event.target.value)}
             >
-              <option value="">DEMO и реальные</option>
-              <option value="true">Только DEMO</option>
-              <option value="false">Только реальные</option>
+              <option value="">{t("DEMO и реальные")}</option>
+              <option value="true">{t("Только DEMO")}</option>
+              <option value="false">{t("Только реальные")}</option>
             </select>
           </div>
           <div>
             <label htmlFor="review-actions-page-size">
-              Материалов с действиями на странице
+              {t("Материалов с действиями на странице")}
             </label>
             <select
               id="review-actions-page-size"
@@ -209,7 +242,7 @@ export function RemainingReviewQueue({
           params.get("from") ||
           params.get("to")) && (
           <Button variant="ghost" onClick={resetFilters}>
-            Сбросить фильтры действий
+            {t("Сбросить фильтры действий")}
           </Button>
         )}
         {!data ? (
@@ -226,7 +259,7 @@ export function RemainingReviewQueue({
               <ul>
                 {actions.map((value) => (
                   <li key={value}>
-                    {actionLabels[value]}: {data.action_totals[value]}
+                    {t(actionLabels[value])}: {data.action_totals[value]}
                   </li>
                 ))}
               </ul>
@@ -238,7 +271,7 @@ export function RemainingReviewQueue({
             <details
               key={id || "queue"}
               className="review-queue-materials"
-              open={!id}
+              open
             >
               <summary>
                 {id
@@ -262,8 +295,9 @@ export function RemainingReviewQueue({
                           <Demo value={ad.is_demo} /> {statusLabel(ad.status)}
                         </span>
                         <small>
-                          Зафиксировано: {date(ad.captured_at)} · ревизия
-                          анализа {item.extraction_revision}
+                          {t("Зафиксировано: ")}
+                          {date(ad.captured_at)} · ревизия анализа{" "}
+                          {item.extraction_revision}
                         </small>
                       </Link>
                       <ul aria-label={`Действия: ${ad.source_label}`}>
@@ -286,7 +320,7 @@ export function RemainingReviewQueue({
                               href={materialUrl(ad.id, "match")}
                               scroll={false}
                             >
-                              Проверить привязку к объекту
+                              {t("Проверить привязку к объекту")}
                             </Link>
                           </li>
                         )}
@@ -297,7 +331,7 @@ export function RemainingReviewQueue({
                               href={materialUrl(ad.id, "factor")}
                               scroll={false}
                             >
-                              Сохранить доказательство оплаты
+                              {t("Сохранить доказательство оплаты")}
                             </Link>
                           </li>
                         )}
@@ -321,12 +355,12 @@ export function RemainingReviewQueue({
                 <p className="empty">
                   {data.total
                     ? "На этой странице материалов нет. Вернитесь на предыдущую страницу."
-                    : "Нерешённых действий по выбранным фильтрам нет. Это не подтверждает безопасность или полноту проверки исходников."}
+                    : "Нерешённых действий по запросу и фильтрам нет. Измените или сбросьте поиск и фильтры. Это не подтверждает безопасность или полноту проверки исходников."}
                 </p>
               )}
             </details>
             <Pagination
-              label="Страницы нерешённых действий"
+              label={t("Страницы нерешённых действий")}
               page={data.page}
               pageSize={data.page_size}
               total={data.total}
@@ -340,7 +374,7 @@ export function RemainingReviewQueue({
             )}
           </>
         )}
-      </section>
+      </ReviewQueuePanel>
       {id
         ? renderMaterial(id, queue.reload)
         : data && (
@@ -362,10 +396,27 @@ function QueueR2Target({
   target: AdvertisementReviewItem["r2_reviews"][number];
   onChange: () => void;
 }) {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
+  const historical =
+    target.property_id !== item.advertisement.confirmed_property_id;
   return (
     <details onToggle={(event) => setOpen(event.currentTarget.open)}>
-      <summary>Проверить решение R2 по объекту {target.property_id}</summary>
+      <summary>
+        {t("Проверить решение R2 по объекту")}{" "}
+        {target.property_name || target.property_id}
+        {historical && <span className="status"> · Прежний объект</span>}
+      </summary>
+      {target.property_name && (
+        <p className="field-help">
+          Название из текущего реестра. Задача и доказательства относятся к
+          этому объекту, а не к новой привязке материала.
+        </p>
+      )}
+      <details className="field-help">
+        <summary>{t("Идентификатор объекта")}</summary>
+        <code>{target.property_id}</code>
+      </details>
       {open && (
         <QueueR2Decision
           key={`${item.advertisement_id}:${target.property_id}:${target.factor_id || "new"}`}
@@ -387,7 +438,9 @@ function QueueR2Decision({
   target: AdvertisementReviewItem["r2_reviews"][number];
   onChange: () => void;
 }) {
+  const { t } = useLocale();
   const { user } = useContext(Auth);
+  const objectName = target.property_name || target.property_id;
   const detail = useData<PropertyDetail>(`/properties/${target.property_id}`);
   const draft = useReviewDraft(
     user?.id || "",
@@ -465,10 +518,7 @@ function QueueR2Decision({
     }
   }
   return (
-    <div
-      className="review-form"
-      aria-label={`Решение R2: ${target.property_id}`}
-    >
+    <div className="review-form" aria-label={`Решение R2: ${objectName}`}>
       <p>
         {historical
           ? "Исторический R2 относится к прежнему объекту. Доказательства текущей привязки сюда не подставляются."
@@ -478,7 +528,7 @@ function QueueR2Decision({
         className="text-link"
         href={`/properties/${target.property_id}#dossier-factors`}
       >
-        Открыть объект и исходные доказательства R2
+        {t("Открыть объект и исходные доказательства R2")}
       </Link>
       {!detail.data ? (
         <LoadState error={detail.error} retry={detail.reload} />
@@ -519,7 +569,7 @@ function QueueR2Decision({
               <label
                 htmlFor={`queue-r2-reason-${item.advertisement_id}-${target.property_id}`}
               >
-                Обоснование решения R2 по объекту {target.property_id}
+                Обоснование решения R2 по объекту {objectName}
               </label>
               <textarea
                 id={`queue-r2-reason-${item.advertisement_id}-${target.property_id}`}
@@ -543,7 +593,7 @@ function QueueR2Decision({
                       aria-busy={busy}
                       onClick={() => void save("CONFIRMED")}
                     >
-                      Подтвердить R2 этого объекта
+                      {t("Подтвердить R2 этого объекта")}
                     </Button>
                     <Button
                       variant="outline"
@@ -551,7 +601,7 @@ function QueueR2Decision({
                       aria-busy={busy}
                       onClick={() => void save("REJECTED")}
                     >
-                      Отклонить R2 этого объекта
+                      {t("Отклонить R2 этого объекта")}
                     </Button>
                   </>
                 ) : (
@@ -566,7 +616,7 @@ function QueueR2Decision({
                     aria-busy={busy}
                     onClick={() => void save()}
                   >
-                    Создать R2 на проверке
+                    {t("Создать R2 на проверке")}
                   </Button>
                 )}
               </div>

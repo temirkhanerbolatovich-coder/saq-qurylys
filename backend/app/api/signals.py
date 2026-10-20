@@ -1,7 +1,7 @@
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import select
+from sqlalchemy import String, case, cast, literal, or_, select
 from starlette.exceptions import HTTPException
 
 from app.api.analysis import Key, analyst, audit, revision
@@ -9,11 +9,23 @@ from app.api.reviews import property_locked
 from app.commands import begin_command, finish_command
 from app.dependencies import DB, Actor, check_csrf
 from app.dto import Page, UserOut
-from app.models import Signal, utcnow
+from app.models import Property, Signal, utcnow
 from app.signal_dto import SignalCreate, SignalDecision, SignalDecisionRequest, SignalDetail, SignalOut, SignalState
 from app.signals import build_snapshot, latest_signal, signal_detail, signal_is_stale, signal_locked, signal_view
 
 router = APIRouter()
+
+SIGNAL_SEARCH_DESCRIPTION = (
+    'Case-insensitive literal substring in current or frozen property name, signal ID, '
+    'Russian version label (for example версия 2), state code or Russian state label. '
+    'Outer whitespace is trimmed; percent, underscore and backslash are literal. '
+    'Search and other filters apply before pagination; snapshots and decisions are never changed.'
+)
+SIGNAL_STATE_LABELS = {
+    'DRAFT': 'Ожидает решения',
+    'CONFIRMED': 'Подтверждён аналитиком',
+    'RETURNED': 'Возвращён на доработку',
+}
 
 
 @router.get('/api/v1/signals', response_model=Page[SignalOut], operation_id='listSignals')
@@ -25,12 +37,34 @@ def list_signals(
     property_id: UUID | None = None,
     state: SignalState | None = None,
     is_stale: bool | None = None,
+    q: str | None = Query(None, max_length=300, description=SIGNAL_SEARCH_DESCRIPTION),
 ):
     query = select(Signal).order_by(Signal.created_at.desc(), Signal.id)
     if property_id:
         query = query.where(Signal.property_id == property_id)
     if state:
         query = query.where(Signal.state == state)
+    if q and q.strip():
+        escaped = q.strip().replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        pattern = f'%{escaped}%'
+        current_name = (
+            select(1)
+            .where(Property.id == Signal.property_id, Property.name.ilike(pattern, escape='\\'))
+            .correlate(Signal)
+            .exists()
+        )
+        state_label = case(SIGNAL_STATE_LABELS, value=Signal.state, else_=Signal.state)
+        version_label = literal('версия ') + cast(Signal.version, String)
+        query = query.where(
+            or_(
+                current_name,
+                Signal.snapshot['property']['name'].as_string().ilike(pattern, escape='\\'),
+                cast(Signal.id, String).ilike(pattern, escape='\\'),
+                version_label.ilike(pattern, escape='\\'),
+                Signal.state.ilike(pattern, escape='\\'),
+                state_label.ilike(pattern, escape='\\'),
+            )
+        )
     rows = [signal_view(db, row) for row in db.scalars(query)]
     if is_stale is not None:
         rows = [row for row in rows if row.is_stale == is_stale]

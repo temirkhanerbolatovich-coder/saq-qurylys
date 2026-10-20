@@ -14,6 +14,7 @@ from app.models import Advertisement, AnalysisJob, Asset, AuditEvent, Extraction
 from app.notifications import process_telegram_one
 from app.ocr import AnalysisError, recognize
 from app.storage import read_asset, save_text
+from app.url_schedules import tick_url_schedules
 
 logger = logging.getLogger(__name__)
 PIPELINE_VERSION = 'tesseract-rus-kaz-eng+rules-1.6+rapidfuzz-1'
@@ -169,9 +170,13 @@ def main():
     settings = Settings()
     engine = create_engine(settings.database_url, pool_pre_ping=True, hide_parameters=True)
     sessions = sessionmaker(engine, expire_on_commit=False)
+    next_schedule_tick = 0
     try:
         while True:
             try:
+                if time.monotonic() >= next_schedule_tick:
+                    tick_url_schedules(sessions, settings)
+                    next_schedule_tick = time.monotonic() + settings.url_schedule_poll_seconds
                 processed = process_one(sessions, settings)
                 notified = process_telegram_one(sessions, settings)
                 if not processed and not notified:

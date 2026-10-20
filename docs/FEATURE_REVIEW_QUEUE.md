@@ -1,5 +1,13 @@
 # Остаток решений по материалам
 
+19.10.2026, контракт0.19.0-mvp: PaymentReviewTarget получает optional nullable
+property_name. Имена точных ID требующих R2 объектов читаются одним SELECT.
+Это текущая справочная подпись, не исторический снимок. При отсутствии имени
+клиент сохраняет UUID fallback; перепривязка материала не подменяет прежний
+target/evidence. Команды, черновики, idempotency, counts и порядок прежние.
+Регрессия test_r2_display_name_resolves_exact_historical_target_without_changing_work
+проверяет старый target, его переименование и отсутствие новых audit writes.
+
 17.10.2026. Backend-контракт **0.12.0-mvp** добавляет read-only
 `GET /api/v1/advertisements/review-queue`. Он отделяет завершённую обработку
 `READY_FOR_REVIEW` от наличия нерешённых действий. Фронтенд подключается отдельным

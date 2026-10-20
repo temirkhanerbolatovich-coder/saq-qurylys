@@ -2,8 +2,13 @@
 
 import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
 import { command, date } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useLocale } from "@/lib/locale";
 import { Button } from "@/components/ui/button";
 import { Auth, LoadState, Notice, useData } from "@/components/workspace";
+import { MonitoringQueryBuilder } from "@/components/monitoring-query-builder";
 
 type Connection = {
   state:
@@ -17,6 +22,7 @@ type Connection = {
   last_attempt: "NOT_RUN" | "SUCCEEDED" | "FAILED";
 };
 type SearchResult = {
+  run_id?: string;
   request: { query: string; search_type: "RECENT" | "TOP"; limit: number };
   captured_at: string;
   has_more: boolean;
@@ -38,9 +44,12 @@ const connectionLabels: Record<Connection["state"], string> = {
 };
 
 export function ThreadsSearch() {
+  const { t } = useLocale();
+  const params = useSearchParams();
   const { user } = useContext(Auth);
   const status = useData<Connection>("/monitoring/threads/status");
   const [query, setQuery] = useState("");
+  const queryInput = useRef<HTMLInputElement>(null);
   const [order, setOrder] = useState<"RECENT" | "TOP">("RECENT");
   const [limit, setLimit] = useState(20);
   const [busy, setBusy] = useState(false);
@@ -48,6 +57,14 @@ export function ThreadsSearch() {
   const [result, setResult] = useState<SearchResult | null>(null);
   const [error, setError] = useState("");
   const heading = useRef<HTMLHeadingElement>(null);
+  const retry = useRef<{ fingerprint: string; key: string } | null>(null);
+  function historyHref(id?: string) {
+    const next = new URLSearchParams(params.toString());
+    next.set("section", "runs");
+    if (id) next.set("run_id", id);
+    else next.delete("run_id");
+    return `/monitoring?${next}`;
+  }
   const ready =
     !status.error &&
     status.resolvedPath === "/monitoring/threads/status" &&
@@ -75,13 +92,21 @@ export function ThreadsSearch() {
     setBusy(true);
     setResult(null);
     setError("");
+    const body = { query: query.trim(), search_type: order, limit };
+    const fingerprint = JSON.stringify(body);
+    if (retry.current?.fingerprint !== fingerprint)
+      retry.current = { fingerprint, key: crypto.randomUUID() };
     try {
       const response = await command<SearchResult>(
         "/monitoring/threads/search",
-        { query: query.trim(), search_type: order, limit },
+        body,
+        retry.current.key,
       );
       setResult(response);
+      retry.current = null;
     } catch (reason) {
+      if (reason instanceof ApiError && reason.status !== 500)
+        retry.current = null;
       setError(
         reason instanceof Error
           ? reason.message
@@ -90,6 +115,7 @@ export function ThreadsSearch() {
     } finally {
       setBusy(false);
       status.reload();
+      window.dispatchEvent(new Event("saq-monitoring-runs-updated"));
     }
   }
 
@@ -131,6 +157,16 @@ export function ThreadsSearch() {
           обрабатывается как текст; полнота охвата, реклама и география требуют
           проверки. Krisha, Instagram и TikTok пока не подключены.
         </p>
+        {user?.role === "analyst" && (
+          <MonitoringQueryBuilder
+            disabled={busy}
+            onSelect={(phrase) => {
+              setQuery(phrase);
+              setResult(null);
+              queryInput.current?.focus();
+            }}
+          />
+        )}
         {user?.role === "analyst" ? (
           <form
             className="monitoring-form"
@@ -140,6 +176,7 @@ export function ThreadsSearch() {
             <label className="monitoring-field">
               <span>Поисковая фраза Threads</span>
               <input
+                ref={queryInput}
                 value={query}
                 onChange={(event) => {
                   setQuery(event.target.value);
@@ -208,7 +245,14 @@ export function ThreadsSearch() {
             Ожидаем ответ Threads. Повторный запрос не отправляется.
           </p>
         )}
-        {error && <Notice error={error} />}
+        {error && (
+          <>
+            <Notice error={error} />
+            <Link href={historyHref()}>
+              {t("Открыть историю попыток", "Әрекеттер тарихын ашу")}
+            </Link>
+          </>
+        )}
         {result && (
           <div
             className="monitoring-record"
@@ -225,9 +269,16 @@ export function ThreadsSearch() {
                 : "по релевантности площадки"}
             </p>
             <p>
-              Результаты текущего запроса. После ухода со страницы они не
-              сохраняются. Правовой статус не проверен.
+              {t(
+                "Ответ поиска сохраняется в истории запусков. Публикации не добавлены в рекламу. Правовой статус не проверен.",
+                "Іздеу жауабы тарихта сақталады. Жарияланымдар жарнамаға қосылмаған. Құқықтық мәртебесі тексерілмеген.",
+              )}
             </p>
+            {result.run_id && (
+              <Link href={historyHref(result.run_id)}>
+                {t("Открыть сохранённый запуск", "Сақталған іске қосуды ашу")}
+              </Link>
+            )}
             {result.has_more && (
               <p>
                 У площадки есть следующая страница; здесь показана только

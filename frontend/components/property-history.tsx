@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/lib/locale";
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -9,9 +10,18 @@ import { statusLabel } from "@/lib/status-labels";
 import type { AuditEvent, Page } from "@/lib/types";
 import { Pagination } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
+import { PdfDownload } from "@/components/pdf-download";
 import { LoadState, useData } from "@/components/workspace";
 
 const actionLabels: Record<string, string> = {
+  SOURCE_PACKAGE_IMPORTED: "Добавлено наблюдение из файла",
+  PROPERTY_LOCATION_IMPORTED: "Добавлен ориентир проекта на карте",
+  MONITORING_DOSSIER_CREATED: "Создано досье из кандидата",
+  PROPERTY_CREATED_FROM_CANDIDATE: "Создано досье из кандидата",
+  MONITORING_DOSSIER_LINKED: "Кандидат связан с досье",
+  PROPERTY_CANDIDATE_LINKED: "Кандидат связан с досье",
+  MONITORING_DOSSIER_UNLINKED: "Отменена ошибочная связь кандидата",
+  PROPERTY_CANDIDATE_UNLINKED: "Отменена ошибочная связь кандидата",
   DEMO_SEEDED: "Добавлены учебные данные",
   ADVERTISEMENT_CREATED: "Сохранена публикация",
   ADVERTISEMENT_UPLOADED: "Загружен материал рекламы",
@@ -63,6 +73,11 @@ function eventStatus(event: AuditEvent) {
 }
 
 function eventLink(event: AuditEvent, propertyId: string, inDossier: boolean) {
+  if (event.entity_type === "monitoring_candidates")
+    return {
+      href: `/monitoring?candidate_id=${event.entity_id}&section=candidates`,
+      label: "Открыть кандидата",
+    };
   if (event.entity_type === "signals")
     return {
       href: `/signals?signal_id=${event.entity_id}`,
@@ -109,6 +124,7 @@ export function PropertyHistory({
   revision?: string | number;
   compact?: boolean;
 }) {
+  const { t } = useLocale();
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -134,20 +150,24 @@ export function PropertyHistory({
   const content = (
     <div className="property-history" aria-busy={!data && !error}>
       <Heading ref={heading} id={`history-title-${id}`} tabIndex={-1}>
-        История объекта
+        {t("История объекта")}
       </Heading>
       <p className="muted">
-        Хронология сохранённых решений и материалов. Новые события сверху. Время
-        — UTC+5.
+        {t(
+          "Хронология сохранённых решений и материалов. Новые события сверху. Время — UTC+5.",
+        )}
       </p>
       <Button type="button" variant="outline" onClick={events.reload}>
-        Обновить историю
+        {t("Обновить историю")}
       </Button>
       {!data ? (
         <LoadState error={error} retry={events.reload} />
       ) : (
         <>
-          <p className="muted">Всего событий: {data.total}</p>
+          <p className="muted">
+            {t("Всего событий: ")}
+            {data.total}
+          </p>
           {!data.items.length ? (
             <p className="empty">
               {data.total
@@ -155,7 +175,10 @@ export function PropertyHistory({
                 : "Сохранённых событий пока нет. Новые решения появятся здесь после проверки материалов."}
             </p>
           ) : (
-            <ol className="history-timeline" aria-label="События по объекту">
+            <ol
+              className="history-timeline"
+              aria-label={t("События по объекту")}
+            >
               {data.items.map((event) => {
                 const transition = eventStatus(event);
                 const link = eventLink(
@@ -170,8 +193,8 @@ export function PropertyHistory({
                     </time>
                     <EventHeading>
                       {Object.hasOwn(actionLabels, event.action)
-                        ? actionLabels[event.action]
-                        : "Сохранено событие"}
+                        ? t(actionLabels[event.action])
+                        : t("Сохранено событие")}
                     </EventHeading>
                     {event.risk_code && (
                       <p className="history-factor">
@@ -183,26 +206,32 @@ export function PropertyHistory({
                       <p className="history-transition">{transition}</p>
                     )}
                     <p className="history-author">
-                      Автор: {event.actor_display_name || "Имя не указано"}
+                      {t("Автор: ")}
+                      {event.actor_display_name || t("Имя не указано")}
                     </p>
-                    <p>{event.reason || "Причина в событии не записана."}</p>
+                    <p>{event.reason || t("Причина в событии не записана.")}</p>
                     {link && (
                       <Link className="text-link" href={link.href}>
-                        {link.label}
+                        {t(link.label)}
                       </Link>
                     )}
                     <details className="history-record">
-                      <summary>Запись аудита</summary>
+                      <summary>{t("Запись аудита")}</summary>
+                      <PdfDownload
+                        kind="audit"
+                        id={event.id}
+                        label={t("PDF записи")}
+                      />
                       <dl>
-                        <dt>Код события</dt>
+                        <dt>{t("Код события")}</dt>
                         <dd>{event.action}</dd>
-                        <dt>ID автора</dt>
+                        <dt>{t("ID автора")}</dt>
                         <dd>{event.actor_id}</dd>
-                        <dt>ID события</dt>
+                        <dt>{t("ID события")}</dt>
                         <dd>{event.id}</dd>
                         {event.new_revision !== null && (
                           <>
-                            <dt>Ревизия записи</dt>
+                            <dt>{t("Ревизия записи")}</dt>
                             <dd>
                               {event.old_revision === null
                                 ? event.new_revision
@@ -222,7 +251,7 @@ export function PropertyHistory({
             pageSize={data.page_size}
             total={data.total}
             onPageChange={changePage}
-            label="Страницы истории объекта"
+            label={t("Страницы истории объекта")}
           />
         </>
       )}
@@ -230,7 +259,7 @@ export function PropertyHistory({
   );
   return compact ? (
     <details>
-      <summary>Журнал решений по объекту</summary>
+      <summary>{t("Журнал решений по объекту")}</summary>
       {content}
     </details>
   ) : (

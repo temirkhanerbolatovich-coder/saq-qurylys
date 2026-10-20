@@ -24,11 +24,9 @@ test("dashboard scopes its priority list and displays the unchanged server score
 }) => {
   await login(page);
   const registry: ResultPage<Property> = await (
-    await page.request.get("/api/v1/properties?page_size=100")
+    await page.request.get("/api/v1/properties?order=work_priority&page_size=5")
   ).json();
-  const rows = [...registry.items]
-    .sort((a, b) => b.risk.score - a.risk.score)
-    .slice(0, 5);
+  const rows = registry.items;
   await expect(page.locator(".priority-list li")).toHaveCount(rows.length);
   for (const [index, row] of rows.entries()) {
     const item = page.locator(".priority-list li").nth(index);
@@ -155,9 +153,12 @@ test("risk dossier reflows at 320 CSS pixels and reduced motion disables feedbac
   for (const width of [320, 375, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto(`/properties/${row.id}`);
-    await expect(page.locator(".risk-number")).toContainText(
+    await expect(page.locator(".dossier-compact-state")).toContainText(
       String(row.risk.score),
     );
+    await page
+      .getByRole("tab", { name: "Проверка и риски", exact: true })
+      .click();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -167,13 +168,19 @@ test("risk dossier reflows at 320 CSS pixels and reduced motion disables feedbac
       .getByRole("button", { name: "Доказательства", exact: true })
       .first();
     await button.click();
-    await expect(button).toHaveAttribute("aria-expanded", "true");
+    await expect(
+      page.getByRole("tab", { name: "Документы", exact: true }),
+    ).toHaveAttribute("aria-selected", "true");
     await expect(page.locator(".evidence-list")).toBeVisible();
     expect(
       await page
         .locator(".evidence-list")
         .evaluate((el) => parseFloat(getComputedStyle(el).animationDuration)),
     ).toBeLessThanOrEqual(0.01);
+    await page
+      .getByRole("tab", { name: "Проверка и риски", exact: true })
+      .click();
+    await expect(button).toHaveAttribute("aria-expanded", "true");
     await button.click();
     await expect(button).toHaveAttribute("aria-expanded", "false");
   }
@@ -196,11 +203,10 @@ test("review material selection is restored by Back and reload without starting 
     name: "Очередь проверки",
     exact: true,
   });
-  await queue.getByText("Выбрать другой материал", { exact: false }).click();
   await queue
-    .locator(".review-queue-item")
-    .filter({ hasText: ads.items[1].source_label })
+    .getByText("Сменить материал · очередь и фильтры", { exact: true })
     .click();
+  await queue.locator(`[data-advertisement-id="${ads.items[1].id}"]`).click();
   await expect(page).toHaveURL(
     new RegExp(`advertisement_id=${ads.items[1].id}`),
   );

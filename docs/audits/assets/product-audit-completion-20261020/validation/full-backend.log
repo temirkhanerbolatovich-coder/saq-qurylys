@@ -1,0 +1,28 @@
+........................................................................ [  6%]
+........................................................................ [ 12%]
+........................................................................ [ 18%]
+ss...................................................................... [ 24%]
+........................................................................ [ 30%]
+........................................................................ [ 36%]
+........................................................................ [ 42%]
+.................................s...................................... [ 48%]
+...................................................ss................... [ 54%]
+........................................................................ [ 60%]
+........................................................................ [ 66%]
+.....s.................................................................. [ 72%]
+......................................................................ss [ 78%]
+ssssssssssss............................................................ [ 84%]
+........................................................................ [ 90%]
+........................................................................ [ 96%]
+................................................                         [100%]
+=========================== short test summary info ===========================
+SKIPPED [2] tests\test_dossier_report.py:365: The offline PDF runtime is Linux Docker
+SKIPPED [1] tests\test_open_registry.py:203: PDF decoding requires Linux resource limits
+SKIPPED [1] tests\test_pdf_validation.py:309: Parser resource limits require Linux Docker
+SKIPPED [1] tests\test_pdf_validation.py:317: Parser resource limits require Linux Docker
+SKIPPED [1] tests\test_signal_pdf.py:144: Native Pango is verified in the Linux runtime container
+SKIPPED [6] tests\test_supporting_pdf.py:80: PDF inspection requires Linux resource limits
+SKIPPED [1] tests\test_supporting_pdf.py:120: PDF inspection requires Linux resource limits
+SKIPPED [6] tests\test_supporting_pdf.py:149: PDF inspection requires Linux resource limits
+SKIPPED [1] tests\test_supporting_pdf.py:174: PDF inspection requires Linux resource limits
+1180 passed, 20 skipped in 520.18s (0:08:40)

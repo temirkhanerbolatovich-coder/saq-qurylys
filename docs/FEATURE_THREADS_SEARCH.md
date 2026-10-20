@@ -1,5 +1,50 @@
 # Threads — проверка доступа и ограниченный поиск
 
+## Актуальное состояние19.10 после установки истории
+
+Существующий preview теперь сохраняет явные попытки и валидированный результат
+в MonitoringRun; их можно повторно прочитать после ухода со страницы.
+Текущий срез описан в [FEATURE_MONITORING_SOURCES](FEATURE_MONITORING_SOURCES.md)
+и ADR-022. Он по-прежнему не создаёт Advertisement и не подтверждает связь/риск.
+Ниже описание16.10 «только на странице» относится к прежней версии.
+Живой доступ Threads не подтверждён; рабочее подключение DISABLED.
+Новый [поиск рекламного источника](audits/AD_SOURCE_RESEARCH_2026-10-19.md)
+фиксирует конкретные кандидаты, C-01 остаётся OPEN по отсутствию подтверждённого доступа.
+
+## Уточнение источников по запросу пользователя ·19.10.2026
+
+Пользователь предложил поиск по тегам в Threads, Instagram и TikTok. Выполнен
+ограниченный read-only поиск через доступный web-index по RU/KZ строительным
+тегам, Өскемен/Усть-Каменогорску и Астане. Проверяемые точные social-permalinks
+в этой выдаче не найдены; это не означает отсутствия публикаций. TikTok отклонён
+robots.txt, обхода/login/CAPTCHA/скрейпинга не было. Коммерческий C-01 не закрыт:
+нет фактически разрешённого импорта нового рекламного оригинала/recovery.
+
+- Threads: [официальный keyword search](https://www.postman.com/meta/threads/request/m9j4i2x/search-for-threads-posts)
+  описывает q/TOP/RECENT и threads_keyword_search. topic_tag в коллекции — тема
+  создаваемого поста, отдельный tag-search не подтверждён. Нынешний SAQ preview
+  принимает #тег как текст запроса; живой доступ владельца/app-review не проверен.
+- Instagram: [официальная Facebook Login collection](https://www.postman.com/meta/instagram/folder/u4g5a2a/instagram-api-with-facebook-login)
+  описывает hashtagged media с Professional account/Facebook Page и авторизацией.
+  Это не доступ к произвольным captions. Конкретные permissions/app-review/квоты
+  приложения SAQ не установлены; токены через чат не запрашивались.
+- TikTok: [Research Query Videos](https://developers.tiktok.com/docs/en/research-api-specs-query-videos)
+  имеет hashtag_name/keyword, но требует approved research.data.basic;
+  [eligibility](https://developers.tiktok.com/products/research-api) команды
+  не подтверждена. [Commercial Content API](https://developers.tiktok.com/products/commercial-content-api)
+  описывает текущую область ЕС и не закрывает KZ-мониторинг.
+
+Поисковый index также показал сайты рекламодателей:
+[AN GROUPS](https://www.angroups.kz/payment), [КӨКТЕМ](https://koktem-uk.kz/),
+[AQ ORDA](https://aq-orda.altynuia.kz/). Видны только snippets условий покупки;
+полные страницы, даты/актуальность и разрешение хранения отдельно не подтверждены.
+Это кандидаты источника, не установленные нарушения, не импорт и не данные риска.
+
+Следующий шаг C-01: официальный доступ владельца для одного Threads-запроса,
+проверка условий хранения конкретного рекламного оригинала, затем отдельный
+согласованный импорт/retry/recovery. UI-ТЗv2 не разрешает менять backend-контракт
+ради оформления; массовый social collector этим исследованием не реализован.
+
 16.10.2026. Реализованы CLI и ручной предпросмотр поиска в разделе `/monitoring`. **Живой доступ не подтверждён: CLI сообщает TOKEN_MISSING, веб-поиск отключён.** API/UI проверяются отдельно от живого источника. Предпросмотр не сохраняет рекламу и не закрывает C-01.
 
 ## Основание и возможности

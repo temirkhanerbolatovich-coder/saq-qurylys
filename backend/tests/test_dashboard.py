@@ -108,6 +108,15 @@ def test_dashboard_counts_only_new_but_keeps_latest_pending_from_other_statuses(
     assert summary['pending_hypotheses'] == 1
 
 
+@pytest.mark.parametrize('query', ['', '   '])
+def test_blank_search_does_not_exclude_unlinked_materials(signed, dashboard_rows, query):
+    params = {key: dashboard_rows[key] for key in ('from', 'to')}
+    baseline = signed.get('/api/v1/dashboard/summary', params=params).json()
+    result = signed.get('/api/v1/dashboard/summary', params={**params, 'q': query}).json()
+    assert result['new_advertisements'] == baseline['new_advertisements'] == 5
+    assert result['pending_hypotheses'] == baseline['pending_hypotheses']
+
+
 @pytest.mark.parametrize(
     ('filters', 'expected_new', 'expected_pending'),
     [

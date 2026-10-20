@@ -22,11 +22,15 @@ class Settings(BaseSettings):
     ocr_languages: str = Field(default='rus+kaz+eng', pattern=r'^[a-z+]+$')
     ocr_timeout_seconds: int = Field(default=60, ge=1, le=90)
     pdf_timeout_seconds: int = Field(default=60, ge=1, le=90)
+    document_pdf_timeout_seconds: int = Field(default=12, ge=1, le=60)
     pdf_validation_timeout_seconds: int = Field(default=10, ge=1, le=10)
     pdf_max_pages: int = Field(default=100, ge=1, le=500)
     job_lease_seconds: int = Field(default=180, ge=120, le=600)
     job_max_attempts: int = Field(default=2, ge=1, le=3)
     worker_poll_seconds: float = Field(default=1, ge=0.1, le=10)
+    url_schedule_poll_seconds: int = Field(default=30, ge=1, le=300)
+    url_schedule_source_interval_seconds: int = Field(default=300, ge=60, le=86400)
+    url_schedule_source_hourly_limit: int = Field(default=12, ge=1, le=100)
     threads_search_enabled: bool = False
     threads_access_token: SecretStr = Field(default=SecretStr(''), repr=False)
     # Keep the web search deadline below the existing frontend proxy's 15 seconds.

@@ -139,7 +139,9 @@ test("failed tiles preserve markers, retry and the usable list", async ({
   await expect(page.locator("#property-list")).toBeFocused();
   await page.locator("#property-list .object-name").first().click();
   await expect(
-    page.getByText("КАРТОЧКА ОБЪЕКТА", { exact: true }),
+    page
+      .getByRole("region", { name: "Карточка объекта", exact: true })
+      .getByRole("heading", { level: 1 }),
   ).toBeVisible();
 });
 

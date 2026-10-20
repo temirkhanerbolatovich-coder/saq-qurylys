@@ -94,6 +94,9 @@ async function mockMaterials(page: BrowserPage, count = 121) {
 }
 
 async function choose(page: BrowserPage, source: string) {
+  const panel = page.locator(".review-queue > details");
+  if ((await panel.getAttribute("open")) === null)
+    await panel.locator(":scope > summary").click();
   const details = page.locator(".review-queue-materials");
   if ((await details.getAttribute("open")) === null)
     await details.locator("summary").click();
@@ -115,7 +118,7 @@ test("server-paged review queue reaches material 101 and preserves selection, fi
   ).toContainText("Страница 3 из 3");
   await expect(page.locator(".review-queue-item")).toHaveCount(21);
   await choose(page, materials[100].source_label);
-  await expect(page.locator(".review-queue-materials")).not.toHaveAttribute(
+  await expect(page.locator(".review-queue > details")).not.toHaveAttribute(
     "open",
   );
   await expect(page).toHaveURL(
@@ -128,9 +131,12 @@ test("server-paged review queue reaches material 101 and preserves selection, fi
     page.locator(".review-provenance").getByRole("link"),
   ).toHaveAttribute("href", materials[100].source_url!);
   await expect(page.locator(".review-provenance")).toContainText(
-    "Не установлена",
+    "Дата публикации неизвестна",
   );
   await expect(page.locator(".review-provenance")).toContainText("10:15");
+  await page
+    .getByText("Сменить материал · очередь и фильтры", { exact: true })
+    .click();
   await page
     .getByLabel("Состояние материала", { exact: true })
     .selectOption("FAILED");
@@ -419,6 +425,9 @@ test("late queue response cannot replace newer filters and queue errors preserve
   await expect(page.locator(".review-provenance")).toContainText(
     materials[0].source_label,
   );
+  await page
+    .getByText("Сменить материал · очередь и фильтры", { exact: true })
+    .click();
   await page
     .getByLabel("Состояние материала", { exact: true })
     .selectOption("FAILED");

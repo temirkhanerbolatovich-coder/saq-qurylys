@@ -8,7 +8,7 @@ from sqlalchemy.orm import load_only
 
 from app.analysis_dto import AdvertisementReviewWork, PaymentReviewTarget
 from app.extraction import payment_offer
-from app.models import Advertisement, AuditEvent, Evidence, ExtractionResult, PropertyMatch, RiskFactor
+from app.models import Advertisement, AuditEvent, Evidence, ExtractionResult, Property, PropertyMatch, RiskFactor
 
 ACTIONS = ('REVIEW_HYPOTHESES', 'REVIEW_MATCH', 'CREATE_PAYMENT_EVIDENCE', 'REVIEW_R2')
 
@@ -85,7 +85,7 @@ def review_work(db, advertisements):
             # Rejecting an unrelated alternative does not change a confirmed binding.
             key = event.entity_id
             match_changes[key] = max(match_changes.get(key, event.occurred_at), event.occurred_at)
-    return {
+    work = {
         extraction.advertisement_id: remaining_work(
             extraction,
             ads[extraction.advertisement_id],
@@ -97,6 +97,14 @@ def review_work(db, advertisements):
         )
         for extraction in extractions
     }
+    target_ids = {target.property_id for item in work.values() for target in item.r2_reviews}
+    if target_ids:
+        # Resolve the actual historical target in one read, never the ad's current binding.
+        names = dict(db.execute(select(Property.id, Property.name).where(Property.id.in_(target_ids))).all())
+        for item in work.values():
+            for target in item.r2_reviews:
+                target.property_name = names.get(target.property_id)
+    return work
 
 
 def remaining_work(extraction, property_id, matches, evidence, factors, hypothesis_changes, match_changes):

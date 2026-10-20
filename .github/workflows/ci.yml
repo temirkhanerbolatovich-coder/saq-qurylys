@@ -1,12 +1,33 @@
 name: SAQ QURYLYS checks
 on:
   push:
-    paths-ignore: ["**/*.md"]
   pull_request:
-    paths-ignore: ["**/*.md"]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
+  repository:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/check_repository_hygiene.py --staged
+      - name: Compose overlays with disposable parameters only
+        env:
+          POSTGRES_DB: ci_config
+          POSTGRES_USER: ci_config
+          POSTGRES_PASSWORD: ci-config-placeholder
+          PUBLIC_HOST: audit.example.invalid
+          SAQ_API_IMAGE: audit-api:local
+          SAQ_FRONTEND_IMAGE: audit-ui:local
+        run: |
+          docker compose --env-file .env.example -f docker-compose.yml config --no-env-resolution --quiet
+          docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.dev.yml config --no-env-resolution --quiet
+          docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.public.yml -f docker-compose.https.yml -f docker-compose.prebuilt.yml config --no-env-resolution --quiet
   backend:
     runs-on: ubuntu-latest
     services:
@@ -38,13 +59,13 @@ jobs:
       - name: Check local backup and evaluation tooling
         run: python -m unittest discover -s scripts -p "test_*.py" -v
       - name: Reject private artifacts and misplaced frontend uploads
-        run: python scripts/check_repository_hygiene.py
+        run: python scripts/check_repository_hygiene.py --staged
       - name: Verify repository UI skill search (offline standard library)
         run: |
           python .agents/skills/ui-ux-pro-max/scripts/search.py "filter chips wrap" --domain ux --json > /tmp/saq-ui-guidance.json
           python -c "import json; data=json.load(open('/tmp/saq-ui-guidance.json')); assert data['domain']=='ux' and data['count'] > 0; print('Repository UI skill search passed')"
-      - run: python -m ruff check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py scripts/evaluate_publications.py scripts/evaluation_fields.py scripts/test_evaluation_fields.py scripts/check_readiness.py scripts/test_check_readiness.py scripts/check_repository_hygiene.py scripts/test_check_repository_hygiene.py
-      - run: python -m ruff format --check --config backend/pyproject.toml scripts/backup_local.py scripts/test_backup_local.py scripts/evaluate_ocr.py scripts/test_evaluate_ocr.py scripts/evaluate_publications.py scripts/evaluation_fields.py scripts/test_evaluation_fields.py scripts/check_readiness.py scripts/test_check_readiness.py scripts/check_repository_hygiene.py scripts/test_check_repository_hygiene.py
+      - run: python -m ruff check --config backend/pyproject.toml scripts
+      - run: python -m ruff format --check --config backend/pyproject.toml scripts
       - name: Evaluate synthetic RU/KZ corpus (quality targets reported separately)
         run: python scripts/evaluate_ocr.py --output output/evaluation/ci
       - name: Evaluate structured fields on the versioned regression corpus
@@ -82,6 +103,11 @@ jobs:
       - run: node --test scripts/test-*.mjs
       - run: npm run build
   browser-e2e:
+    env:
+      SAQ_ISOLATED_ACCEPTANCE: "1"
+      SAQ_E2E_BASE_URL: http://localhost:3090
+      SAQ_QUERY_PROFILES_LIVE: "1"
+      SAQ_URL_SCHEDULES_LIVE: "1"
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -107,7 +133,7 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
       - name: Generate private disposable configuration
-        run: python scripts/configure_local.py
+        run: python scripts/configure_local.py --port 3090
       - name: Build and start the local MVP
         run: |
           docker compose -f docker-compose.yml -f docker-compose.dev.yml build
@@ -116,7 +142,7 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm --no-deps --user root --entrypoint chown api saq:saq /app/storage
           docker compose -f docker-compose.yml -f docker-compose.dev.yml up --no-build -d --wait --wait-timeout 180
       - name: Wait for the frontend proxy
-        run: curl --fail --silent --show-error --retry 30 --retry-delay 2 --retry-connrefused --max-time 5 http://localhost:3000/api/v1/auth/csrf > /dev/null
+        run: curl --fail --silent --show-error --retry 30 --retry-delay 2 --retry-connrefused --max-time 5 http://localhost:3090/api/v1/auth/csrf > /dev/null
       - name: Verify real RU/KZ OCR and create browser fixtures
         run: |
           python scripts/verify_ocr.py > /dev/null

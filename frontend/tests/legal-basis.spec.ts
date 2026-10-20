@@ -12,6 +12,7 @@ test("legal document stays pending until a dated human review, rejection never c
     p.name.includes("Алтай"),
   ).id;
   await page.goto(`/properties/${id}`);
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
   const number = `DEMO-BASIS-${Date.now()}`;
   await page
     .getByText("Ввести реквизиты и загрузить документ", { exact: true })
@@ -56,9 +57,12 @@ test("legal document stays pending until a dated human review, rejection never c
   await expect(
     page.getByRole("status").filter({ hasText: "Основание сохранено" }),
   ).toContainText("Основание сохранено");
-  const card = page
-    .locator(".document")
-    .filter({ has: page.getByRole("heading", { name: new RegExp(number) }) });
+  const documentTrigger = page.getByRole("button", {
+    name: `Открыть документ: ${number}`,
+    exact: true,
+  });
+  await documentTrigger.click();
+  const card = page.getByRole("dialog", { name: number, exact: true });
   await expect(card).toContainText("На проверке");
   await card
     .getByLabel("Обоснование проверки основания")
@@ -74,6 +78,7 @@ test("legal document stays pending until a dated human review, rejection never c
   expect(detail.property.risk.score).toBe(before.summary.score);
   expect(detail.property.risk.confirmed_codes).not.toContain("R1");
   await page.reload();
+  await documentTrigger.click();
   await expect(card).toContainText("Документ подтверждён");
   await card
     .getByLabel("Обоснование проверки основания")

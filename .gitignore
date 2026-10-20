@@ -18,3 +18,12 @@ coverage/
 /*.zip
 *.tsbuildinfo
 frontend/next-env.d.ts
+*.dump
+*.sqlite
+*.sqlite3
+.coverage
+
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini

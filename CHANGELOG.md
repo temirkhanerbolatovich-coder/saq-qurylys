@@ -1,4 +1,354 @@
+## 21.10.2026 — организация репозитория и воспроизводимость
+
+- Краткий README, тематические developer/API/deployment/backup/troubleshooting guides; история сохранена в docs/archive, первичные источники в docs/reference с SHA.
+- Общие guards записывающих E2E/OCR, scripts-wide Ruff и repository/Compose/docs/secret checks в существующем CI.
+- Кэши исключены из Docker context, добавлены шаблоны PR/issue, EditorConfig и SECURITY без назначения проекту новой лицензии.
+- Полные результаты/ограничения текущей ревизии — docs/REFACTOR_REPORT.md. API/риск/исторические snapshots и рабочие deployment/data не изменены cleanup.
+
 # Changelog
+
+## 2026-10-20 — SQ fixes, этапы3–6 (source/test runtime)
+
+- Исключающие категории факторов, явная ошибка refresh и единый список документов.
+- Reviewer provenance в новых snapshots/PDF, actionable DRAFT count и полный bounded source lookup.
+- Основные targets44px, меньше мобильных отступов; карта/даты/legalchoices RU/KZ.
+- Вторичные досье panels загружаются при первом посещении и сохраняют формы/файлы.
+  Initial GET8→4,decoded JSON17834→4217bytes; ускорение latency не подтверждено.
+- Контракт0.34.0; история/архивы не переписываются. Проверки — SQ_FIX_PROGRESS.
+
+## 2026-10-20 — SQ fixes, этап2 (source/test runtime)
+
+- Точные ручные платёжные предложения с независимым analyst review и прежними R2 guards.
+- Общий bounded PDF GET:90sclient/75sproxy,отмена,различимые timeout/cancel,RU/KZ retry.
+- Контракт0.33.0,без миграции/backfill/изменения архивов. Receipts в SQ_FIX_PROGRESS.
+
+## 2026-10-20 — SQ fixes, этапы0–1 (source/test runtime)
+
+- Изолирована незавершённая очередь между backend cases, production FIFO сохранён.
+- Новые рекламные evidence различают publication/capture; legacy дата не выдаётся
+  за установленную публикацию. Контракт0.32.0,без backfill исторических JSON/PDF.
+- Signal UI/новые PDF показывают frozen legal period/review и unknown risk codes;
+  нулевой score/GREEN явно не подтверждают безопасность.
+- Проверки и ограничения: docs/implementation/SQ_FIX_PROGRESS.md.
+
+## 20.10 · публикация Oracle Micro и ожидание PDF
+
+Создана отдельная бесплатная E2.1.Micro, HTTPS/Caddy, free DNS и приватный перенос
+текущих DB/storage с проверкой таблиц/AssetSHA/историческихPDF. Native amd64
+images собираются локально и запускаются без build на1GB VM;4GiB swap и rotation
+логов. Авторизация/CSRF/роли/риск сохранены, старые copied sessions удалены.
+На Micro read-only отчёты требуют больше wall time: добавлены ограниченные
+DOCUMENT_PDF_TIMEOUT_SECONDS и PDF_PROXY_TIMEOUT_MS только для GETPDF; defaults
+и CPU/address caps прежние. External auth/OCR/PDF и stop/start acceptance PASS;
+локальная установка не обновлялась. Ограничения и эксплуатация — ORACLE_DEPLOYMENT.
+
+## 20.10 · интерфейс Parser V2
+
+В мониторинг добавлена вкладка словаря/активации, версий V2 профилей, одного
+явного запроса, capture и находок с историей/observations. Импорт точной версии
+требует выбора observation, причины и свежего TEXT_ONLY подтверждения; переход
+ведёт в существующую проверку. Сохранены legacy links, user/session drafts и
+UUID retry. API/DB/dependencies/risk прежние. Исходники/QA, primary не обновлялся;
+live доступ/holdout и finding-level review ещё открыты.
+
+## 20.10 · parser V2: находки и явный импорт
+
+Добавлены версионные находки из сохранённых страниц Threads, наблюдения по
+run/profile version/query ID, история изменений и явный импорт выбранной версии
+в Advertisement NEW. Импорт текста сохраняет Asset/provenance, не запускает
+анализ и не подтверждает объект/R1–R6. Профиль V2 явно запускает один сохранённый
+keyword-запрос через прежний access/cooldown; disabled не создаёт фиктивные данные.
+Добавлены контракт0.31.0, миграция ef90fc78b461 с защитой истории и ADR-026.
+UI/live-подключения/публичная установка этим блоком не добавлялись.
+
+## 19.10 · parser V2: словари и версии профилей
+
+Добавлены immutable bytes словаря, явный журнал активации/деактивации с audit,
+revision concurrency и idempotency. V2 profile хранит dictionary ID/SHA и готовый
+preview/query IDs без перекомпиляции истории. Legacy list/detail по умолчанию1.0;
+V2 требует явного фильтра. Добавлены миграция df89eb67a350 с защитой downgrade,
+контракт0.30.0, словари в production image и ADR-025. Live сбор не включается.
+
+## 19.10 · parser V2: контекстные гипотезы RU/KZ
+
+Добавлены offline правила географии/отрицаний/платёжного времени/сумм/годов и
+раздельных family/phase, объяснимые приоритеты и exact original spans.
+Локальный analyze_social_text.py не импортирует материалы и не меняет риск.
+246focused tests PASS, включая10входных примеров и существующий extraction.
+
+## 19.10 · parser V2: первый offline-срез
+
+Добавлены строгий загрузчик v1/v2 с сохранением original bytes/SHA и bounded
+query preview с provenance/ID/capabilities/причинами пропуска. CLI не обращается
+к сети/БД и не активирует источники.47регрессионных проверок; интеграция профилей,
+контекстные правила, findings/UI/live приёмка остаются следующими срезами.
+
+## 19.10 · размещение карты на desktop
+
+Правовое пояснение над картой использует доступную ширину рядом с легендой:
+удалено узкое ограничение, создававшее лишние строки и смещавшее карту ниже.
+Полный текст и мобильная последовательность сохранены. Регрессия каталога
+учитывает AN GROUPS и проверяет его ссылку импорта/оговорки. Текущий результат
+локальной проверки и граница установки — PROJECT_STATUS.
+
+## 19.10 · первый запуск без DEMO и чистая локальная приёмка
+
+`DEMO_SEED_ENABLED=false` создаёт настроенного аналитика без fixtures/storage,
+сохраняя прежние пароль/роль/имя. Native seed получил `--bootstrap-only`;
+Compose проверяет строгое true/false. Генератор поддерживает `--port` и
+`--no-demo-seed`, отказывается перезаписывать `.env` или credentials и использует
+exclusive creation при одновременном запуске. Рецепт чистой приёмки и различие
+локального стенда/второго ПК записаны в CLEAN_INSTALL_ACCEPTANCE и PROJECT_STATUS.
+
+
+## 19.10 · управляемое расписание открытых страниц
+
+Явное включение/выключение точного подключённого URL, durable история со снимком
+настройки, межпроцессный бюджет постановок, паузы и остановка после ошибок.
+Прежние worker/jobs/lease и человеческие решения сохранены. Контракт0.29,
+миграция ce78da56f249; Threads scheduling и parser-v2 не включались.
+
+
+## 19.10 · подготовка общей URL-очереди (QA)
+
+Существующая постановка URL выделена из route в общую транзакционную функцию
+с прежними правилами валидации, лимита и дедупа. Добавлена PostgreSQL проверка
+гонки; scheduler остаётся открытым, рабочие images не обновлялись.
+
+## 19.10 · серверные поисковые профили
+
+Общие профили помощника RU/KZ1.0 с append-only снимками параметров/скомпилированных
+фраз/SHA и историей по revision. Идемпотентные analyst-команды, защита409 от гонок,
+явное применение без поиска. Один JSON для клиента и сервера. Контракт0.28,
+миграция bd67c945e138; расписание и parser-v2 не активированы.
+
+## 19.10 · открытая страница AN GROUPS
+
+Явный импорт /payment через существующую очередь: неизменяемые HTML/TEXT,
+дедуп по содержимому, корректная provenance без чужой лицензии, строгая проверка
+точного пути/query на redirects. В каталоге, форме и карточке RU/KZ показаны
+область извлечения и неизвестная дата/ЖК. Исправлена прежняя привязка любого HTML
+к Primeminister CC BY. Нет автоматического анализа, привязки или скоринга.
+
+## 19.10 · социальные наблюдения и карта
+
+Добавлены20наблюдений как19материалов/6новыхдосье,14проектных ориентиров с происхождением и SHA. Сохранены ID, решения и UNKNOWN. DEMO-пояснение карты стало условным, уточнена точность RU/KZ. Проверки и открытые11адресов — PROJECT_STATUS.
+
+19.10, Master2.0: новая оболочка/вкладки досье по предоставленным скриншотам,
+SVG SAQ, RU/KZ, каталог источников, fact cards и native боковые детали документов
+и публикаций. Настраиваемый read-only PDF текущего досье с RU/KZ, обязательными
+оговорками, датами/источниками/SHA и отменой скачивания. Сигналы, решения и
+серверный риск не переопределяются. Материал импорта ведёт к сохранённой записи
+для проверки связи; повторный ввод публикации не предлагается автоматически.
+Проверка backup теперь допускает настоящую базу без сигналов и честно сообщает
+нулевое покрытие исторических PDF. Точная приёмка и runtime — PROJECT_STATUS.
+
+19.10: исправлена гонка R4 при быстром отклонении после подтверждения: следующая команда ждёт новую revision; при503 доступен явный повтор чтения без потери причины.
+
+19.10, UI/UX-ТЗv2: очередь нерешённых действий при прямом входе /review;
+явный processing-режим и совместимость старых deep links. Единые Lucide18px
+icon+label на desktop/mobile. Phase-based URL-import fixtures проверяют repeat
+GET/late response без изменения корректной production cancellation logic.
+Добавлен настоящий DEMO material→candidate→dossier→R2→signal→downloaded PDF маршрут;
+Inter проверен A/B и оставлен вне runtime из-за ухудшения плотности.
+
+19.10: исправлена потеря выбранной зоны реестра при быстром переключении на карту;
+параметры URL объединяются синхронно, debounce сохраняет Back/Forward. Добавлена
+регрессия;23 selected browser PASS. Полная накопленная приёмка остаётся частичной.
+
+## 2026-10-19 · Исправление ошибочной связи кандидата
+
+- Явная отмена только LINKED с причиной, двумя версиями, confirmation и audit;
+  дальнейший выбор досье отдельный. CREATED, публикации и предметные решения сохраняются.
+- Пагинированная история связей с сохранёнными именами/причинами и читаемыми
+  действиями в истории досье. Контракт0.24, ADR-019, без новой миграции.
+
+## 2026-10-19 · Связь кандидата с существующим досье
+
+- Явный выбор объекта и подтверждение идентичности с причиной/двумя версиями.
+- CREATED сохраняет источник создания, LINKED допускает несколько находок у досье;
+  обратный список с property_id и отдельным счётчиком связанных кандидатов.
+- Черновик/selected ID сохраняются, раскрытие не отправляет POST; публикации,
+  риск, сигналы и решения инцидентов не переносятся. Контракт0.23/ADR-018.
+
+## 2026-10-19 · Завершение сценария досье
+
+- Поиск дублей использует базовое имя кандидата; отсутствие БИН не создаёт
+  ложную DEMO-подпись. Форма использует компактную responsive-сетку.
+- Добавлена gated live API/browser регрессия: создание досье сохраняет источники
+  и UNKNOWN; привязка публикации требует отдельного решения аналитика.
+
+## 2026-10-19 · Локально: досье из кандидата
+
+- Явное создание PHASE с UNKNOWN стадией/правовым статусом, защитой от повторов
+  и точных дублей; источники и причина в аудите, переходы кандидат ↔ досье.
+- Черновик формы сохраняется; раскрытие не отправляет команду. Решения о публикации,
+  факторах и сигналах независимы. Контракт0.22, миграция d92e6a14f301, ADR-017.
+
+## Unreleased ·19.10.2026 · Material scope and signal queues
+
+- Add server-side is_demo to the material library and processing queue; retain
+  scope/search/selection when switching review queues.
+- Open bare signal entry on current drafts and expose all/stale presets without
+  deleting history; preserve selected snapshot and draft across filters.
+- Contract0.21; no new migrations or dependencies. Local changes only.
+
+
+## Unreleased ·19.10.2026 · Material text search
+
+- Add optional q≤300 to advertisement and review-queue reads: literal
+  case-insensitive original text/source-label search before counts/pagination.
+- Share compact native search across the library and both review queues;
+  preserve URL filters, selected material/version and unsaved reasons.
+- Contract0.20; PostgreSQL51 tests and production4 new +27 regression cases
+  passed. Live browser/API smoke remains gated; no deployment.
+
+
+## Unreleased ·19.10.2026 · Monitoring drafts
+
+- Restore comparison input and incident decisions per user, tab and subject;
+  keep registry selection per candidate and show a compact restoration notice.
+- Preserve explicit retry keys across reload; clear successful drafts and require
+  a new choice if the selected publication is unavailable. No API changes.
+- Validate 8 new production HTTP-mock browser tests plus19 existing safety and
+  composition tests; build, TypeScript, ESLint and Prettier pass. No deployment.
+
+
+## Unreleased ·19.10.2026 · Readable review tasks and PDF names
+
+- Resolve exact R2 target names in one batch read; preserve historical IDs,
+  evidence, commands and drafts. Contract0.19 adds optional display metadata.
+- Translate known stage values for reading and retain saved codes separately.
+- Name PDF downloads by type, saved context/date/full ID and frozen signal v/r;
+  provide safe Unicode/ASCII headers and fallback without changing stored bytes.
+- Verify914 Linux backend,37 selected frontend plus3 live integration tests,
+  and13 production presentation/parser cases. No publication or push.
+
+## Unreleased ·19.10.2026 · Approved analyst composition
+
+- Move the shared server-ordered3/5 property queue ahead of secondary analytics;
+  compact independent action counters and restore deep-green task navigation.
+- Use the existing registry table on desktop in both modes; retain full phone
+  cards, all reasons/dates/legal context and visible focus after dossier return.
+- Put the exact next action first in dossier progress with grouped facts and
+  accessible underline tabs; keep editors mounted and drafts intact.
+- Add8 isolated presentation scenarios, update existing layout selectors and
+  stabilize the synthetic account-switch test.19 production scenarios pass.
+- Preserve backend/contracts/risk/roles/snapshots; local only, no deployment.
+
+## Unreleased ·19.10.2026 · Draft safety and precise next actions
+
+- Scope new publication drafts by user/session and clear the unscoped legacy key
+  at logout/401; restore input without submitting and explain storage fallback.
+- Preserve signal decision reasons per version across navigation/reload/conflict;
+  clear only after a successful decision.
+- Open the pending document or R1/R3–R6 editor from dossier progress, including
+  objects without publications, while preserving roles and separate decisions.
+- Add11 presentation regressions and standalone DEMO review mockups for three screens.
+- No backend/contract/risk/dependency changes or public deployment.
+
+## Published ·18.10.2026 · Analyst workflow updates
+
+- Publish the accumulated dossier/monitoring tabs, read-only PDF, whole-registry
+  search/priority/structure and UI stabilization to the working HTTPS instance.
+- Preserve the database/storage, verify a fresh backup by isolated restore, retain
+  rollback images, and check44public read-only browser observations plus source/PDF SHA.
+- Publish source on codex/audit-workflow-fixes; main remains unmerged.
+- Make chooser fixtures independent, await URL reset before reload and scope status
+  search assertions to their own property; runtime behavior is unchanged.
+- Record the new temporary URL and remaining acceptance boundaries in deployment docs.
+
+## Unreleased · Local UI stabilization and audit reconciliation
+
+- Show the legal-basis limitation next to GREEN property scores without changing risk.
+- Collapse mobile global search, retain its draft on Escape, restore keyboard focus,
+  and tighten dossier spacing while preserving labels, limitations and touch targets.
+- Choose a DEMO registry version by readable label/date/scope with paging and retry;
+  retain manual UUID input in details. Selection remains local until reload.
+- Debounce registry q/city together for350ms, support Enter and preserve URL/reset/view context.
+- Reconcile all20 audit findings and UI requirements; keep partial/external acceptance explicit.
+- No backend/contract/dependency changes or public deployment.
+
+## Unreleased · Whole-queue signal search
+
+- Add q to existing listSignals for current/frozen property names, signal ID,
+  version and state before pagination; preserve filters, auth and snapshots.
+- Submit queue search with Enter/button, restore q in URL, retain selected
+  version across search/pages/empty/error, and reuse loading/retry/reset focus.
+- Contract0.18.0-mvp; local only, no new route/DTO/migration/dependency.
+
+## Unreleased · Global property work priority
+
+- Extend existing listProperties with order=work_priority before pagination;
+  retain default name/ID, filters and unchanged server scores/legal views.
+- Read the dashboard's first5 (simple3) from that server order across the full registry;
+  remove the client comparator and distinguish list failures from empty results.
+- Contract0.17.0-mvp; local only. Existing all-view calculation/SQL scaling remains open.
+
+## Unreleased · Property structure navigation
+
+- Add read-only ancestors, paged children and siblings using saved parent_id relations;
+  retain each object's separate risk, legal bases, documents and DEMO label.
+- Add compact dossier navigation with registry return context, empty/error/retry and keyboard focus.
+- Contract0.16.0-mvp adds getPropertyStructure; cycles/depth are bounded. No seed changes or deployment.
+
+## Unreleased · Registry search and signal property selection
+
+- Extend existing registry/dashboard q search to individual saved aliases, developer name and BIN;
+  retain literal escaping, filters, ordering and pagination. Contract0.15.0-mvp.
+- Treat blank dashboard search as no query so unlinked materials remain counted.
+- Reuse the paged PropertyPicker in signal filters with preserved selection and focus;
+  fetch missing property names beyond the initial100 with explicit retry on failure.
+- Keep risk, human decisions and historical snapshots unchanged. Local QA only.
+
+## Unreleased · Audit workflow fixes
+
+- Expose registry filters and map in both interface modes; remove the large map introduction.
+- Collapse queue controls when reviewing a selected material while preserving drafts and URL context.
+- Compact dashboard counters with on-demand explanations and retain all metric definitions.
+- Open the actual source/version tool from monitoring shortcuts and return to the candidate after selecting a version.
+- Move the analysis action into the material header and distinguish PDF copies from saved signal exports.
+- Preserve backend, contracts, risk, roles and snapshots; local only.
+
+## Unreleased · Local tabs and record PDF
+
+- Replace dossier and monitoring section anchors with six/four real URL-backed tabs;
+  retain mounted drafts/files, keyboard focus, legacy links and browser history.
+- Compact the object header/mobile navigation; search, filter and page saved documents,
+  and show related publications/signals in existing server pages.
+- Add authenticated bounded read-only PDF downloads for saved records and sources;
+  preserve original PDF bytes and frozen signal payloads. Contract0.14.0-mvp.
+- Preserve existing risk, authorization, decisions and snapshots. Local only.
+
+## Unreleased · Local UI completion
+
+- Collapse dossier documents while preserving visible scope/dates/status and mounted decision drafts.
+- Search and page the full eligible registry when selecting a property for an advertisement; retain the selected ID through filters, errors and reload.
+- Add the existing exact-city filter and restore registry position, focus and selected map marker after dossier navigation.
+- Order overview objects by available work action and review age before server score, with explicit scope and no invented deadlines.
+- Keep the working public installation unchanged; these updates are local only.
+
+## 2026-10-18 · B0–B3 frontend installation
+
+- Installed the reviewed dossier drafts, seven dossier sections and monitoring task layout on the working site; retained a rollback image and existing application data/configuration.
+- Restored the stopped temporary tunnel, then replaced only the frontend. Public HTTPS smoke passed 44 responsive observations, authentication/CSRF, draft preservation and retained source/PDF reads without business writes.
+
+## 2026-10-18 · Monitoring task layout
+
+- Put candidate queue, selected comparison and preliminary incidents before auxiliary tools; group KHC reference search, Threads preview and DEMO registry versions in mounted native disclosures.
+- Preserve existing deep links, query context, forms, file selection and explicit commands; keep REAL/DEMO limits visible and prevent sticky headers from obscuring anchor targets.
+
+## 2026-10-18 · Seven dossier sections
+
+- Organize the dossier into overview, legal bases, publications, risk factors, evidence, history and signals; keep all seven destinations available in both interface modes.
+- Open factor editors locally without unmounting forms, drafts or file inputs; retain deep editor links and keyboard focus.
+- Reuse existing evidence reads on selection and existing filtered publication/signal routes. Preserve backend risk, legal guards, roles and historical snapshots.
+
+## 2026-10-18 · Dossier draft protection
+
+- Preserve R1/R4/construction/legal-basis form input across object navigation, Back and reload with scoped tab drafts and explicit restore notices.
+- Keep selected files and retry state in tab memory during SPA navigation; require and explain file reselection after reload. Clear text and memory on logout/401; never store file bytes in Web Storage or submit restored decisions automatically.
+- Verify R4 document capture and its separate decision against an existing nonzero risk baseline.
 
 ## 2026-10-17 · Selective integration of frontend updates
 
@@ -223,3 +573,17 @@
 ## 0.1.0 · 2026-10-14 · первый вертикальный срез
 
 - Локальная сессия аналитика, PostgreSQL/Alembic, DEMO seed, обзор/реестр/карточки/сохранённые доказательства, новый текст с происхождением и SHA-256.
+
+## 2026-10-19 — Social Monitor: ручной CSV
+
+Добавлены CSV preview/commit/journal, точное хранение оригинала, дедупликация
+и новые версии без перезаписи старых материалов. Поддержаны простой шаблон
+и пользовательский формат social audit. Новый контракт0.26.0/миграцияfb45a723c916.
+Импорт не создаёт досье и не подтверждает связь/фактор; source URL не загружается.
+
+## 2026-10-19 — источники и поисковые запуски
+
+Добавлены capability catalogue и сохраняемая история явного Threads preview:
+результаты/пустые ответы/ошибки/неизвестный исход, повторное чтение без внешнего
+поиска, actor+key retry защита. Контракт0.27.0, миграцияac56b834d027.
+CSV journal и IMPORT_URL jobs сохраняют прежние механизмы.

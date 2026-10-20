@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Advertisement, Page as ResultPage, Property } from "../lib/types";
 import type { MonitoringCandidateDetail } from "../lib/monitoring-types";
-import { login, testOrigin } from "./support";
+import { openMonitoringTool, login, testOrigin } from "./support";
 
 test("manual DEMO monitoring preserves registry versions, deduplicates the preliminary case and records human decisions without changing risk", async ({
   page,
@@ -119,6 +119,7 @@ test("manual DEMO monitoring preserves registry versions, deduplicates the preli
   expect(keys[1]).toBe(keys[0]);
   await page.unroute(`**/api/v1/monitoring/candidates/${candidateId}/compare`);
 
+  await openMonitoringTool(page, "registry");
   await page.getByText("Создать версию DEMO-реестра", { exact: true }).click();
   const snapshot = page.getByRole("form", {
     name: "Новая версия DEMO-реестра",
@@ -136,6 +137,7 @@ test("manual DEMO monitoring preserves registry versions, deduplicates the preli
     .getByRole("button", { name: "Сохранить DEMO-версию", exact: true })
     .click();
   await expect(snapshot.getByRole("status")).toContainText("Документов: 0");
+  await page.getByRole("tab", { name: "Кандидаты", exact: true }).click();
   await expect(
     compare.getByLabel("ID DEMO-версии реестра (пусто — реестр недоступен)", {
       exact: true,
@@ -179,6 +181,8 @@ test("manual DEMO monitoring preserves registry versions, deduplicates the preli
     .click();
   await expect(incident.locator("strong").first()).toHaveText("Ожидает данных");
 
+  await openMonitoringTool(page, "registry");
+
   await snapshot
     .getByRole("button", { name: "Заполнить DEMO-пример", exact: true })
     .click();
@@ -192,6 +196,7 @@ test("manual DEMO monitoring preserves registry versions, deduplicates the preli
     .getByRole("button", { name: "Сохранить DEMO-версию", exact: true })
     .click();
   await expect(snapshot.getByRole("status")).toContainText("Документов: 1");
+  await page.getByRole("tab", { name: "Кандидаты", exact: true }).click();
   await compare
     .getByLabel("Основание запуска сверки", { exact: true })
     .fill("DEMO получена новая версия списка с применимым документом");

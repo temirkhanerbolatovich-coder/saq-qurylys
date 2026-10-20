@@ -106,6 +106,71 @@ async function materialFixtures(
   });
 }
 
+test("fresh review opens actions and explicit processing and legacy links retain their context", async ({
+  page,
+}) => {
+  await login(page);
+  await page.route("**/api/v1/advertisements/review-queue?**", (route) =>
+    route.fulfill({ json: result([]) }),
+  );
+  const commands: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST") commands.push(request.url());
+  });
+  await page.goto("/review");
+  const actions = page.getByRole("link", {
+    name: "Нерешённые действия",
+    exact: true,
+  });
+  const processing = page.getByRole("link", {
+    name: "Состояния обработки",
+    exact: true,
+  });
+  await expect(actions).toHaveAttribute("aria-current", "page");
+  await expect(
+    page.getByLabel("Нерешённое действие", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Режим материалов", { exact: true })
+    .selectOption("true");
+  await expect(page).toHaveURL(/queue=actions/);
+  await page.reload();
+  await expect(actions).toHaveAttribute("aria-current", "page");
+  await processing.click();
+  await expect(page).toHaveURL(/queue=processing/);
+  await expect(
+    page.getByLabel("Состояние материала", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Режим материалов", { exact: true }),
+  ).toHaveValue("true");
+  await page.reload();
+  await expect(processing).toHaveAttribute("aria-current", "page");
+  await page.goBack();
+  await expect(actions).toHaveAttribute("aria-current", "page");
+  await page.goForward();
+  await expect(processing).toHaveAttribute("aria-current", "page");
+  // Pre-existing unqualified filters keep their processing meaning.
+  await page.goto("/review?status=FAILED&page=2&page_size=10");
+  await expect(processing).toHaveAttribute("aria-current", "page");
+  await expect(
+    page.getByLabel("Состояние материала", { exact: true }),
+  ).toHaveValue("FAILED");
+  await expect(page).toHaveURL(/page=2/);
+  await actions.click();
+  await expect(page).toHaveURL(/queue=actions/);
+  expect(new URL(page.url()).searchParams.has("status")).toBe(false);
+  await page.goto("/review?status=FAILED");
+  await page
+    .getByLabel("Состояние материала", { exact: true })
+    .selectOption("");
+  await expect(processing).toHaveAttribute("aria-current", "page");
+  await expect(page).toHaveURL(/queue=processing/);
+  await page.reload();
+  await expect(processing).toHaveAttribute("aria-current", "page");
+  expect(commands).toEqual([]);
+});
+
 test("derived work queue uses whole-set material counts and preserves selection, drafts and URL pagination", async ({
   page,
 }) => {
@@ -150,6 +215,9 @@ test("derived work queue uses whole-set material counts and preserves selection,
   const reason = page.getByLabel("Обоснование проверки", { exact: true });
   await reason.fill("DEMO unsaved queue hypothesis reason");
   await queue
+    .getByText("Сменить материал · очередь и фильтры", { exact: true })
+    .click();
+  await queue
     .getByRole("button", { name: "Следующая страница", exact: true })
     .click();
   await expect(queue).toContainText("Страница 2 из 2");
@@ -160,6 +228,9 @@ test("derived work queue uses whole-set material counts and preserves selection,
   await expect(queue).toContainText("больше не иметь нерешённых действий");
   await page.reload();
   await expect(reason).toHaveValue("DEMO unsaved queue hypothesis reason");
+  await queue
+    .getByText("Сменить материал · очередь и фильтры", { exact: true })
+    .click();
   await page
     .getByLabel("Нерешённое действие", { exact: true })
     .selectOption("REVIEW_MATCH");
@@ -235,6 +306,9 @@ test("pending or failed derived filters do not show stale rows or a false zero a
     page.getByLabel("Обоснование проверки", { exact: true }),
   ).toBeVisible();
   mode = "pending";
+  await queue
+    .getByText("Сменить материал · очередь и фильтры", { exact: true })
+    .click();
   await page
     .getByLabel("Нерешённое действие", { exact: true })
     .selectOption("REVIEW_MATCH");
