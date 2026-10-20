@@ -9,4 +9,4 @@
 docs/audits/assets/**/validation/*.log -text -whitespace
 
 # Preserve the user-provided specification bytes used by SOURCES.json.
-docs/reference/REPOSITORY_CLEANUP_TZ_2026-10-20.md -text
+docs/reference/REPOSITORY_CLEANUP_TZ_2026-10-20.md -text -whitespace
