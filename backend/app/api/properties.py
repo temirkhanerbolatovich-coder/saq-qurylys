@@ -4,12 +4,24 @@ from uuid import UUID
 from fastapi import APIRouter, Query
 from sqlalchemy import String, column, func, or_, select
 from sqlalchemy.dialects.postgresql import distinct_on
+from sqlalchemy.orm import aliased
 from starlette.exceptions import HTTPException
 
 from app import dto
+from app.analysis_dto import AuditEventOut
 from app.dependencies import DB, Actor, get_property
-from app.models import Advertisement, Developer, ExtractionResult, Property, Signal, utcnow
-from app.signals import signal_view
+from app.models import (
+    Advertisement,
+    AuditEvent,
+    Developer,
+    ExtractionResult,
+    MonitoringCandidate,
+    Property,
+    Signal,
+    User,
+    utcnow,
+)
+from app.signals import signal_is_stale, signal_view
 from app.views import factor_views, legal_views, property_view, unknown_information
 
 router = APIRouter()
@@ -102,6 +114,16 @@ def property_detail(id: UUID, actor: Actor, db: DB):
     factors = factor_views(db, id)
     return {
         'property': property_view(row, factors),
+        'source_candidate_id': db.scalar(
+            select(MonitoringCandidate.id).where(
+                MonitoringCandidate.property_id == id, MonitoringCandidate.property_link_kind == 'CREATED'
+            )
+        ),
+        'linked_candidate_count': db.scalar(
+            select(func.count())
+            .select_from(MonitoringCandidate)
+            .where(MonitoringCandidate.property_id == id, MonitoringCandidate.property_link_kind == 'LINKED')
+        ),
         'legal_bases': legal_views(db, id),
         'factors': factors,
         'advertisement_ids': list(
@@ -109,6 +131,35 @@ def property_detail(id: UUID, actor: Actor, db: DB):
         ),
         'unknown_information': unknown_information(row),
     }
+
+
+@router.get(
+    '/api/v1/properties/{id}/provenance',
+    response_model=AuditEventOut | None,
+    operation_id='getPropertyProvenance',
+    description=(
+        'Return the latest saved SOURCE_PACKAGE_IMPORTED event for this exact property entity, '
+        'or null when none exists. Independent of audit pagination; read-only and not an identity confirmation.'
+    ),
+)
+def property_provenance(id: UUID, actor: Actor, db: DB):
+    get_property(db, id)
+    event = db.scalar(
+        select(AuditEvent)
+        .where(
+            AuditEvent.entity_type == 'properties',
+            AuditEvent.entity_id == id,
+            AuditEvent.action == 'SOURCE_PACKAGE_IMPORTED',
+        )
+        .order_by(AuditEvent.occurred_at.desc(), AuditEvent.id)
+        .limit(1)
+    )
+    if event is None:
+        return None
+    author = db.get(User, event.actor_id)
+    return AuditEventOut.model_validate(event).model_copy(
+        update={'actor_display_name': author.display_name if author else None}
+    )
 
 
 @router.get(
@@ -205,6 +256,20 @@ def dashboard(
         .order_by(ExtractionResult.advertisement_id, ExtractionResult.created_at.desc(), ExtractionResult.id)
     )
     pending = sum(h['review_status'] == 'PENDING' for extraction in latest for h in extraction.hypotheses)
+    newer = aliased(Signal)
+    # A superseded draft can never accept a decision. Avoid loading its snapshot;
+    # the remaining candidates use the same current-state comparison as /signals.
+    pending_candidates = db.scalars(
+        select(Signal).where(
+            Signal.state == 'DRAFT',
+            Signal.property_id.in_([row.id for row in rows]),
+            ~select(1)
+            .where(newer.property_id == Signal.property_id, newer.version > Signal.version)
+            .correlate(Signal)
+            .exists(),
+        )
+    )
+    pending_signals = sum(not signal_is_stale(db, signal) for signal in pending_candidates)
     return {
         'property_count': len(rows),
         'zones': {value: sum(row.risk.zone == value for row in rows) for value in ['GREEN', 'YELLOW', 'RED']},
@@ -212,11 +277,7 @@ def dashboard(
             select(func.count()).select_from(query.where(Advertisement.status == 'NEW').subquery())
         ),
         'pending_hypotheses': pending,
-        'pending_signals': db.scalar(
-            select(func.count())
-            .select_from(Signal)
-            .where(Signal.state == 'DRAFT', Signal.property_id.in_([row.id for row in rows]))
-        ),
+        'pending_signals': pending_signals,
         'unknown_legal_bases': sum(row.legal_verification_status in {'UNKNOWN', 'PENDING'} for row in rows),
         'latest_signals': [
             signal_view(db, item).model_dump(mode='json')

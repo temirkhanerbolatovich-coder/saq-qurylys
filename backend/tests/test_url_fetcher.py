@@ -262,6 +262,15 @@ def test_redirect_must_pass_allowlist_before_next_connection(monkeypatch, locati
     assert len(calls) == len(closed) == 1
 
 
+@pytest.mark.parametrize('suffix', ['/other', '/', '?tracking=1'])
+def test_exact_page_policy_rejects_redirect_before_next_connection(monkeypatch, suffix):
+    exact = replace(POLICY, path_prefixes=('/advertisements/123',), allow_subpaths=False, allow_query=False)
+    url = 'https://ads.example.org/advertisements/123'
+    calls, closed = transport(monkeypatch, [wire_response(status='302 Found', headers=[('Location', url + suffix)])])
+    rejected('URL_NOT_ALLOWED', lambda: fetcher._fetch(url, exact))
+    assert len(calls) == len(closed) == 1
+
+
 def test_dns_rechecked_after_same_host_redirect(monkeypatch):
     calls, closed = transport(
         monkeypatch, [wire_response(status='302 Found', headers=[('Location', '/advertisements/2')])]

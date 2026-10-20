@@ -4,3 +4,6 @@
 *.png binary
 # Preserve pinned third-party sources byte-for-byte; owned code keeps normal whitespace checks.
 .agents/skills/ui-ux-pro-max/** -whitespace
+
+# Historical diagnostic evidence is preserved byte-for-byte.
+docs/audits/assets/**/validation/*.log -whitespace

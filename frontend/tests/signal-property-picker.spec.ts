@@ -57,7 +57,8 @@ test("signal property filter reaches object 101 and retains selection across emp
   page.on("request", (request) => {
     if (request.method() === "POST") commands.push(request.url());
   });
-  await page.goto("/signals");
+  // Picker coverage uses all versions, including confirmed/stale seed snapshots.
+  await page.goto("/signals?state=&is_stale=");
   await expect(
     page
       .getByRole("alert")
@@ -161,7 +162,7 @@ test("registry and signal picker send developer search to the real API", async (
     rows.filter((row) => row.developer.name === target.developer.name).length,
   );
   await expect(page.locator("tbody")).toContainText(target.name);
-  await page.goto("/signals");
+  await page.goto("/signals?state=&is_stale=");
   await page.getByText("Дополнительные фильтры", { exact: true }).click();
   const picker = page.getByRole("region", {
     name: "Выбор объекта сигнала",

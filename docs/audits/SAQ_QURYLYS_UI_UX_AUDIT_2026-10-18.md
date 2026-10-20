@@ -32,7 +32,7 @@
 - Четыре локальных cold-context навигации: script transfer примерно206–249KB;31/33/25/39resource entries. Load event примерно58–62ms в loopback-окружении. Это **не** LCP/INP/TTI, не WAN и не нагрузочный benchmark. Предыдущий warm замер показал0transfer из cache; он не используется как размер bundle.
 - Четыре официальных референса изучены по документации, см. ниже.
 
-Артефакты: [observations.json](../../output/qa/full-audit-20261018/observations.json), [interactions.json](../../output/qa/full-audit-20261018/interactions.json), [cold-local-performance.json](../../output/qa/full-audit-20261018/cold-local-performance.json), [selected review](../../output/qa/full-audit-20261018/review-selected.txt).
+Артефакты: observations.json (локальный артефакт, не входит в Git: `../../output/qa/full-audit-20261018/observations.json`), interactions.json (локальный артефакт, не входит в Git: `../../output/qa/full-audit-20261018/interactions.json`), cold-local-performance.json (локальный артефакт, не входит в Git: `../../output/qa/full-audit-20261018/cold-local-performance.json`), selected review (локальный артефакт, не входит в Git: `../../output/qa/full-audit-20261018/review-selected.txt`).
 В observations поле `height` содержит **scrollHeight документа**, а не высоту viewport: её перекрыл результат DOM-измерения. Размеры viewport задавались явно в скрипте; не интерпретировать height как размер окна.
 Воспроизведение: ignored helpers `.local/tabs-pdf-20261018/full-audit.cjs`, `audit-interactions.cjs`, `audit-extra.cjs`. Они читают существующие локальные QA credentials; не предназначены для публичного сервера.
 Скриншоты содержат только QA DEMO-контент.
@@ -50,19 +50,19 @@ PDF616bytes подтверждает скачивание оригинала, н
 
 На карте первый экран занят инструкциями; сами точки доступны после прокрутки:
 
-![Карта1440×900](../../output/qa/full-audit-20261018/detailed-map-1440.png)
+!Карта1440×900 (локальный артефакт, не входит в Git: `../../output/qa/full-audit-20261018/detailed-map-1440.png`)
 
 В мобильном досье вкладки видны, но содержательный обзор почти целиком ниже первого экрана:
 
-![Досье390×844](../../output/qa/full-audit-20261018/simple-dossier-390.png)
+!Досье390×844 (локальный артефакт, не входит в Git: `../../output/qa/full-audit-20261018/simple-dossier-390.png`)
 
 Реестр показывает и риск, и статус основания — сохранять оба признака:
 
-![Реестр1440×900](../../output/qa/full-audit-20261018/detailed-properties-1440.png)
+!Реестр1440×900 (локальный артефакт, не входит в Git: `../../output/qa/full-audit-20261018/detailed-properties-1440.png`)
 
 Выбранный материал проверки начинается после большой панели очереди:
 
-![Выбранный материал](../../output/qa/full-audit-20261018/review-selected.png)
+!Выбранный материал (локальный артефакт, не входит в Git: `../../output/qa/full-audit-20261018/review-selected.png`)
 
 ## A. Product Reality Check
 

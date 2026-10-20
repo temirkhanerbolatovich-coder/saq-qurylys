@@ -7,6 +7,8 @@ export type MonitoringResult =
   | "ENTITY_AMBIGUOUS";
 
 export type MonitoringCandidate = {
+  property_id?: string | null;
+  property_link_kind?: "CREATED" | "LINKED" | null;
   id: string;
   name: string;
   city: string;

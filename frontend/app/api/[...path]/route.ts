@@ -1,6 +1,22 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
+
+function proxyTimeout(method: string, path: string[]): number {
+  const pdfDownload =
+    method === "GET" &&
+    ((path.length === 4 &&
+      ((path[1] === "properties" && path[3] === "report.pdf") ||
+        (path[1] === "signals" && path[3] === "pdf"))) ||
+      (path.length === 5 && path[1] === "exports" && path[4] === "pdf"));
+  if (!pdfDownload) return 15_000;
+  const configured = Number(process.env.PDF_PROXY_TIMEOUT_MS || "75000");
+  return Number.isSafeInteger(configured) &&
+    configured >= 1 &&
+    configured <= 75_000
+    ? configured
+    : 75_000;
+}
 
 async function proxy(
   request: NextRequest,
@@ -71,13 +87,16 @@ async function proxy(
       body.set(chunk, offset);
       offset += chunk.byteLength;
     }
+    const deadline = AbortSignal.timeout(proxyTimeout(request.method, path));
     const upstream = await fetch(target, {
       method: request.method,
       headers,
       redirect: "manual",
       cache: "no-store",
       body: request.method === "GET" ? undefined : body,
-      signal: AbortSignal.timeout(15000),
+      signal: request.signal
+        ? AbortSignal.any([request.signal, deadline])
+        : deadline,
     });
     const resultHeaders = new Headers();
     for (const name of [

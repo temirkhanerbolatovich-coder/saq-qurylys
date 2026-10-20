@@ -1,4 +1,218 @@
+## 21.10.2026 — организация репозитория и воспроизводимость
+
+- Краткий README, тематические developer/API/deployment/backup/troubleshooting guides; история сохранена в docs/archive, первичные источники в docs/reference с SHA.
+- Общие guards записывающих E2E/OCR, scripts-wide Ruff и repository/Compose/docs/secret checks в существующем CI.
+- Кэши исключены из Docker context, добавлены шаблоны PR/issue, EditorConfig и SECURITY без назначения проекту новой лицензии.
+- Полные результаты/ограничения текущей ревизии — docs/REFACTOR_REPORT.md. API/риск/исторические snapshots и рабочие deployment/data не изменены cleanup.
+
 # Changelog
+
+## 2026-10-20 — SQ fixes, этапы3–6 (source/test runtime)
+
+- Исключающие категории факторов, явная ошибка refresh и единый список документов.
+- Reviewer provenance в новых snapshots/PDF, actionable DRAFT count и полный bounded source lookup.
+- Основные targets44px, меньше мобильных отступов; карта/даты/legalchoices RU/KZ.
+- Вторичные досье panels загружаются при первом посещении и сохраняют формы/файлы.
+  Initial GET8→4,decoded JSON17834→4217bytes; ускорение latency не подтверждено.
+- Контракт0.34.0; история/архивы не переписываются. Проверки — SQ_FIX_PROGRESS.
+
+## 2026-10-20 — SQ fixes, этап2 (source/test runtime)
+
+- Точные ручные платёжные предложения с независимым analyst review и прежними R2 guards.
+- Общий bounded PDF GET:90sclient/75sproxy,отмена,различимые timeout/cancel,RU/KZ retry.
+- Контракт0.33.0,без миграции/backfill/изменения архивов. Receipts в SQ_FIX_PROGRESS.
+
+## 2026-10-20 — SQ fixes, этапы0–1 (source/test runtime)
+
+- Изолирована незавершённая очередь между backend cases, production FIFO сохранён.
+- Новые рекламные evidence различают publication/capture; legacy дата не выдаётся
+  за установленную публикацию. Контракт0.32.0,без backfill исторических JSON/PDF.
+- Signal UI/новые PDF показывают frozen legal period/review и unknown risk codes;
+  нулевой score/GREEN явно не подтверждают безопасность.
+- Проверки и ограничения: docs/implementation/SQ_FIX_PROGRESS.md.
+
+## 20.10 · публикация Oracle Micro и ожидание PDF
+
+Создана отдельная бесплатная E2.1.Micro, HTTPS/Caddy, free DNS и приватный перенос
+текущих DB/storage с проверкой таблиц/AssetSHA/историческихPDF. Native amd64
+images собираются локально и запускаются без build на1GB VM;4GiB swap и rotation
+логов. Авторизация/CSRF/роли/риск сохранены, старые copied sessions удалены.
+На Micro read-only отчёты требуют больше wall time: добавлены ограниченные
+DOCUMENT_PDF_TIMEOUT_SECONDS и PDF_PROXY_TIMEOUT_MS только для GETPDF; defaults
+и CPU/address caps прежние. External auth/OCR/PDF и stop/start acceptance PASS;
+локальная установка не обновлялась. Ограничения и эксплуатация — ORACLE_DEPLOYMENT.
+
+## 20.10 · интерфейс Parser V2
+
+В мониторинг добавлена вкладка словаря/активации, версий V2 профилей, одного
+явного запроса, capture и находок с историей/observations. Импорт точной версии
+требует выбора observation, причины и свежего TEXT_ONLY подтверждения; переход
+ведёт в существующую проверку. Сохранены legacy links, user/session drafts и
+UUID retry. API/DB/dependencies/risk прежние. Исходники/QA, primary не обновлялся;
+live доступ/holdout и finding-level review ещё открыты.
+
+## 20.10 · parser V2: находки и явный импорт
+
+Добавлены версионные находки из сохранённых страниц Threads, наблюдения по
+run/profile version/query ID, история изменений и явный импорт выбранной версии
+в Advertisement NEW. Импорт текста сохраняет Asset/provenance, не запускает
+анализ и не подтверждает объект/R1–R6. Профиль V2 явно запускает один сохранённый
+keyword-запрос через прежний access/cooldown; disabled не создаёт фиктивные данные.
+Добавлены контракт0.31.0, миграция ef90fc78b461 с защитой истории и ADR-026.
+UI/live-подключения/публичная установка этим блоком не добавлялись.
+
+## 19.10 · parser V2: словари и версии профилей
+
+Добавлены immutable bytes словаря, явный журнал активации/деактивации с audit,
+revision concurrency и idempotency. V2 profile хранит dictionary ID/SHA и готовый
+preview/query IDs без перекомпиляции истории. Legacy list/detail по умолчанию1.0;
+V2 требует явного фильтра. Добавлены миграция df89eb67a350 с защитой downgrade,
+контракт0.30.0, словари в production image и ADR-025. Live сбор не включается.
+
+## 19.10 · parser V2: контекстные гипотезы RU/KZ
+
+Добавлены offline правила географии/отрицаний/платёжного времени/сумм/годов и
+раздельных family/phase, объяснимые приоритеты и exact original spans.
+Локальный analyze_social_text.py не импортирует материалы и не меняет риск.
+246focused tests PASS, включая10входных примеров и существующий extraction.
+
+## 19.10 · parser V2: первый offline-срез
+
+Добавлены строгий загрузчик v1/v2 с сохранением original bytes/SHA и bounded
+query preview с provenance/ID/capabilities/причинами пропуска. CLI не обращается
+к сети/БД и не активирует источники.47регрессионных проверок; интеграция профилей,
+контекстные правила, findings/UI/live приёмка остаются следующими срезами.
+
+## 19.10 · размещение карты на desktop
+
+Правовое пояснение над картой использует доступную ширину рядом с легендой:
+удалено узкое ограничение, создававшее лишние строки и смещавшее карту ниже.
+Полный текст и мобильная последовательность сохранены. Регрессия каталога
+учитывает AN GROUPS и проверяет его ссылку импорта/оговорки. Текущий результат
+локальной проверки и граница установки — PROJECT_STATUS.
+
+## 19.10 · первый запуск без DEMO и чистая локальная приёмка
+
+`DEMO_SEED_ENABLED=false` создаёт настроенного аналитика без fixtures/storage,
+сохраняя прежние пароль/роль/имя. Native seed получил `--bootstrap-only`;
+Compose проверяет строгое true/false. Генератор поддерживает `--port` и
+`--no-demo-seed`, отказывается перезаписывать `.env` или credentials и использует
+exclusive creation при одновременном запуске. Рецепт чистой приёмки и различие
+локального стенда/второго ПК записаны в CLEAN_INSTALL_ACCEPTANCE и PROJECT_STATUS.
+
+
+## 19.10 · управляемое расписание открытых страниц
+
+Явное включение/выключение точного подключённого URL, durable история со снимком
+настройки, межпроцессный бюджет постановок, паузы и остановка после ошибок.
+Прежние worker/jobs/lease и человеческие решения сохранены. Контракт0.29,
+миграция ce78da56f249; Threads scheduling и parser-v2 не включались.
+
+
+## 19.10 · подготовка общей URL-очереди (QA)
+
+Существующая постановка URL выделена из route в общую транзакционную функцию
+с прежними правилами валидации, лимита и дедупа. Добавлена PostgreSQL проверка
+гонки; scheduler остаётся открытым, рабочие images не обновлялись.
+
+## 19.10 · серверные поисковые профили
+
+Общие профили помощника RU/KZ1.0 с append-only снимками параметров/скомпилированных
+фраз/SHA и историей по revision. Идемпотентные analyst-команды, защита409 от гонок,
+явное применение без поиска. Один JSON для клиента и сервера. Контракт0.28,
+миграция bd67c945e138; расписание и parser-v2 не активированы.
+
+## 19.10 · открытая страница AN GROUPS
+
+Явный импорт /payment через существующую очередь: неизменяемые HTML/TEXT,
+дедуп по содержимому, корректная provenance без чужой лицензии, строгая проверка
+точного пути/query на redirects. В каталоге, форме и карточке RU/KZ показаны
+область извлечения и неизвестная дата/ЖК. Исправлена прежняя привязка любого HTML
+к Primeminister CC BY. Нет автоматического анализа, привязки или скоринга.
+
+## 19.10 · социальные наблюдения и карта
+
+Добавлены20наблюдений как19материалов/6новыхдосье,14проектных ориентиров с происхождением и SHA. Сохранены ID, решения и UNKNOWN. DEMO-пояснение карты стало условным, уточнена точность RU/KZ. Проверки и открытые11адресов — PROJECT_STATUS.
+
+19.10, Master2.0: новая оболочка/вкладки досье по предоставленным скриншотам,
+SVG SAQ, RU/KZ, каталог источников, fact cards и native боковые детали документов
+и публикаций. Настраиваемый read-only PDF текущего досье с RU/KZ, обязательными
+оговорками, датами/источниками/SHA и отменой скачивания. Сигналы, решения и
+серверный риск не переопределяются. Материал импорта ведёт к сохранённой записи
+для проверки связи; повторный ввод публикации не предлагается автоматически.
+Проверка backup теперь допускает настоящую базу без сигналов и честно сообщает
+нулевое покрытие исторических PDF. Точная приёмка и runtime — PROJECT_STATUS.
+
+19.10: исправлена гонка R4 при быстром отклонении после подтверждения: следующая команда ждёт новую revision; при503 доступен явный повтор чтения без потери причины.
+
+19.10, UI/UX-ТЗv2: очередь нерешённых действий при прямом входе /review;
+явный processing-режим и совместимость старых deep links. Единые Lucide18px
+icon+label на desktop/mobile. Phase-based URL-import fixtures проверяют repeat
+GET/late response без изменения корректной production cancellation logic.
+Добавлен настоящий DEMO material→candidate→dossier→R2→signal→downloaded PDF маршрут;
+Inter проверен A/B и оставлен вне runtime из-за ухудшения плотности.
+
+19.10: исправлена потеря выбранной зоны реестра при быстром переключении на карту;
+параметры URL объединяются синхронно, debounce сохраняет Back/Forward. Добавлена
+регрессия;23 selected browser PASS. Полная накопленная приёмка остаётся частичной.
+
+## 2026-10-19 · Исправление ошибочной связи кандидата
+
+- Явная отмена только LINKED с причиной, двумя версиями, confirmation и audit;
+  дальнейший выбор досье отдельный. CREATED, публикации и предметные решения сохраняются.
+- Пагинированная история связей с сохранёнными именами/причинами и читаемыми
+  действиями в истории досье. Контракт0.24, ADR-019, без новой миграции.
+
+## 2026-10-19 · Связь кандидата с существующим досье
+
+- Явный выбор объекта и подтверждение идентичности с причиной/двумя версиями.
+- CREATED сохраняет источник создания, LINKED допускает несколько находок у досье;
+  обратный список с property_id и отдельным счётчиком связанных кандидатов.
+- Черновик/selected ID сохраняются, раскрытие не отправляет POST; публикации,
+  риск, сигналы и решения инцидентов не переносятся. Контракт0.23/ADR-018.
+
+## 2026-10-19 · Завершение сценария досье
+
+- Поиск дублей использует базовое имя кандидата; отсутствие БИН не создаёт
+  ложную DEMO-подпись. Форма использует компактную responsive-сетку.
+- Добавлена gated live API/browser регрессия: создание досье сохраняет источники
+  и UNKNOWN; привязка публикации требует отдельного решения аналитика.
+
+## 2026-10-19 · Локально: досье из кандидата
+
+- Явное создание PHASE с UNKNOWN стадией/правовым статусом, защитой от повторов
+  и точных дублей; источники и причина в аудите, переходы кандидат ↔ досье.
+- Черновик формы сохраняется; раскрытие не отправляет команду. Решения о публикации,
+  факторах и сигналах независимы. Контракт0.22, миграция d92e6a14f301, ADR-017.
+
+## Unreleased ·19.10.2026 · Material scope and signal queues
+
+- Add server-side is_demo to the material library and processing queue; retain
+  scope/search/selection when switching review queues.
+- Open bare signal entry on current drafts and expose all/stale presets without
+  deleting history; preserve selected snapshot and draft across filters.
+- Contract0.21; no new migrations or dependencies. Local changes only.
+
+
+## Unreleased ·19.10.2026 · Material text search
+
+- Add optional q≤300 to advertisement and review-queue reads: literal
+  case-insensitive original text/source-label search before counts/pagination.
+- Share compact native search across the library and both review queues;
+  preserve URL filters, selected material/version and unsaved reasons.
+- Contract0.20; PostgreSQL51 tests and production4 new +27 regression cases
+  passed. Live browser/API smoke remains gated; no deployment.
+
+
+## Unreleased ·19.10.2026 · Monitoring drafts
+
+- Restore comparison input and incident decisions per user, tab and subject;
+  keep registry selection per candidate and show a compact restoration notice.
+- Preserve explicit retry keys across reload; clear successful drafts and require
+  a new choice if the selected publication is unavailable. No API changes.
+- Validate 8 new production HTTP-mock browser tests plus19 existing safety and
+  composition tests; build, TypeScript, ESLint and Prettier pass. No deployment.
+
 
 ## Unreleased ·19.10.2026 · Readable review tasks and PDF names
 
@@ -359,3 +573,17 @@
 ## 0.1.0 · 2026-10-14 · первый вертикальный срез
 
 - Локальная сессия аналитика, PostgreSQL/Alembic, DEMO seed, обзор/реестр/карточки/сохранённые доказательства, новый текст с происхождением и SHA-256.
+
+## 2026-10-19 — Social Monitor: ручной CSV
+
+Добавлены CSV preview/commit/journal, точное хранение оригинала, дедупликация
+и новые версии без перезаписи старых материалов. Поддержаны простой шаблон
+и пользовательский формат social audit. Новый контракт0.26.0/миграцияfb45a723c916.
+Импорт не создаёт досье и не подтверждает связь/фактор; source URL не загружается.
+
+## 2026-10-19 — источники и поисковые запуски
+
+Добавлены capability catalogue и сохраняемая история явного Threads preview:
+результаты/пустые ответы/ошибки/неизвестный исход, повторное чтение без внешнего
+поиска, actor+key retry защита. Контракт0.27.0, миграцияac56b834d027.
+CSV journal и IMPORT_URL jobs сохраняют прежние механизмы.

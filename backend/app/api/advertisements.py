@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import FileResponse
-from sqlalchemy import func, select, text
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import selectinload
 from starlette.exceptions import HTTPException
 
@@ -18,6 +18,26 @@ from app.review_queue import ACTIONS, review_work
 from app.storage import save_text
 
 router = APIRouter()
+
+MATERIAL_SEARCH_DESCRIPTION = (
+    'Case-insensitive literal substring in saved original_text or source_label. '
+    'Whitespace-only query is ignored; OCR, hypotheses and external sources are not searched. '
+    'Applied before counts and pagination, combined with other filters.'
+)
+
+
+def search_materials(query, q):
+    """Share literal original/source search between the library and review queues."""
+    if not q or not q.strip():
+        return query
+    escaped = q.strip().replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+    pattern = f'%{escaped}%'
+    return query.where(
+        or_(
+            Advertisement.original_text.ilike(pattern, escape='\\'),
+            Advertisement.source_label.ilike(pattern, escape='\\'),
+        )
+    )
 
 
 @router.get(
@@ -44,13 +64,14 @@ def review_queue(
     db: DB,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
+    q: str | None = Query(None, max_length=300, description=MATERIAL_SEARCH_DESCRIPTION),
     property_id: UUID | None = None,
     is_demo: bool | None = None,
     action: ReviewAction | None = None,
     date_from: Annotated[dto.AwareDatetime | None, Query(alias='from')] = None,
     date_to: Annotated[dto.AwareDatetime | None, Query(alias='to')] = None,
 ):
-    query = select(Advertisement)
+    query = search_materials(select(Advertisement), q)
     if property_id:
         query = query.where(Advertisement.confirmed_property_id == property_id)
     if is_demo is not None:
@@ -89,14 +110,18 @@ def advertisements(
     db: DB,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
+    q: str | None = Query(None, max_length=300, description=MATERIAL_SEARCH_DESCRIPTION),
     property_id: UUID | None = None,
+    is_demo: bool | None = None,
     status: Literal['NEW', 'ANALYZING', 'READY_FOR_REVIEW', 'REVIEWED', 'FAILED'] | None = None,
     date_from: Annotated[dto.AwareDatetime | None, Query(alias='from')] = None,
     date_to: Annotated[dto.AwareDatetime | None, Query(alias='to')] = None,
 ):
-    query = select(Advertisement)
+    query = search_materials(select(Advertisement), q)
     if property_id:
         query = query.where(Advertisement.confirmed_property_id == property_id)
+    if is_demo is not None:
+        query = query.where(Advertisement.is_demo == is_demo)
     if status:
         query = query.where(Advertisement.status == status)
     if date_from:
@@ -224,7 +249,7 @@ def asset_download(id: UUID, request: Request, actor: Actor, db: DB, inline: boo
     return FileResponse(
         path,
         media_type=row.mime_type if preview else 'application/octet-stream',
-        filename=f'{row.id}{path.suffix}',
+        filename=f'{row.id}{".csv" if row.mime_type == "text/csv" else path.suffix}',
         content_disposition_type='inline' if preview else 'attachment',
         headers={'Content-Security-Policy': "default-src 'none'; sandbox"},
     )

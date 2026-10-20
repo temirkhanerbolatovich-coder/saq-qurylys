@@ -1,4 +1,6 @@
 "use client";
+import { useLocale } from "@/lib/locale";
+import { useMonitoringCommand } from "@/lib/use-monitoring-command";
 
 import Link from "next/link";
 import {
@@ -7,6 +9,7 @@ import {
   useWorkspaceSection,
 } from "@/components/ui/workspace-tabs";
 import { PdfDownload } from "@/components/pdf-download";
+import { PropertyPicker } from "@/components/property-picker";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   useContext,
@@ -16,8 +19,14 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { api, command, date } from "@/lib/api";
-import type { Advertisement, Page } from "@/lib/types";
+import { api, date } from "@/lib/api";
+import { useReviewDraft } from "@/lib/use-review-draft";
+import type {
+  Advertisement,
+  AuditEvent,
+  Page,
+  PropertyDetail,
+} from "@/lib/types";
 import type {
   IncidentCloseReason,
   IncidentState,
@@ -31,7 +40,14 @@ import type {
 } from "@/lib/monitoring-types";
 import { Button } from "@/components/ui/button";
 import { ThreadsSearch } from "@/components/threads-search";
+import { MonitoringV2 } from "@/components/monitoring-v2";
 import { OpenRegistry } from "@/components/open-registry";
+import { CsvImport } from "@/components/csv-import";
+import { MonitoringUrlSchedules } from "@/components/monitoring-url-schedules";
+import {
+  MonitoringSources,
+  MonitoringRuns,
+} from "@/components/monitoring-sources";
 import { Pagination } from "@/components/ui/pagination";
 import { TableRegion } from "@/components/ui/table-region";
 import {
@@ -102,31 +118,47 @@ function Field({
 }
 
 // The same payload keeps its command key after a failed/unknown HTTP response.
-function useMonitoringCommand() {
-  const pending = useRef<{ payload: string; key: string } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  return {
-    busy,
-    error,
-    async run<T>(path: string, body: unknown): Promise<T | null> {
-      const payload = JSON.stringify({ path, body });
-      if (pending.current?.payload !== payload)
-        pending.current = { payload, key: crypto.randomUUID() };
-      setBusy(true);
-      setError("");
-      try {
-        const result = await command<T>(path, body, pending.current.key);
-        pending.current = null;
-        return result;
-      } catch (e) {
-        setError((e as Error).message);
-        return null;
-      } finally {
-        setBusy(false);
-      }
-    },
-  };
+function MonitoringDraftNotice({
+  draft,
+  retryError = "",
+}: {
+  draft: { restored: boolean; dirty: boolean; storageError: string };
+  retryError?: string;
+}) {
+  return (
+    <>
+      {draft.restored ? (
+        <p className="notice" role="status">
+          Черновик восстановлен. Проверьте данные перед отправкой.
+        </p>
+      ) : draft.dirty && !draft.storageError ? (
+        <p className="field-help">Черновик сохранён в этой вкладке.</p>
+      ) : null}
+      {(draft.storageError || retryError) && (
+        <Notice error={draft.storageError || retryError} />
+      )}
+    </>
+  );
+}
+
+function snapshotSelections(raw: string): Record<string, string> {
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+      return {};
+    return Object.fromEntries(
+      Object.entries(parsed).filter((entry): entry is [string, string] => {
+        const [id, value] = entry;
+        return (
+          /^[0-9a-f-]{36}$/i.test(id) &&
+          typeof value === "string" &&
+          value.length <= 36
+        );
+      }),
+    );
+  } catch {
+    return {};
+  }
 }
 
 function revealMonitoringTarget(targetId: string) {
@@ -143,6 +175,9 @@ const monitoringTabs = [
   { id: "incidents", label: "Инциденты" },
   { id: "sources", label: "Источники" },
   { id: "registry", label: "Версии реестра" },
+  { id: "imports", label: "Импорт CSV" },
+  { id: "runs", label: "Запуски" },
+  { id: "v2", label: "Parser V2" },
 ] as const;
 function monitoringSectionForHash(hash: string) {
   if (["monitoring-candidates", "monitoring-detail"].includes(hash))
@@ -154,11 +189,16 @@ function monitoringSectionForHash(hash: string) {
 }
 
 export function MonitoringView() {
+  const { t } = useLocale();
   const { user } = useContext(Auth);
   const sections = useWorkspaceSection(
     monitoringTabs,
     monitoringSectionForHash,
   );
+  const [v2Visited, setV2Visited] = useState(sections.active === "v2");
+  useEffect(() => {
+    if (sections.active === "v2") setV2Visited(true);
+  }, [sections.active]);
   const pendingTool = useRef<string | null>(null);
   useEffect(() => {
     const target = pendingTool.current || window.location.hash.slice(1);
@@ -183,12 +223,14 @@ export function MonitoringView() {
   const snapshotPage = positivePage(params.get("snapshot_page"));
   const incidentState = params.get("incident_state") || "";
   const candidateId = params.get("candidate_id") || "";
+  const relatedPropertyId = params.get("property_id") || "";
   const candidateQuery = new URLSearchParams({
     page: String(page),
     page_size: "10",
   });
   if (q) candidateQuery.set("q", q);
   if (mode) candidateQuery.set("is_demo", mode);
+  if (relatedPropertyId) candidateQuery.set("property_id", relatedPropertyId);
   const queuePath = `${prefix}/candidates?${candidateQuery}`;
   const queue = useData<Page<MonitoringCandidate>>(queuePath);
   const queueData =
@@ -216,9 +258,31 @@ export function MonitoringView() {
       : null;
   const incidentError =
     incidents.resolvedPath === incidentPath ? incidents.error : "";
-  const [snapshotId, setSnapshotId] = useState("");
-  const [selectedSnapshot, setSelectedSnapshot] =
+  const versionDraft = useReviewDraft(
+    user?.id || "",
+    "monitoring:registry-selections",
+    { selections: "{}" },
+    ["selections"],
+  );
+  const selections = snapshotSelections(versionDraft.values.selections);
+  const [pendingSnapshotId, setPendingSnapshotId] = useState("");
+  const snapshotId = candidateId
+    ? selections[candidateId] || ""
+    : pendingSnapshotId;
+  function setSnapshotId(id: string) {
+    if (!candidateId) {
+      setPendingSnapshotId(id);
+      return;
+    }
+    versionDraft.update({
+      selections: JSON.stringify({ ...selections, [candidateId]: id }),
+    });
+  }
+  const [snapshotMetadata, setSelectedSnapshot] =
     useState<RegistrySnapshot | null>(null);
+  const selectedSnapshot =
+    snapshotData?.items.find((row) => row.id === snapshotId) ||
+    (snapshotMetadata?.id === snapshotId ? snapshotMetadata : null);
   function chooseSnapshot(snapshot: RegistrySnapshot | null) {
     setSelectedSnapshot(snapshot);
     setSnapshotId(snapshot?.id || "");
@@ -241,6 +305,12 @@ export function MonitoringView() {
     router.push(`/monitoring?${next}`, { scroll: false });
   }
   function selectCandidate(id: string) {
+    if (!candidateId && pendingSnapshotId) {
+      versionDraft.update({
+        selections: JSON.stringify({ ...selections, [id]: pendingSnapshotId }),
+      });
+      setPendingSnapshotId("");
+    }
     focusSelection.current = true;
     update({ candidate_id: id, section: "candidates" });
   }
@@ -251,12 +321,14 @@ export function MonitoringView() {
   return (
     <div className="monitoring-workspace">
       <PageTitle
-        eyebrow="Кандидаты и предварительные инциденты"
-        title="Мониторинг рекламы"
-        description="Ручной ввод находок, сохранённые версии реестра и отдельная проверка расхождений."
+        eyebrow={t("Кандидаты и предварительные инциденты")}
+        title={t("Мониторинг рекламы")}
+        description={t(
+          "Ручной ввод находок, сохранённые версии реестра и отдельная проверка расхождений.",
+        )}
       />
       <div className="monitoring-boundary">
-        <strong>Закрытый реестр недоступен. Сверка DEMO.</strong>
+        <strong>{t("Закрытый реестр недоступен. Сверка DEMO.")}</strong>
         <p>
           Открытый документ КЖК доступен во вкладке «Источники» для поиска по
           страницам. Автоматическая сверка реальных объектов ещё не подключена;
@@ -267,15 +339,15 @@ export function MonitoringView() {
           variant="outline"
           onClick={() => openTool("sources", "open-register-title")}
         >
-          Открыть источники
+          {t("Открыть источники")}
         </Button>
       </div>
       <WorkspaceTabs
-        tabs={monitoringTabs}
+        tabs={monitoringTabs.map((tab) => ({ ...tab, label: t(tab.label) }))}
         active={sections.active}
         onSelect={sections.select}
         prefix="monitoring"
-        label="Разделы мониторинга"
+        label={t("Разделы мониторинга")}
       />
 
       <WorkspacePanel
@@ -291,14 +363,16 @@ export function MonitoringView() {
         >
           <div className="panel-heading">
             <div>
-              <h2 id="monitoring-candidates-title">Кандидаты объектов</h2>
+              <h2 id="monitoring-candidates-title">
+                {t("Кандидаты объектов")}
+              </h2>
               <p>
                 Отдельная очередь находок. Кандидат ещё не является
                 подтверждённым объектом в каталоге ЖК.
               </p>
             </div>
             <Button variant="outline" onClick={queue.reload}>
-              Обновить кандидатов
+              {t("Обновить кандидатов")}
             </Button>
           </div>
           <div className="padded">
@@ -316,7 +390,7 @@ export function MonitoringView() {
                 });
               }}
             >
-              <Field label="Поиск кандидата">
+              <Field label={t("Поиск кандидата")}>
                 <input
                   name="q"
                   defaultValue={q}
@@ -324,18 +398,28 @@ export function MonitoringView() {
                   type="search"
                 />
               </Field>
-              <Field label="Режим материалов">
+              <Field label={t("Режим материалов")}>
                 <select name="mode" defaultValue={mode}>
-                  <option value="">Все материалы</option>
+                  <option value="">{t("Все материалы")}</option>
                   <option value="true">DEMO</option>
-                  <option value="false">Реальные</option>
+                  <option value="false">{t("Реальные")}</option>
                 </select>
               </Field>
               <Button type="submit" variant="outline">
-                Применить фильтры
+                {t("Применить фильтры")}
               </Button>
             </form>
-            {(q || mode) && (
+            {relatedPropertyId && (
+              <p className="field-help">
+                Кандидаты выбранного досье:{" "}
+                <Link href={`/properties/${relatedPropertyId}`}>
+                  Открыть объект
+                </Link>
+                . Показаны связанные находки и кандидат, из которого досье
+                создано.
+              </p>
+            )}
+            {(q || mode || relatedPropertyId) && (
               <Button
                 variant="ghost"
                 onClick={() =>
@@ -344,10 +428,11 @@ export function MonitoringView() {
                     is_demo: null,
                     page: null,
                     incident_page: null,
+                    property_id: null,
                   })
                 }
               >
-                Сбросить фильтры
+                {t("Сбросить фильтры")}
               </Button>
             )}
           </div>
@@ -359,7 +444,7 @@ export function MonitoringView() {
             <>
               <p className="padded">Найдено кандидатов: {queueData.total}</p>
               {queueData.items.length ? (
-                <TableRegion label="Кандидаты объектов — таблица">
+                <TableRegion label={t("Кандидаты объектов — таблица")}>
                   <table>
                     <thead>
                       <tr>
@@ -389,6 +474,13 @@ export function MonitoringView() {
                             <small>
                               {candidate.address || "Адрес не установлен"}
                             </small>
+                            {candidate.property_id && (
+                              <small>
+                                {candidate.property_link_kind === "LINKED"
+                                  ? "Связан с существующим досье"
+                                  : "Создано досье"}
+                              </small>
+                            )}
                           </td>
                           <td>
                             {candidate.city}
@@ -410,7 +502,7 @@ export function MonitoringView() {
                 </p>
               )}
               <Pagination
-                label="Страницы кандидатов"
+                label={t("Страницы кандидатов")}
                 page={queueData.page}
                 pageSize={queueData.page_size}
                 total={queueData.total}
@@ -440,7 +532,7 @@ export function MonitoringView() {
           aria-labelledby="monitoring-detail-title"
         >
           <div className="panel-heading">
-            <h2 id="monitoring-detail-title">Сверка кандидата</h2>
+            <h2 id="monitoring-detail-title">{t("Сверка кандидата")}</h2>
           </div>
           {candidateId ? (
             <CandidateDetail
@@ -455,9 +547,9 @@ export function MonitoringView() {
                 <div
                   className="registry-snapshot-picker"
                   role="region"
-                  aria-label="Выбор версии реестра"
+                  aria-label={t("Выбор версии реестра")}
                 >
-                  <Field label="DEMO-версия реестра">
+                  <Field label={t("DEMO-версия реестра")}>
                     <select
                       value={snapshotId}
                       onChange={(event) =>
@@ -486,7 +578,7 @@ export function MonitoringView() {
                       ))}
                     </select>
                   </Field>
-                  {selectedSnapshot && (
+                  {selectedSnapshot?.id === snapshotId && (
                     <div className="notice" role="status">
                       <strong>{selectedSnapshot.label} · DEMO</strong>
                       <p>
@@ -497,11 +589,15 @@ export function MonitoringView() {
                         · записей: {selectedSnapshot.entries.length}
                       </p>
                       <p>
-                        Охват: {date(selectedSnapshot.coverage_from)} —{" "}
+                        {t("Охват: ")}
+                        {date(selectedSnapshot.coverage_from)} —{" "}
                         {date(selectedSnapshot.coverage_until)}. Пригоден до:{" "}
                         {date(selectedSnapshot.expires_at)}.
                       </p>
                     </div>
+                  )}
+                  {versionDraft.storageError && (
+                    <Notice error={versionDraft.storageError} />
                   )}
                   {!snapshotData ? (
                     <LoadState error={snapshotError} retry={snapshots.reload} />
@@ -514,7 +610,7 @@ export function MonitoringView() {
                         page={snapshotPage}
                         pageSize={10}
                         total={snapshotData.total}
-                        label="Страницы выбора версии реестра"
+                        label={t("Страницы выбора версии реестра")}
                         onPageChange={(next) =>
                           update({ snapshot_page: String(next) })
                         }
@@ -548,18 +644,20 @@ export function MonitoringView() {
         >
           <div className="panel-heading">
             <div>
-              <h2 id="monitoring-incidents-title">Предварительные инциденты</h2>
+              <h2 id="monitoring-incidents-title">
+                {t("Предварительные инциденты")}
+              </h2>
               <p>
                 Причина для проверки, а не подтверждённый правовой вывод.
                 Повторная сверка дополняет активную карточку той же причины.
               </p>
             </div>
             <Button variant="outline" onClick={incidents.reload}>
-              Обновить инциденты
+              {t("Обновить инциденты")}
             </Button>
           </div>
           <div className="padded">
-            <Field label="Состояние инцидента">
+            <Field label={t("Состояние инцидента")}>
               <select
                 value={incidentState}
                 onChange={(event) =>
@@ -569,7 +667,7 @@ export function MonitoringView() {
                   })
                 }
               >
-                <option value="">Все состояния</option>
+                <option value="">{t("Все состояния")}</option>
                 {Object.entries(incidentLabels).map(([state, label]) => (
                   <option key={state} value={state}>
                     {label}
@@ -588,7 +686,7 @@ export function MonitoringView() {
                       <PdfDownload
                         kind="incidents"
                         id={incident.id}
-                        label="PDF инцидента"
+                        label={t("PDF инцидента")}
                       />
                       <h3>
                         <Link
@@ -616,7 +714,7 @@ export function MonitoringView() {
                   <p className="empty">Инцидентов по этим условиям нет.</p>
                 )}
                 <Pagination
-                  label="Страницы предварительных инцидентов"
+                  label={t("Страницы предварительных инцидентов")}
                   page={incidentData.page}
                   pageSize={incidentData.page_size}
                   total={incidentData.total}
@@ -630,6 +728,11 @@ export function MonitoringView() {
         </section>
       </WorkspacePanel>
       <WorkspacePanel id="sources" active={sections.active} prefix="monitoring">
+        <MonitoringSources
+          onOpenTool={(target) => openTool("sources", target)}
+          onOpenCsv={() => sections.select("imports")}
+        />
+        <MonitoringUrlSchedules />
         <details className="monitoring-tool">
           <summary>
             Справочный документ КЖК
@@ -702,7 +805,7 @@ export function MonitoringView() {
                     </p>
                   )}
                   <Pagination
-                    label="Страницы версий DEMO-реестра"
+                    label={t("Страницы версий DEMO-реестра")}
                     page={snapshotData.page}
                     pageSize={snapshotData.page_size}
                     total={snapshotData.total}
@@ -727,6 +830,15 @@ export function MonitoringView() {
           </section>
         </details>
       </WorkspacePanel>
+      <WorkspacePanel id="imports" active={sections.active} prefix="monitoring">
+        <CsvImport key={user?.id || "anonymous"} />
+      </WorkspacePanel>
+      <WorkspacePanel id="runs" active={sections.active} prefix="monitoring">
+        <MonitoringRuns />
+      </WorkspacePanel>
+      <WorkspacePanel id="v2" active={sections.active} prefix="monitoring">
+        {v2Visited && <MonitoringV2 />}
+      </WorkspacePanel>
     </div>
   );
 }
@@ -738,6 +850,7 @@ function CandidateCreate({
   advertisementId: string;
   onCreated: (candidate: MonitoringCandidate) => void;
 }) {
+  const { t } = useLocale();
   const [adId, setAdId] = useState(advertisementId);
   const [preview, setPreview] = useState<Advertisement | null>(null);
   const [previewError, setPreviewError] = useState("");
@@ -793,7 +906,7 @@ function CandidateCreate({
         Сопоставление здесь выполняет аналитик. Неизвестные адрес и очередь
         остаются пустыми; система не подставляет вымышленные данные.
       </p>
-      <Field label="ID сохранённой публикации">
+      <Field label={t("ID сохранённой публикации")}>
         <input
           required
           value={adId}
@@ -832,20 +945,20 @@ function CandidateCreate({
         </div>
       )}
       <div className="monitoring-fields">
-        <Field label="Название кандидата">
+        <Field label={t("Название кандидата")}>
           <input name="name" required maxLength={300} />
         </Field>
-        <Field label="Город кандидата">
+        <Field label={t("Город кандидата")}>
           <input name="city" required minLength={2} maxLength={100} />
         </Field>
-        <Field label="Адрес кандидата (если известен)">
+        <Field label={t("Адрес кандидата (если известен)")}>
           <input name="address" maxLength={300} />
         </Field>
-        <Field label="Очередь / корпус кандидата (если известны)">
+        <Field label={t("Очередь / корпус кандидата (если известны)")}>
           <input name="phase" maxLength={100} />
         </Field>
       </div>
-      <Field label="Обоснование выделения объекта">
+      <Field label={t("Обоснование выделения объекта")}>
         <textarea name="reason" required maxLength={1000} rows={3} />
       </Field>
       <Button
@@ -885,17 +998,27 @@ function CandidateDetail({
   onChooseSnapshot: () => void;
   onChanged: () => void;
 }) {
+  const { t } = useLocale();
   const { user } = useContext(Auth);
   const path = `${prefix}/candidates/${encodeURIComponent(id)}`;
   const detail = useData<MonitoringCandidateDetail>(path);
   const data =
     detail.resolvedPath === path && !detail.error ? detail.data : null;
-  const mutation = useMonitoringCommand();
+  const draft = useReviewDraft(user?.id || "", `monitoring:compare:${id}`, {
+    advertisementId: "",
+    reason: "",
+  });
+  const advertisementId =
+    draft.values.advertisementId || data?.advertisements[0]?.id || "";
+  const advertisementAvailable = data?.advertisements.some(
+    (ad) => ad.id === advertisementId,
+  );
+  const mutation = useMonitoringCommand(`compare:${id}`);
   const [latest, setLatest] = useState<MonitoringComparison | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   async function compare(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!data) return;
+    if (!data || !advertisementAvailable) return;
     setLatest(null);
     const form = new FormData(event.currentTarget);
     const comparison = await mutation.run<MonitoringComparison>(
@@ -908,6 +1031,8 @@ function CandidateDetail({
       },
     );
     if (!comparison) return;
+    draft.update({ advertisementId: "", reason: "" });
+    draft.saved();
     setLatest(comparison);
     detail.reload();
     onChanged();
@@ -929,10 +1054,28 @@ function CandidateDetail({
           <h3>
             {data.candidate.name} <Demo value={data.candidate.is_demo} />
           </h3>
+          {!data.candidate.property_id && (
+            <CandidatePropertyLink
+              candidate={data.candidate}
+              onChanged={reviewed}
+            />
+          )}
+          <CandidateDossier candidate={data.candidate} onChanged={reviewed} />
+          {data.candidate.property_link_kind === "LINKED" && (
+            <CandidatePropertyUnlink
+              key={`${data.candidate.id}:${data.candidate.property_id}:${data.candidate.revision}`}
+              candidate={data.candidate}
+              onChanged={reviewed}
+            />
+          )}
+          <CandidateDossierHistory
+            key={data.candidate.revision}
+            candidateId={data.candidate.id}
+          />
           <PdfDownload
             kind="candidates"
             id={data.candidate.id}
-            label="PDF карточки кандидата"
+            label={t("PDF карточки кандидата")}
           />
           <p>
             {data.candidate.city} ·{" "}
@@ -943,7 +1086,7 @@ function CandidateDetail({
           <p className="monitoring-meta">
             ID {data.candidate.id} · ревизия {data.candidate.revision}
           </p>
-          <h3>Связанные публикации</h3>
+          <h3>{t("Связанные публикации")}</h3>
           <p className="field-help">
             Показано {data.advertisements.length} из {data.advertisement_total}{" "}
             связанных публикаций, не более 100 последних. Для сверки доступны
@@ -967,9 +1110,13 @@ function CandidateDetail({
             <form
               className="monitoring-form"
               onSubmit={compare}
-              aria-label="Выполнить сверку кандидата"
+              aria-label={t("Выполнить сверку кандидата")}
             >
-              <h3>Новая сверка</h3>
+              <h3>{t("Новая сверка")}</h3>
+              <MonitoringDraftNotice
+                draft={draft}
+                retryError={mutation.storageError}
+              />
               <p className="field-help">
                 Выберите DEMO-версию в списке или оставьте «Без версии» для
                 результата «Ожидает доступного реестра». Сверка реального
@@ -984,12 +1131,20 @@ function CandidateDetail({
               >
                 Выбрать версию реестра
               </Button>
-              <Field label="Публикация для сверки">
+              <Field label={t("Публикация для сверки")}>
                 <select
                   name="advertisement_id"
                   required
-                  defaultValue={data.advertisements[0]?.id || ""}
+                  value={advertisementId}
+                  onChange={(event) =>
+                    draft.update({ advertisementId: event.target.value })
+                  }
                 >
+                  {advertisementId && !advertisementAvailable && (
+                    <option value={advertisementId} disabled>
+                      Выбранная публикация недоступна — выберите другую
+                    </option>
+                  )}
                   {data.advertisements.map((ad) => (
                     <option key={ad.id} value={ad.id}>
                       {ad.source_label}
@@ -1002,10 +1157,14 @@ function CandidateDetail({
                 <summary>Технический ID версии</summary>
                 <p className="field-help">
                   Ручной ввод не загружает описание версии. Для проверки
-                  названия и охвата используйте список выше. Выбор сохраняется
-                  до обновления страницы.
+                  названия и охвата используйте список выше. Выбор сохраняется в
+                  этой вкладке отдельно для каждого кандидата.
                 </p>
-                <Field label="ID DEMO-версии реестра (пусто — реестр недоступен)">
+                <Field
+                  label={t(
+                    "ID DEMO-версии реестра (пусто — реестр недоступен)",
+                  )}
+                >
                   <input
                     value={snapshotId}
                     onChange={(event) => onSnapshotChange(event.target.value)}
@@ -1022,14 +1181,26 @@ function CandidateDetail({
               >
                 Сверять без реестра
               </Button>
-              <Field label="Основание запуска сверки">
-                <textarea name="reason" required maxLength={1000} rows={2} />
+              <Field label={t("Основание запуска сверки")}>
+                <textarea
+                  name="reason"
+                  required
+                  maxLength={1000}
+                  rows={2}
+                  value={draft.values.reason}
+                  onChange={(event) =>
+                    draft.update({
+                      reason: event.target.value,
+                      advertisementId,
+                    })
+                  }
+                />
               </Field>
               <Button
                 type="submit"
                 disabled={
                   mutation.busy ||
-                  !data.advertisements.length ||
+                  !advertisementAvailable ||
                   (!data.candidate.is_demo && !!snapshotId.trim())
                 }
                 aria-busy={mutation.busy}
@@ -1052,7 +1223,7 @@ function CandidateDetail({
               className="monitoring-success monitoring-result"
               role="status"
             >
-              <h3>Последняя выполненная сверка</h3>
+              <h3>{t("Последняя выполненная сверка")}</h3>
               <p>
                 <strong>{resultLabel(latest.result)}</strong>
               </p>
@@ -1064,7 +1235,7 @@ function CandidateDetail({
               <p>Предварительная карточка не начисляет баллы R1–R6.</p>
             </div>
           )}
-          <h3>Последние сверки</h3>
+          <h3>{t("Последние сверки")}</h3>
           <p className="field-help">
             Последние 20 результатов. Новая сверка не переписывает старые
             снимки.
@@ -1075,7 +1246,7 @@ function CandidateDetail({
                 <PdfDownload
                   kind="comparisons"
                   id={comparison.id}
-                  label="PDF сверки"
+                  label={t("PDF сверки")}
                 />
                 <h4>{resultLabel(comparison.result)}</h4>
                 <p>{comparison.explanation}</p>
@@ -1094,7 +1265,7 @@ function CandidateDetail({
               Сверок ещё нет. Выберите источник и выполните первую сверку.
             </p>
           )}
-          <h3>Инциденты кандидата</h3>
+          <h3>{t("Инциденты кандидата")}</h3>
           <p className="field-help">
             Последние 20 карточек. Закрытая карточка сохраняет историю;
             автоматического подтверждения нарушения нет.
@@ -1117,8 +1288,9 @@ function CandidateDetail({
 }
 
 function RegistryEntries({ entries }: { entries: RegistryEntry[] }) {
+  const { t } = useLocale();
   return (
-    <TableRegion label="Записи сохранённой версии реестра">
+    <TableRegion label={t("Записи сохранённой версии реестра")}>
       <table>
         <thead>
           <tr>
@@ -1171,13 +1343,14 @@ function RegistryVersion({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const { t } = useLocale();
   const { user } = useContext(Auth);
   return (
     <article className="monitoring-record">
       <PdfDownload
         kind="registry-snapshots"
         id={snapshot.id}
-        label="PDF версии реестра"
+        label={t("PDF версии реестра")}
       />
       <h3>
         {snapshot.label} <Demo value={snapshot.is_demo} />
@@ -1266,6 +1439,7 @@ function SnapshotCreate({
 }: {
   onCreated: (snapshot: RegistrySnapshot) => void;
 }) {
+  const { t } = useLocale();
   const mutation = useMonitoringCommand();
   const [entries, setEntries] = useState<{ key: number; data: EntryDraft }[]>(
     [],
@@ -1366,7 +1540,7 @@ function SnapshotCreate({
     <form
       className="monitoring-form"
       onSubmit={submit}
-      aria-label="Новая версия DEMO-реестра"
+      aria-label={t("Новая версия DEMO-реестра")}
     >
       <p>
         Только синтетические данные. Заполнение примера не сохраняет версию. Для
@@ -1382,7 +1556,7 @@ function SnapshotCreate({
         Заполнить DEMO-пример
       </Button>
       <div className="monitoring-fields">
-        <Field label="Название DEMO-версии">
+        <Field label={t("Название DEMO-версии")}>
           <input
             required
             maxLength={300}
@@ -1392,7 +1566,7 @@ function SnapshotCreate({
             }
           />
         </Field>
-        <Field label="Город охвата DEMO-версии">
+        <Field label={t("Город охвата DEMO-версии")}>
           <input
             required
             minLength={2}
@@ -1403,7 +1577,7 @@ function SnapshotCreate({
             }
           />
         </Field>
-        <Field label="Начало охвата публикаций">
+        <Field label={t("Начало охвата публикаций")}>
           <input
             required
             type="datetime-local"
@@ -1413,7 +1587,7 @@ function SnapshotCreate({
             }
           />
         </Field>
-        <Field label="Окончание охвата публикаций">
+        <Field label={t("Окончание охвата публикаций")}>
           <input
             required
             type="datetime-local"
@@ -1424,7 +1598,7 @@ function SnapshotCreate({
             }
           />
         </Field>
-        <Field label="Версия пригодна до">
+        <Field label={t("Версия пригодна до")}>
           <input
             required
             type="datetime-local"
@@ -1586,7 +1760,7 @@ function SnapshotCreate({
       >
         Добавить DEMO-документ
       </Button>
-      <Field label="Обоснование создания DEMO-версии">
+      <Field label={t("Обоснование создания DEMO-версии")}>
         <textarea
           required
           rows={3}
@@ -1615,6 +1789,522 @@ function SnapshotCreate({
   );
 }
 
+function CandidateDossierHistory({ candidateId }: { candidateId: string }) {
+  const { t } = useLocale();
+  const [page, setPage] = useState(1);
+  const path = `${prefix}/candidates/${candidateId}/dossier-history?page=${page}&page_size=10`;
+  const history = useData<Page<AuditEvent>>(path);
+  const data =
+    history.resolvedPath === path && !history.error ? history.data : null;
+  const labels: Record<string, string> = {
+    MONITORING_DOSSIER_CREATED: "Создано досье из кандидата",
+    MONITORING_DOSSIER_LINKED: "Кандидат связан с досье",
+    MONITORING_DOSSIER_UNLINKED: "Отменена ошибочная связь кандидата",
+  };
+  return (
+    <details className="monitoring-record">
+      <summary>История связей с досье</summary>
+      {!data ? (
+        <LoadState error={history.error} retry={history.reload} />
+      ) : (
+        <>
+          <p>
+            Сохранённых решений: {data.total}. Отмена связи не удаляет
+            предыдущие решения.
+          </p>
+          {data.items.map((event) => {
+            const propertyId =
+              typeof event.details.property_id === "string"
+                ? event.details.property_id
+                : "";
+            const identity = event.details.property_identity;
+            const name =
+              identity &&
+              typeof identity === "object" &&
+              "name" in identity &&
+              typeof identity.name === "string"
+                ? identity.name
+                : typeof event.details.name === "string"
+                  ? event.details.name
+                  : propertyId;
+            return (
+              <article className="monitoring-record" key={event.id}>
+                <strong>
+                  {labels[event.action] || "Решение по связи с досье"}
+                </strong>
+                <p>
+                  {date(event.occurred_at)} ·{" "}
+                  {event.actor_display_name || "Аналитик"}
+                </p>
+                {propertyId && (
+                  <p>
+                    <Link href={`/properties/${propertyId}`}>{name}</Link>
+                  </p>
+                )}
+                <p>{event.reason || "Причина в старой записи не указана"}</p>
+                <details>
+                  <summary>Данные решения</summary>
+                  <p>
+                    Ревизия кандидата: {event.old_revision ?? "не указана"} →{" "}
+                    {event.new_revision ?? "не указана"}. ID решения: {event.id}
+                  </p>
+                </details>
+              </article>
+            );
+          })}
+          {!data.total && (
+            <p className="empty">Решений по связи с досье пока нет.</p>
+          )}
+          <Pagination
+            label={t("Страницы истории связей")}
+            page={data.page}
+            pageSize={data.page_size}
+            total={data.total}
+            onPageChange={setPage}
+          />
+        </>
+      )}
+    </details>
+  );
+}
+
+function CandidatePropertyUnlink({
+  candidate,
+  onChanged,
+}: {
+  candidate: MonitoringCandidate;
+  onChanged: () => void;
+}) {
+  const { t } = useLocale();
+  const { user } = useContext(Auth);
+  const draft = useReviewDraft(
+    user?.id || "",
+    `monitoring:dossier-unlink:${candidate.id}:${candidate.property_id}:${candidate.revision}`,
+    { reason: "" },
+  );
+  const mutation = useMonitoringCommand(
+    `dossier-unlink:${candidate.id}:${candidate.property_id}:${candidate.revision}`,
+  );
+  const [target, setTarget] = useState<PropertyDetail | null>(null);
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    api<PropertyDetail>(`/properties/${candidate.property_id}`, {
+      signal: controller.signal,
+    })
+      .then((detail) => {
+        setTarget(detail);
+        setError("");
+      })
+      .catch((failure) => {
+        if (failure.name !== "AbortError") {
+          setTarget(null);
+          setError(failure.message);
+        }
+      });
+    return () => controller.abort();
+  }, [candidate.property_id, attempt]);
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!target || target.property.id !== candidate.property_id) return;
+    const form = new FormData(event.currentTarget);
+    const result = await mutation.run<MonitoringCandidate>(
+      `${prefix}/candidates/${candidate.id}/unlink-dossier`,
+      {
+        property_id: candidate.property_id,
+        expected_revision: candidate.revision,
+        expected_property_revision: target.property.revision,
+        reason: draft.values.reason.trim(),
+        unlink_confirmed: form.get("unlink_confirmed") === "on",
+      },
+    );
+    if (!result || result.property_id) return;
+    draft.saved();
+    onChanged();
+  }
+  if (user?.role !== "analyst") return null;
+  return (
+    <details className="monitoring-record">
+      <summary>Исправить ошибочную связь</summary>
+      <p>
+        Отмените текущую связь кандидата. После отмены нужное досье выбирается
+        отдельным действием. Публикации, факторы и решения остаются на своих
+        местах и требуют самостоятельной проверки.
+      </p>
+      <MonitoringDraftNotice draft={draft} retryError={mutation.storageError} />
+      {!target || target.property.id !== candidate.property_id ? (
+        <LoadState error={error} retry={() => setAttempt((n) => n + 1)} />
+      ) : (
+        <>
+          <p>
+            Сейчас связано: {target.property.name} · {target.property.city} ·{" "}
+            {target.property.address}. <Demo value={target.property.is_demo} />
+          </p>
+          <form
+            key={`${candidate.revision}:${target.property.revision}`}
+            className="monitoring-form"
+            aria-label={t("Отмена ошибочной связи с досье")}
+            onSubmit={submit}
+          >
+            <fieldset
+              className="monitoring-link-fields monitoring-form"
+              disabled={mutation.busy}
+            >
+              <legend className="sr-only">Подтверждение отмены связи</legend>
+              <Field label={t("Причина отмены связи")}>
+                <textarea
+                  required
+                  maxLength={1000}
+                  rows={2}
+                  value={draft.values.reason}
+                  onChange={(e) => draft.update({ reason: e.target.value })}
+                />
+              </Field>
+              <label>
+                <input type="checkbox" name="unlink_confirmed" required /> Я
+                проверил ошибку и подтверждаю отмену этой связи
+              </label>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setTarget(null);
+                  setAttempt((n) => n + 1);
+                }}
+              >
+                Обновить сведения связанного досье
+              </Button>
+              <Button
+                type="submit"
+                variant="danger"
+                disabled={mutation.busy}
+                aria-busy={mutation.busy}
+              >
+                {mutation.busy ? "Отмена…" : "Отменить ошибочную связь"}
+              </Button>
+            </fieldset>
+          </form>
+        </>
+      )}
+      {mutation.error && <Notice error={mutation.error} />}
+    </details>
+  );
+}
+
+function CandidatePropertyLink({
+  candidate,
+  onChanged,
+}: {
+  candidate: MonitoringCandidate;
+  onChanged: () => void;
+}) {
+  const { t } = useLocale();
+  const { user } = useContext(Auth);
+  const draft = useReviewDraft(
+    user?.id || "",
+    `monitoring:dossier-link:${candidate.id}`,
+    { propertyId: "", reason: "" },
+  );
+  const mutation = useMonitoringCommand(`dossier-link:${candidate.id}`);
+  const [target, setTarget] = useState<PropertyDetail | null>(null);
+  const [targetError, setTargetError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!draft.values.propertyId) return;
+    const controller = new AbortController();
+    api<PropertyDetail>(`/properties/${draft.values.propertyId}`, {
+      signal: controller.signal,
+    })
+      .then((detail) => {
+        setTarget(detail);
+        setTargetError("");
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") {
+          setTarget(null);
+          setTargetError(error.message);
+        }
+      });
+    return () => controller.abort();
+  }, [draft.values.propertyId, attempt]);
+  const selected =
+    target?.property.id === draft.values.propertyId ? target.property : null;
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selected) return;
+    const form = new FormData(event.currentTarget);
+    const result = await mutation.run<MonitoringCandidate>(
+      `${prefix}/candidates/${candidate.id}/link-dossier`,
+      {
+        property_id: selected.id,
+        expected_revision: candidate.revision,
+        expected_property_revision: selected.revision,
+        identity_checked: form.get("identity_checked") === "on",
+        reason: draft.values.reason.trim(),
+      },
+    );
+    if (!result?.property_id) return;
+    draft.saved();
+    onChanged();
+  }
+  if (user?.role !== "analyst") return null;
+  return (
+    <details className="monitoring-record">
+      <summary>{t("Связать с существующим досье")}</summary>
+      <p>
+        Кандидат: {candidate.name} · {candidate.city} ·{" "}
+        {candidate.address || "Адрес не установлен"} ·{" "}
+        {candidate.phase || "Очередь не установлена"}.{" "}
+        <Demo value={candidate.is_demo} />
+      </p>
+      <MonitoringDraftNotice draft={draft} retryError={mutation.storageError} />
+      <fieldset
+        className="monitoring-link-fields monitoring-form"
+        disabled={mutation.busy}
+      >
+        <legend className="sr-only">
+          Выбор и подтверждение досье кандидата
+        </legend>
+        <PropertyPicker
+          value={draft.values.propertyId}
+          onChange={(propertyId) => {
+            draft.update({ propertyId });
+            setTarget(null);
+            setTargetError("");
+          }}
+          isDemo={candidate.is_demo}
+        />
+        {draft.values.propertyId &&
+          (!selected ? (
+            <LoadState
+              error={targetError}
+              retry={() => setAttempt((n) => n + 1)}
+            />
+          ) : (
+            <>
+              <p>
+                Выбрано досье:{" "}
+                <Link
+                  href={`/properties/${selected.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {selected.name}
+                </Link>{" "}
+                · {selected.city} · {selected.address} ·{" "}
+                {selected.developer.name}
+                . <Demo value={selected.is_demo} />
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setTarget(null);
+                  setAttempt((n) => n + 1);
+                }}
+              >
+                Обновить сведения досье
+              </Button>
+              <form
+                key={`${selected.id}:${selected.revision}`}
+                className="monitoring-form"
+                aria-label={t("Связь кандидата с досье")}
+                onSubmit={submit}
+              >
+                <Field label={t("Основание связи с досье")}>
+                  <textarea
+                    required
+                    maxLength={1000}
+                    rows={2}
+                    value={draft.values.reason}
+                    onChange={(e) => draft.update({ reason: e.target.value })}
+                  />
+                </Field>
+                <label>
+                  <input type="checkbox" name="identity_checked" required /> Я
+                  проверил, что это тот же объект и очередь / корпус
+                </label>
+                <p className="field-help">
+                  Проверьте адрес, очередь и застройщика по источникам. Связь
+                  кандидата не переносит публикации, решения по инцидентам,
+                  факторы или сигналы. После сохранения смена досье этим
+                  действием недоступна.
+                </p>
+                <Button
+                  type="submit"
+                  disabled={mutation.busy}
+                  aria-busy={mutation.busy}
+                >
+                  {mutation.busy
+                    ? "Сохранение связи…"
+                    : "Подтвердить связь с досье"}
+                </Button>
+              </form>
+            </>
+          ))}
+      </fieldset>
+      {mutation.error && <Notice error={mutation.error} />}
+    </details>
+  );
+}
+
+function CandidateDossier({
+  candidate,
+  onChanged,
+}: {
+  candidate: MonitoringCandidate;
+  onChanged: () => void;
+}) {
+  const { t } = useLocale();
+  const { user } = useContext(Auth);
+  const draft = useReviewDraft(
+    user?.id || "",
+    `monitoring:dossier:${candidate.id}`,
+    {
+      name: candidate.phase
+        ? `${candidate.name} · ${candidate.phase}`
+        : candidate.name,
+      address: candidate.address || "",
+      developerName: "",
+      developerBin: "",
+      reason: "",
+    },
+  );
+  const mutation = useMonitoringCommand(`dossier:${candidate.id}`);
+  const [createdId, setCreatedId] = useState("");
+  const propertyId = candidate.property_id || createdId;
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const result = await mutation.run<MonitoringCandidate>(
+      `${prefix}/candidates/${candidate.id}/dossier`,
+      {
+        expected_revision: candidate.revision,
+        name: draft.values.name.trim(),
+        address: draft.values.address.trim(),
+        developer_name: draft.values.developerName.trim(),
+        developer_bin: draft.values.developerBin.trim() || null,
+        reason: draft.values.reason.trim(),
+        identity_checked: form.get("identity_checked") === "on",
+      },
+    );
+    if (!result?.property_id) return;
+    draft.saved();
+    setCreatedId(result.property_id);
+    onChanged();
+  }
+  if (propertyId)
+    return (
+      <p role="status">
+        <Link href={`/properties/${propertyId}`}>
+          {candidate.property_link_kind === "LINKED"
+            ? "Открыть связанное досье"
+            : "Открыть созданное досье"}
+        </Link>
+        {candidate.property_link_kind === "CREATED" && (
+          <small className="field-help">
+            {" "}
+            Происхождение создания сохраняется; отмена этой связи здесь
+            недоступна.
+          </small>
+        )}
+      </p>
+    );
+  if (user?.role !== "analyst") return null;
+  return (
+    <details className="monitoring-record">
+      <summary>{t("Создать досье объекта")}</summary>
+      <p>
+        Проверьте название, очередь, адрес и застройщика по источникам. Город:{" "}
+        {candidate.city}. <Demo value={candidate.is_demo} />
+      </p>
+      <Link
+        href={`/properties?${new URLSearchParams({ q: candidate.name, is_demo: String(candidate.is_demo) })}`}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Проверить дубли в реестре (новая вкладка)
+      </Link>
+      <form
+        className="monitoring-form"
+        aria-label={t("Создание досье из кандидата")}
+        onSubmit={submit}
+      >
+        <MonitoringDraftNotice
+          draft={draft}
+          retryError={mutation.storageError}
+        />
+        <p className="field-help">Все поля обязательны, кроме БИН.</p>
+        <div className="monitoring-fields">
+          <Field label={t("Название объекта и очередь")}>
+            <input
+              required
+              minLength={2}
+              maxLength={300}
+              value={draft.values.name}
+              onChange={(e) => draft.update({ name: e.target.value })}
+            />
+          </Field>
+          <Field label={t("Адрес объекта")}>
+            <input
+              required
+              minLength={2}
+              maxLength={300}
+              value={draft.values.address}
+              onChange={(e) => draft.update({ address: e.target.value })}
+            />
+          </Field>
+          <Field label={t("Название застройщика")}>
+            <input
+              required
+              minLength={2}
+              maxLength={300}
+              value={draft.values.developerName}
+              onChange={(e) => draft.update({ developerName: e.target.value })}
+            />
+          </Field>
+          <Field label={t("БИН застройщика (если известен)")}>
+            <input
+              inputMode="numeric"
+              pattern="[0-9]{12}"
+              maxLength={12}
+              value={draft.values.developerBin}
+              onChange={(e) => draft.update({ developerBin: e.target.value })}
+            />
+          </Field>
+        </div>
+        <Field label={t("Основание создания досье")}>
+          <textarea
+            required
+            maxLength={1000}
+            rows={2}
+            value={draft.values.reason}
+            onChange={(e) => draft.update({ reason: e.target.value })}
+          />
+        </Field>
+        <label>
+          <input type="checkbox" name="identity_checked" required /> Я проверил
+          сведения и отсутствие дубля в реестре
+        </label>
+        <p className="field-help">
+          Привязка публикаций этим действием не меняется. Правовой статус и
+          стадия будут неизвестны; факторов риска и сигнала это действие не
+          подтверждает.
+        </p>
+        <Button
+          type="submit"
+          disabled={mutation.busy}
+          aria-busy={mutation.busy}
+        >
+          {mutation.busy ? "Создание…" : "Создать новое досье"}
+        </Button>
+        {mutation.error && <Notice error={mutation.error} />}
+      </form>
+    </details>
+  );
+}
+
 function IncidentReview({
   incident,
   onChanged,
@@ -1622,9 +2312,19 @@ function IncidentReview({
   incident: MonitoringIncident;
   onChanged: () => void;
 }) {
+  const { t } = useLocale();
   const { user } = useContext(Auth);
-  const mutation = useMonitoringCommand();
-  const [targetState, setTargetState] = useState<IncidentState>("IN_REVIEW");
+  const draft = useReviewDraft(
+    user?.id || "",
+    `monitoring:incident:${incident.id}`,
+    { state: "IN_REVIEW", reason: "", closeReason: "" },
+  );
+  const targetState = ["IN_REVIEW", "WAITING_DATA", "CLOSED"].includes(
+    draft.values.state,
+  )
+    ? (draft.values.state as IncidentState)
+    : "IN_REVIEW";
+  const mutation = useMonitoringCommand(`incident:${incident.id}`);
   const [saved, setSaved] = useState("");
   const resultRef = useRef<HTMLParagraphElement>(null);
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -1641,6 +2341,8 @@ function IncidentReview({
       },
     );
     if (!updated) return;
+    draft.update({ state: "IN_REVIEW", reason: "", closeReason: "" });
+    draft.saved();
     setSaved(`Решение сохранено: ${incidentLabels[updated.state]}.`);
     onChanged();
     requestAnimationFrame(() => resultRef.current?.focus());
@@ -1665,14 +2367,16 @@ function IncidentReview({
         <form
           className="monitoring-form"
           onSubmit={submit}
-          aria-label="Решение по предварительному инциденту"
+          aria-label={t("Решение по предварительному инциденту")}
         >
-          <Field label="Новое состояние инцидента">
+          <MonitoringDraftNotice
+            draft={draft}
+            retryError={mutation.storageError}
+          />
+          <Field label={t("Новое состояние инцидента")}>
             <select
               value={targetState}
-              onChange={(event) =>
-                setTargetState(event.target.value as IncidentState)
-              }
+              onChange={(event) => draft.update({ state: event.target.value })}
             >
               <option value="IN_REVIEW">В работе</option>
               <option value="WAITING_DATA">Ожидает данных</option>
@@ -1680,8 +2384,19 @@ function IncidentReview({
             </select>
           </Field>
           {targetState === "CLOSED" && (
-            <Field label="Причина закрытия инцидента">
-              <select name="close_reason" required defaultValue="">
+            <Field label={t("Причина закрытия инцидента")}>
+              <select
+                name="close_reason"
+                required
+                value={
+                  Object.hasOwn(closeLabels, draft.values.closeReason)
+                    ? draft.values.closeReason
+                    : ""
+                }
+                onChange={(event) =>
+                  draft.update({ closeReason: event.target.value })
+                }
+              >
                 <option value="" disabled>
                   Выберите причину
                 </option>
@@ -1693,8 +2408,15 @@ function IncidentReview({
               </select>
             </Field>
           )}
-          <Field label="Обоснование решения по инциденту">
-            <textarea name="reason" required maxLength={1000} rows={3} />
+          <Field label={t("Обоснование решения по инциденту")}>
+            <textarea
+              name="reason"
+              required
+              maxLength={1000}
+              rows={3}
+              value={draft.values.reason}
+              onChange={(event) => draft.update({ reason: event.target.value })}
+            />
           </Field>
           {targetState === "CLOSED" && (
             <p className="field-help">
@@ -1727,7 +2449,7 @@ function IncidentReview({
       )}
       <details>
         <summary>История решений инцидента</summary>
-        <ol aria-label="История предварительного инцидента">
+        <ol aria-label={t("История предварительного инцидента")}>
           {incident.history.map((entry, index) => (
             <li key={`${entry.occurred_at}:${index}`}>
               <p>

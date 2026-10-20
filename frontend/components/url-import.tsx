@@ -7,6 +7,7 @@ import { api, command } from "@/lib/api";
 import type { Job } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Auth, Notice, PageTitle } from "@/components/workspace";
+import { useLocale } from "@/lib/locale";
 
 type ImportJob = Job & {
   kind: "IMPORT_URL";
@@ -17,6 +18,7 @@ const terminal = (job: ImportJob) =>
   ["SUCCEEDED", "FAILED", "BLOCKED"].includes(job.state);
 
 export function UrlImportView() {
+  const { t } = useLocale();
   const { user } = useContext(Auth);
   const params = useSearchParams();
   const router = useRouter();
@@ -140,14 +142,24 @@ export function UrlImportView() {
         description="Сохраните оригинал открытой публикации. Анализ и подтверждение выполняются отдельно."
       />
       <section className="panel padded form-panel">
-        <h2>Primeminister.kz</h2>
+        <h2>{t("Поддерживаемые страницы", "Қолдау көрсетілетін беттер")}</h2>
         <p>
-          Поддерживаются статьи разделов /ru/news/ и /news/. Это официальные
-          информационные материалы о жилищных программах; коммерческие площадки
-          пока не подключены.
+          <a
+            href="https://www.angroups.kz/payment"
+            target="_blank"
+            rel="noreferrer"
+          >
+            AN GROUPS · /payment
+          </a>{" "}
+          —{" "}
+          {t(
+            "условия оплаты. Сохраняются текст мобильных карточек и полный HTML; текст настольной версии может отличаться. Дата публикации и конкретный ЖК не установлены.",
+            "төлем шарттары. Мобильді карточкалар мәтіні мен толық HTML сақталады; компьютер нұсқасының мәтіні өзгеше болуы мүмкін. Жарияланған күні мен нақты ТК анықталмаған.",
+          )}
         </p>
         <p>
-          Источник: Primeminister.kz.{" "}
+          Primeminister.kz · /ru/news/, /news/ —{" "}
+          {t("информационные статьи", "ақпараттық мақалалар")}.{" "}
           <a
             href="https://creativecommons.org/licenses/by/4.0/"
             target="_blank"
@@ -155,8 +167,11 @@ export function UrlImportView() {
           >
             Лицензия CC BY 4.0
           </a>
-          . При импорте извлекается текст статьи, оформление удаляется;
-          HTML-оригинал сохраняется отдельно.
+          {t(" (только Primeminister.kz).", " (тек Primeminister.kz).")}{" "}
+          {t(
+            "Импорт запускается кнопкой. Привязка объекта, анализ и решения выполняются отдельно.",
+            "Импорт батырмамен іске қосылады. Нысанға байланыстыру, талдау мен шешімдер бөлек орындалады.",
+          )}
         </p>
         {user?.role === "analyst" ? (
           <form onSubmit={start}>

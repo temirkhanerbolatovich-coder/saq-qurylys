@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/lib/locale";
 
 import { PdfDownload } from "@/components/pdf-download";
 
@@ -94,6 +95,10 @@ const pdfLabels: Record<Signal["pdf_state"], string> = {
 
 function signalVersionUrl(search: string, signalId: string) {
   const next = new URLSearchParams(search);
+  if (!next.size) {
+    next.set("state", "DRAFT");
+    next.set("is_stale", "false");
+  }
   next.set("signal_id", signalId);
   return `/signals?${next.toString()}`;
 }
@@ -186,11 +191,14 @@ export function CreateSignalButton({
 }
 
 export function SignalsView() {
+  const { t } = useLocale();
   const params = useSearchParams();
   const router = useRouter();
 
-  const state = params.get("state") || "";
-  const stale = params.get("is_stale") || "";
+  // Only the bare entry opens the work queue; existing deep links keep their meaning.
+  const defaultWork = params.size === 0;
+  const state = params.get("state") || (defaultWork ? "DRAFT" : "");
+  const stale = params.get("is_stale") || (defaultWork ? "false" : "");
   const propertyId = params.get("property_id") || "";
   const search = params.get("q") || "";
 
@@ -246,9 +254,32 @@ export function SignalsView() {
 
   const id = params.get("signal_id") || queueData?.items[0]?.id;
 
+  function queueParams() {
+    const next = new URLSearchParams(params);
+    if (defaultWork) {
+      next.set("state", "DRAFT");
+      next.set("is_stale", "false");
+    }
+    return next;
+  }
+
+  function selectQueue(preset: "work" | "all" | "stale") {
+    const next = queueParams();
+    next.set("view", preset);
+    next.delete("page");
+    next.delete("state");
+    next.delete("is_stale");
+    if (preset === "work") {
+      next.set("state", "DRAFT");
+      next.set("is_stale", "false");
+    } else if (preset === "stale") next.set("is_stale", "true");
+    if (id) next.set("signal_id", id);
+    router.push(`/signals?${next}`, { scroll: false });
+  }
+
   function searchQueue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const next = new URLSearchParams(params);
+    const next = queueParams();
     const value = queueSearch.trim();
     if (value) next.set("q", value);
     else next.delete("q");
@@ -276,32 +307,27 @@ export function SignalsView() {
   }, [id, focusDetail]);
 
   function filter(name: string, value: string) {
-    const next = new URLSearchParams(params);
+    const next = queueParams();
+    next.set("view", "custom");
 
     if (value) next.set(name, value);
     else next.delete(name);
 
     if (name !== "page") next.delete("page");
 
-    if (name === "page" && id) next.set("signal_id", id);
-    else next.delete("signal_id");
+    if (id) next.set("signal_id", id);
 
     router.push(`/signals?${next.toString()}`, { scroll: false });
   }
 
   function resetFilters() {
     const next = new URLSearchParams(params);
+    next.set("view", "all");
 
-    for (const name of [
-      "state",
-      "is_stale",
-      "property_id",
-      "page",
-      "signal_id",
-      "q",
-    ]) {
+    for (const name of ["state", "is_stale", "property_id", "page", "q"]) {
       next.delete(name);
     }
+    if (id) next.set("signal_id", id);
 
     // Открываем дополнительные фильтры, чтобы фокус попал на доступный элемент.
     setFiltersOpen(true);
@@ -323,73 +349,85 @@ export function SignalsView() {
   return (
     <>
       <PageTitle
-        eyebrow="СИГНАЛЫ"
-        title="Сигналы для проверки"
-        description="Изучайте сохранённые факты, проверяйте версии и фиксируйте решение аналитика. Сигнал помогает организовать проверку, но не устанавливает нарушение. Передачи в ведомства нет."
+        eyebrow={t("СИГНАЛЫ")}
+        title={t("Сигналы для проверки")}
+        description={t(
+          "Изучайте сохранённые факты, проверяйте версии и фиксируйте решение аналитика. Сигнал помогает организовать проверку, но не устанавливает нарушение. Передачи в ведомства нет.",
+        )}
         action={false}
       />
 
       <section className="signals-guide" aria-labelledby="signals-guide-title">
         <div className="signals-guide-heading">
-          <p className="eyebrow">КАК ПОЛЬЗОВАТЬСЯ</p>
-          <h2 id="signals-guide-title">Три шага до понятного результата</h2>
+          <p className="eyebrow">{t("КАК ПОЛЬЗОВАТЬСЯ")}</p>
+          <h2 id="signals-guide-title">
+            {t("Три шага до понятного результата")}
+          </h2>
         </div>
         <ol>
           <li>
             <span>1</span>
             <div>
-              <strong>Выберите сигнал</strong>
+              <strong>{t("Выберите сигнал")}</strong>
               <small>Нужный объект и версия находятся в списке.</small>
             </div>
           </li>
           <li>
             <span>2</span>
             <div>
-              <strong>Проверьте факты</strong>
+              <strong>{t("Проверьте факты")}</strong>
               <small>Факторы, документы и исходники сохранены в снимке.</small>
             </div>
           </li>
           <li>
             <span>3</span>
             <div>
-              <strong>Откройте решение</strong>
+              <strong>{t("Откройте решение")}</strong>
               <small>Аналитик обосновывает решение, затем доступен PDF.</small>
             </div>
           </li>
         </ol>
       </section>
 
-      <section className="signals-summary" aria-label="Сводка сигналов">
+      <section className="signals-summary" aria-label={t("Сводка сигналов")}>
         <article className="signals-summary-card">
-          <span className="signals-summary-card__label">Всего сигналов</span>
+          <span className="signals-summary-card__label">
+            {t("Всего сигналов")}
+          </span>
           <strong className="signals-summary-card__value">
             {queueData ? queueData.total : "—"}
           </strong>
-          <small>По выбранным фильтрам</small>
+          <small>{t("По выбранным фильтрам")}</small>
         </article>
 
         <article className="signals-summary-card">
-          <span className="signals-summary-card__label">Ожидают решения</span>
+          <span className="signals-summary-card__label">
+            {t("Ожидают решения")}
+          </span>
           <strong className="signals-summary-card__value">
             {queueData ? draftsCount : "—"}
           </strong>
-          <small>На текущей странице</small>
+          <small>{t("На текущей странице")}</small>
         </article>
 
         <article className="signals-summary-card">
-          <span className="signals-summary-card__label">Устаревшие версии</span>
+          <span className="signals-summary-card__label">
+            {t("Устаревшие версии")}
+          </span>
           <strong className="signals-summary-card__value">
             {queueData ? staleCount : "—"}
           </strong>
-          <small>На текущей странице</small>
+          <small>{t("На текущей странице")}</small>
         </article>
 
         <article className="signals-summary-card">
-          <span className="signals-summary-card__label">Объекты в реестре</span>
+          <span className="signals-summary-card__label">
+            {t("Объекты в реестре")}
+          </span>
           <strong className="signals-summary-card__value">
             {registry.data ? registry.data.total : "—"}
           </strong>
-          <small>Доступные объекты</small>
+          <small>{t("Доступные объекты")}</small>
         </article>
       </section>
 
@@ -403,12 +441,15 @@ export function SignalsView() {
         <section className="panel padded signals-queue">
           <div className="queue-heading">
             <div>
-              <p className="eyebrow">СПИСОК</p>
+              <p className="eyebrow">{t("СПИСОК")}</p>
               <h2>Сигналы</h2>
             </div>
 
             {queueData && (
-              <span className="queue-count" aria-label="Количество сигналов">
+              <span
+                className="queue-count"
+                aria-label={t("Количество сигналов")}
+              >
                 {queueData.total}
               </span>
             )}
@@ -418,25 +459,63 @@ export function SignalsView() {
             Найдите нужный объект, выберите версию и откройте её детали. Фильтры
             и страница сохраняются в ссылке.
           </p>
+          <div
+            className="review-actions"
+            role="group"
+            aria-label={t("Виды очереди сигналов")}
+          >
+            <Button
+              type="button"
+              variant={
+                state === "DRAFT" && stale === "false" ? "default" : "outline"
+              }
+              aria-pressed={state === "DRAFT" && stale === "false"}
+              onClick={() => selectQueue("work")}
+            >
+              {t("К проверке")}
+            </Button>
+            <Button
+              type="button"
+              variant={!state && !stale ? "default" : "outline"}
+              aria-pressed={!state && !stale}
+              onClick={() => selectQueue("all")}
+            >
+              {t("Все версии")}
+            </Button>
+            <Button
+              type="button"
+              variant={!state && stale === "true" ? "default" : "outline"}
+              aria-pressed={!state && stale === "true"}
+              onClick={() => selectQueue("stale")}
+            >
+              {t("Устаревшие")}
+            </Button>
+          </div>
+          <p className="field-help">
+            К проверке — актуальные черновики. Все версии включают историю;
+            переключение списка сохраняет открытый снимок.
+          </p>
 
           <div
             className="signals-primary-filters"
-            aria-label="Поиск и основные фильтры"
+            aria-label={t("Поиск и основные фильтры")}
           >
             <form className="signals-queue-search" onSubmit={searchQueue}>
-              <label htmlFor="signal-search">Поиск по всем сигналам</label>
+              <label htmlFor="signal-search">
+                {t("Поиск по всем сигналам")}
+              </label>
               <input
                 id="signal-search"
                 type="search"
                 maxLength={300}
                 value={queueSearch}
                 onChange={(event) => setQueueSearch(event.target.value)}
-                placeholder="Объект, ID сигнала, версия или статус"
+                placeholder={t("Объект, ID сигнала, версия или статус")}
                 autoComplete="off"
                 aria-describedby="signal-search-help"
               />
               <Button type="submit" variant="outline">
-                Найти сигналы
+                {t("Найти сигналы")}
               </Button>
             </form>
             <p id="signal-search-help" className="field-help">
@@ -445,14 +524,14 @@ export function SignalsView() {
               всей очереди; выбранный снимок остаётся открытым.
             </p>
 
-            <label htmlFor="signal-state">Статус сигнала</label>
+            <label htmlFor="signal-state">{t("Статус сигнала")}</label>
 
             <select
               id="signal-state"
               value={state}
               onChange={(event) => filter("state", event.target.value)}
             >
-              <option value="">Все статусы</option>
+              <option value="">{t("Все статусы")}</option>
 
               {Object.entries(stateLabels).map(([value, label]) => (
                 <option value={value} key={value}>
@@ -468,7 +547,7 @@ export function SignalsView() {
                 onToggle={(event) => setFiltersOpen(event.currentTarget.open)}
               >
                 <summary>
-                  <span>Дополнительные фильтры</span>
+                  <span>{t("Дополнительные фильтры")}</span>
 
                   {activeFilterCount > 0 && (
                     <span className="queue-count">{activeFilterCount}</span>
@@ -483,23 +562,25 @@ export function SignalsView() {
                     onChange={(value) => filter("property_id", value)}
                   />
 
-                  <label htmlFor="signal-stale">Актуальность сигнала</label>
+                  <label htmlFor="signal-stale">
+                    {t("Актуальность сигнала")}
+                  </label>
 
                   <select
                     id="signal-stale"
                     value={stale}
                     onChange={(event) => filter("is_stale", event.target.value)}
                   >
-                    <option value="">Все версии</option>
-                    <option value="false">Актуальные для решения</option>
-                    <option value="true">Устаревшие</option>
+                    <option value="">{t("Все версии")}</option>
+                    <option value="false">{t("Актуальные для решения")}</option>
+                    <option value="true">{t("Устаревшие")}</option>
                   </select>
                 </div>
               </details>
 
               {(activeFilterCount > 0 || search || queueSearch) && (
                 <Button variant="ghost" type="button" onClick={resetFilters}>
-                  Сбросить фильтры сигналов
+                  {t("Сбросить фильтры сигналов")}
                 </Button>
               )}
             </div>
@@ -512,7 +593,7 @@ export function SignalsView() {
                 Часть названий объектов не загружена: {propertyNames.error}
               </p>
               <Button variant="outline" onClick={propertyNames.retry}>
-                Повторить загрузку названий
+                {t("Повторить загрузку названий")}
               </Button>
             </div>
           )}
@@ -522,7 +603,10 @@ export function SignalsView() {
           {queueData ? (
             <>
               {queueData.items.length > 0 ? (
-                <div className="candidate-list" aria-label="Очередь сигналов">
+                <div
+                  className="candidate-list"
+                  aria-label={t("Очередь сигналов")}
+                >
                   {queueData.items.map((signal) => {
                     return (
                       <article
@@ -535,7 +619,7 @@ export function SignalsView() {
                           <span
                             className={`signal-state ${signal.state.toLowerCase()}`}
                           >
-                            {stateLabels[signal.state]}
+                            {t(stateLabels[signal.state])}
                           </span>
 
                           <Demo value={signal.is_demo} />
@@ -586,7 +670,7 @@ export function SignalsView() {
               )}
 
               <Pagination
-                label="Страницы сигналов"
+                label={t("Страницы сигналов")}
                 page={page}
                 pageSize={25}
                 total={queueData.total}
@@ -617,9 +701,9 @@ export function SignalsView() {
 
           {!id && queueData && (
             <section className="panel padded signals-empty-detail">
-              <p className="eyebrow">СИГНАЛ НЕ ВЫБРАН</p>
+              <p className="eyebrow">{t("СИГНАЛ НЕ ВЫБРАН")}</p>
 
-              <h2>Здесь откроются детали проверки</h2>
+              <h2>{t("Здесь откроются детали проверки")}</h2>
 
               <p>
                 Если список пуст, сначала откройте объект и создайте черновик
@@ -627,7 +711,7 @@ export function SignalsView() {
               </p>
 
               <Button asChild>
-                <Link href="/properties">Открыть реестр объектов</Link>
+                <Link href="/properties">{t("Открыть реестр объектов")}</Link>
               </Button>
             </section>
           )}
@@ -638,6 +722,7 @@ export function SignalsView() {
 }
 
 function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
+  const { t } = useLocale();
   const params = useSearchParams();
   const { user } = useContext(Auth);
   const writable = user?.role === "analyst";
@@ -768,7 +853,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
     <section className="panel padded signal-card" data-testid="signal-detail">
       <header className="signal-card-header">
         <div>
-          <p className="eyebrow">СОХРАНЁННЫЙ СНИМОК</p>
+          <p className="eyebrow">{t("СОХРАНЁННЫЙ СНИМОК")}</p>
 
           <h2>Сигнал · версия {row.version}</h2>
 
@@ -784,7 +869,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
           <Zone risk={row.risk_snapshot} />
 
           <Button variant="outline" onClick={reload} disabled={busy}>
-            Обновить состояние сигнала
+            {t("Обновить состояние сигнала")}
           </Button>
         </div>
       </header>
@@ -800,14 +885,17 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
         </p>
       )}
 
-      <div className="signal-status-grid" aria-label="Краткая сводка сигнала">
+      <div
+        className="signal-status-grid"
+        aria-label={t("Краткая сводка сигнала")}
+      >
         <div>
           <span>Статус</span>
-          <strong>{stateLabels[row.state]}</strong>
+          <strong>{t(stateLabels[row.state])}</strong>
         </div>
 
         <div>
-          <span>Актуальность</span>
+          <span>{t("Актуальность")}</span>
           <strong>
             {row.is_stale
               ? "Устарел для текущего решения"
@@ -816,7 +904,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
         </div>
 
         <div>
-          <span>Факторы</span>
+          <span>{t("Факторы")}</span>
           <strong>
             {confirmedFactors} подтверждено из {snapshot.factors.length}
           </strong>
@@ -829,7 +917,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
       </div>
 
       <div className="signal-next-step">
-        <strong>Что делать сейчас</strong>
+        <strong>{t("Что делать сейчас")}</strong>
         <p>{nextStep}</p>
       </div>
 
@@ -848,11 +936,11 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
         </p>
       )}
 
-      <nav className="signal-section-nav" aria-label="Разделы сигнала">
-        <a href={`#signal-overview-${id}`}>Обзор</a>
-        <a href={`#signal-facts-${id}`}>Факты</a>
-        <a href={`#signal-decision-${id}`}>Решение</a>
-        <a href={`#signal-output-${id}`}>PDF и версии</a>
+      <nav className="signal-section-nav" aria-label={t("Разделы сигнала")}>
+        <a href={`#signal-overview-${id}`}>{t("Обзор", "Шолу")}</a>
+        <a href={`#signal-facts-${id}`}>{t("Факты")}</a>
+        <a href={`#signal-decision-${id}`}>{t("Решение")}</a>
+        <a href={`#signal-output-${id}`}>{t("PDF и версии")}</a>
       </nav>
 
       <section
@@ -865,13 +953,13 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
 
           <div>
             <p className="eyebrow">ОБЗОР</p>
-            <h3>Что важно знать</h3>
+            <h3>{t("Что важно знать")}</h3>
           </div>
         </div>
 
         {snapshot.unknown_information.length ? (
           <div className="signal-unknowns">
-            <strong>Нужно уточнить</strong>
+            <strong>{t("Нужно уточнить")}</strong>
 
             <ul>
               {snapshot.unknown_information.map((value) => (
@@ -892,7 +980,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
         </p>
 
         <details className="signal-disclosure signal-metadata">
-          <summary>Служебные данные снимка</summary>
+          <summary>{t("Служебные данные снимка")}</summary>
 
           <dl>
             <dt>Объект</dt>
@@ -907,7 +995,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
               {snapshot.property.city} · {snapshot.property.address}
             </dd>
 
-            <dt>Автор снимка</dt>
+            <dt>{t("Автор снимка")}</dt>
             <dd>{row.created_by.display_name}</dd>
 
             <dt>Риск рассчитан</dt>
@@ -916,7 +1004,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
               {row.risk_snapshot.revision}
             </dd>
 
-            <dt>Версия правил</dt>
+            <dt>{t("Версия правил")}</dt>
             <dd>{row.risk_snapshot.rules_version}</dd>
           </dl>
         </details>
@@ -932,7 +1020,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
 
           <div>
             <p className="eyebrow">ФАКТЫ</p>
-            <h3>Проверяемые материалы</h3>
+            <h3>{t("Проверяемые материалы")}</h3>
           </div>
         </div>
 
@@ -959,7 +1047,29 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                 </strong>
 
                 <p>
-                  Дата оценки: {date(factor.as_of)} · ревизия {factor.revision}
+                  {t("Дата оценки: ")}
+                  {date(factor.as_of)} · ревизия {factor.revision}
+                </p>
+                <p>
+                  {t(
+                    "Проверивший (исторический ID): ",
+                    "Тексеруші (тарихи ID): ",
+                  )}
+                  {factor.reviewed_by ||
+                    t(
+                      "Не зафиксирован в снимке",
+                      "Сақталған нұсқада тіркелмеген",
+                    )}
+                  {factor.reviewed_by_details?.display_name &&
+                    ` · ${factor.reviewed_by_details.display_name}`}
+                  {" · "}
+                  {t("Решение принято: ", "Шешім қабылданған күні: ")}
+                  {factor.reviewed_at
+                    ? date(factor.reviewed_at)
+                    : t(
+                        "Не указано в снимке",
+                        "Сақталған нұсқада көрсетілмеген",
+                      )}
                 </p>
 
                 <p>{factor.reason || "Обоснование не указано"}</p>
@@ -991,17 +1101,77 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
 
                 <p>Область: {basis.scope_description}</p>
 
+                <p>
+                  {t("Действует с: ", "Қолданыла бастайтын күні: ")}
+                  {basis.applies_from
+                    ? date(basis.applies_from)
+                    : t(
+                        "Не указано в снимке",
+                        "Сақталған нұсқада көрсетілмеген",
+                      )}
+                  {" · "}
+                  {t("Действует до: ", "Қолданылу мерзімінің соңы: ")}
+                  {basis.applies_until
+                    ? date(basis.applies_until)
+                    : t(
+                        "Не указано в снимке",
+                        "Сақталған нұсқада көрсетілмеген",
+                      )}
+                </p>
+                <p>
+                  {t(
+                    "Проверено по состоянию на: ",
+                    "Тексеру жүргізілген күн: ",
+                  )}
+                  {basis.verification_as_of
+                    ? date(basis.verification_as_of)
+                    : t(
+                        "Не указано в снимке",
+                        "Сақталған нұсқада көрсетілмеген",
+                      )}
+                </p>
+                <p>
+                  {t("Решение принято: ", "Шешім қабылданған күні: ")}
+                  {basis.reviewed_at
+                    ? date(basis.reviewed_at)
+                    : t(
+                        "Не указано в снимке",
+                        "Сақталған нұсқада көрсетілмеген",
+                      )}
+                </p>
+                <p>
+                  {t(
+                    "Проверивший (исторический ID): ",
+                    "Тексеруші (тарихи ID): ",
+                  )}
+                  {basis.reviewed_by ||
+                    t(
+                      "Не зафиксирован в снимке",
+                      "Сақталған нұсқада тіркелмеген",
+                    )}
+                  {basis.reviewed_by_details?.display_name &&
+                    ` · ${basis.reviewed_by_details.display_name}`}
+                </p>
+                <p>
+                  {t(
+                    "Сведения относятся к сохранённому снимку; применимость основания сегодня требует отдельной проверки.",
+                    "Мәліметтер сақталған нұсқаға қатысты; негіздің бүгін қолданылуын бөлек тексеру қажет.",
+                  )}
+                </p>
+
                 <a
                   className="text-link"
                   href={`/api/v1/assets/${basis.asset_id}`}
                 >
-                  Исходный документ основания
+                  {t("Исходный документ основания")}
                 </a>
                 <PdfDownload
                   kind="assets"
                   id={basis.asset_id}
-                  label="Получить источник в PDF"
-                  description="Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия."
+                  label={t("Получить источник в PDF")}
+                  description={t(
+                    "Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия.",
+                  )}
                 />
               </article>
             ))}
@@ -1034,8 +1204,42 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
 
                   <p>{evidence.description}</p>
 
+                  {evidence.kind === "ADVERTISEMENT_FRAGMENT" ? (
+                    <>
+                      <p>
+                        {t("Дата публикации: ", "Жарияланған күні: ")}
+                        {evidence.date_basis === "PUBLICATION" &&
+                        evidence.published_at
+                          ? date(evidence.published_at)
+                          : t("Не подтверждена", "Расталмаған")}
+                      </p>
+                      {evidence.date_basis !== "PUBLICATION" &&
+                        evidence.date_basis !== "CAPTURE_ONLY" && (
+                          <p>
+                            {t(
+                              "Тип исторической даты не указан",
+                              "Тарихи күннің түрі көрсетілмеген",
+                            )}
+                            {evidence.event_at &&
+                              `: ${date(evidence.event_at)}`}
+                            .{" "}
+                            {t(
+                              "Она не подтверждает дату публикации.",
+                              "Ол жарияланған күнін растамайды.",
+                            )}
+                          </p>
+                        )}
+                    </>
+                  ) : (
+                    <p>
+                      {t("Дата события: ", "Оқиға күні: ")}
+                      {evidence.event_at
+                        ? date(evidence.event_at)
+                        : t("Не установлена", "Анықталмаған")}
+                    </p>
+                  )}
                   <p>
-                    Событие: {date(evidence.event_at || null)} · получено:{" "}
+                    {t("Зафиксировано: ", "Тіркелген күні: ")}
                     {date(evidence.captured_at)}
                   </p>
 
@@ -1044,7 +1248,10 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                   )}
 
                   {evidence.methodology && (
-                    <p>Методика: {evidence.methodology}</p>
+                    <p>
+                      {t("Методика: ")}
+                      {evidence.methodology}
+                    </p>
                   )}
 
                   {evidence.absence_as_of && (
@@ -1076,13 +1283,15 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                       className="text-link"
                       href={`/api/v1/assets/${evidence.asset_id}`}
                     >
-                      Сохранённый исходник
+                      {t("Сохранённый исходник")}
                     </a>
                     <PdfDownload
                       kind="assets"
                       id={evidence.asset_id}
-                      label="Получить источник в PDF"
-                      description="Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия."
+                      label={t("Получить источник в PDF")}
+                      description={t(
+                        "Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия.",
+                      )}
                     />
 
                     {evidence.source_url && (
@@ -1092,7 +1301,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        Ссылка на источник
+                        {t("Ссылка на источник")}
                       </a>
                     )}
 
@@ -1101,7 +1310,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                         className="text-link"
                         href={`/advertisements/${evidence.advertisement_id}`}
                       >
-                        Текущая карточка публикации
+                        {t("Текущая карточка публикации")}
                       </Link>
                     )}
                   </div>
@@ -1126,7 +1335,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
 
           <div>
             <p className="eyebrow">РЕШЕНИЕ</p>
-            <h3>Решение по этой версии</h3>
+            <h3>{t("Решение по этой версии")}</h3>
           </div>
         </div>
 
@@ -1149,7 +1358,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
         {writable && row.state === "DRAFT" && (
           <div className="review-form signal-decision-form">
             <label htmlFor="signal-reason">
-              Обоснование решения по сигналу
+              {t("Обоснование решения по сигналу")}
             </label>
 
             <textarea
@@ -1185,7 +1394,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                 }
                 onClick={() => decide("CONFIRM")}
               >
-                Подтвердить сигнал
+                {t("Подтвердить сигнал")}
               </Button>
 
               <Button
@@ -1195,7 +1404,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                 }
                 onClick={() => decide("RETURN")}
               >
-                Вернуть на доработку
+                {t("Вернуть на доработку")}
               </Button>
             </div>
           </div>
@@ -1217,8 +1426,8 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
           <span>4</span>
 
           <div>
-            <p className="eyebrow">РЕЗУЛЬТАТ</p>
-            <h3>PDF и версии</h3>
+            <p className="eyebrow">{t("РЕЗУЛЬТАТ")}</p>
+            <h3>{t("PDF и версии")}</h3>
           </div>
         </div>
 
@@ -1228,22 +1437,22 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
             id={`signal-pdf-${id}`}
             tabIndex={-1}
           >
-            <h4>PDF этой версии</h4>
+            <h4>{t("PDF этой версии")}</h4>
             {row.pdf_state !== "READY" && (
               <PdfDownload
                 kind="signals"
                 id={id}
-                label="Скачать копию снимка"
+                label={t("Скачать копию снимка")}
               />
             )}
 
             <p role={row.pdf_state === "QUEUED" ? "status" : undefined}>
-              {pdfLabels[row.pdf_state]}
+              {t(pdfLabels[row.pdf_state])}
             </p>
 
             {row.pdf_state === "READY" ? (
               <a className="text-link" href={`/api/v1/signals/${id}/pdf`}>
-                Скачать PDF этой версии
+                {t("Скачать PDF этой версии")}
               </a>
             ) : writable &&
               ["NOT_REQUESTED", "FAILED"].includes(row.pdf_state) ? (
@@ -1275,11 +1484,11 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
             id={`signal-history-${id}`}
             tabIndex={-1}
           >
-            <h4>История объекта</h4>
+            <h4>{t("История объекта")}</h4>
 
             {writable && latest && (
               <Button variant="outline" disabled={busy} onClick={nextVersion}>
-                Создать новую версию из текущих фактов
+                {t("Создать новую версию из текущих фактов")}
               </Button>
             )}
 
@@ -1291,7 +1500,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                   row.previous_signal_id,
                 )}
               >
-                Предыдущая версия
+                {t("Предыдущая версия")}
               </Link>
             )}
 
@@ -1305,7 +1514,7 @@ function SignalCard({ id, onChange }: { id: string; onChange: () => void }) {
                     Версия {version.version}
                   </Link>{" "}
                   <small>
-                    {stateLabels[version.state]}
+                    {t(stateLabels[version.state])}
                     {version.is_stale ? " · устарела" : ""} ·{" "}
                     {date(version.created_at)}
                   </small>

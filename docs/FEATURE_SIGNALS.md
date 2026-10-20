@@ -1,5 +1,25 @@
 # Сигналы и PDF
 
+20.10,SQ-11/12: новые snapshots сохраняют optional reviewed_by_details для факторов
+и оснований одним batch lookup при создании. Чтение legacy использует historicalID,
+не сегодняшнее имя профиля. Дополнительное имя не участвует в stale сравнении;
+reviewed_by,дата,результат/причина по-прежнему участвуют. Новые signalPDF и текущий
+dossierPDF показывают reviewerID рядом с решением и отдельно дату оценки.
+Dashboard pending_signals и ссылка /signals?state=DRAFT&is_stale=false исключают
+stale/superseded/decided. Сам stale decision по-прежнему409. Контракт0.34.0,
+без DBmigration/backfill. Проверки — SQ_FIX_PROGRESS.
+
+20.10.2026, SQ-01–03: новые рекламные evidence различают nullable `published_at`,
+`captured_at` и `date_basis` (PUBLICATION/CAPTURE_ONLY). В legacy отсутствие типа
+даты означает LEGACY_UNSPECIFIED; прежний event_at не выдаётся за установленную
+публикацию. GET/DTO defaults не переписывают JSONB/архивы; stale сравнивает
+совместимые defaults. Контракт0.32.0, [ADR-028](decisions/ADR-028-explicit-publication-date-provenance.md).
+Исторические основания показывают сохранённые период действия, дату проверки,
+время решения и historical reviewer ID. Новые PDF перечисляют confirmed/unknown
+codes, объясняют нулевой score и ограничение GREEN. Архивные PDF остаются
+прежними файлами; исходные цитаты не переводятся. Фактические проверки —
+[SQ_FIX_PROGRESS](implementation/SQ_FIX_PROGRESS.md).
+
 Сигнал сохраняет проверяемый исторический снимок для решения аналитика. Он не устанавливает факт правонарушения и не отправляется автоматически во внешние органы. При DEMO-данных маркировка сохраняется в карточке и PDF.
 
 ## Пользовательский сценарий

@@ -131,7 +131,7 @@ test("server-paged review queue reaches material 101 and preserves selection, fi
     page.locator(".review-provenance").getByRole("link"),
   ).toHaveAttribute("href", materials[100].source_url!);
   await expect(page.locator(".review-provenance")).toContainText(
-    "Не установлена",
+    "Дата публикации неизвестна",
   );
   await expect(page.locator(".review-provenance")).toContainText("10:15");
   await page

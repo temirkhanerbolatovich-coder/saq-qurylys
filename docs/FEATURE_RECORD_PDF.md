@@ -1,5 +1,13 @@
 # PDF сохранённых материалов
 
+20.10,SQ-05: PdfDownload и ReportOptions используют общий bounded PDF GET reader
+(client90s / точный PDF proxy75s / document renderer до60s). Есть ожидание,
+отмена, отдельные RU/KZ timeout/cancel сообщения и явный GET retry. MIME строго
+application/pdf, пустой/неверный PDF header отклоняется. Отмена не является
+откатом бизнес-решения и не гарантирует остановку уже начатого subprocess;
+серверная подготовка ограничена своим timeout. Не-PDF/commands сохраняют15s.
+Архивы не перезаписываются. [Receipts](implementation/SQ_FIX_PROGRESS.md).
+
 19.10.2026: имя скачивания содержит тип, доступное название, дату записи, полный
 ID и v/r сигнала. Для сигнала используются только frozen name/created_at и его
 версия/ревизия; переименование текущего объекта не влияет. source означает

@@ -1,0 +1,22 @@
+.F                                                                       [100%]
+================================== FAILURES ===================================
+__ test_matching_absence_and_payment_are_red_in_either_order[absence-first] ___
+tests\test_legal_absence.py:423: in test_matching_absence_and_payment_are_red_in_either_order
+    factors['R2'] = payment_factor(signed, settings, prop, published_at)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_legal_absence.py:394: in payment_factor
+    ad, _, _, payment, _ = reviewed_evidence(client, settings, prop)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_analysis.py:114: in reviewed_evidence
+    ad, result = analyzed(signed, settings) if text is None else analyzed(signed, settings, text)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_analysis.py:88: in analyzed
+    assert result['state'] == 'SUCCEEDED', result
+E   AssertionError: {'id': '9361152a-39fc-415d-aa2c-90a167cc2878', 'kind': 'ANALYZE', 'state': 'QUEUED', 'stage': '������� ���������', ...}
+E   assert 'QUEUED' == 'SUCCEEDED'
+E     
+E     - SUCCEEDED
+E     + QUEUED
+=========================== short test summary info ===========================
+FAILED tests/test_legal_absence.py::test_matching_absence_and_payment_are_red_in_either_order[absence-first]
+1 failed, 1 passed in 4.82s

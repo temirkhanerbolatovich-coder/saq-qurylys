@@ -40,18 +40,34 @@ test("document archive searches, filters and pages mounted forms; legacy documen
   page.on("request", (request) => {
     if (request.method() === "POST") commands.push(request.url());
   });
-  const cards = page.locator(".dossier-document:visible");
+  const cards = page.locator("#dossier-bases .dossier-records tbody tr");
   await expect(cards).toHaveCount(10);
-  await cards.first().locator(":scope > summary").click();
-  const reason = cards
+  await cards
     .first()
-    .getByLabel("Обоснование проверки основания", { exact: true });
+    .getByRole("button", { name: /^Открыть документ:/ })
+    .click();
+  const drawer = page
+    .getByRole("dialog")
+    .filter({ has: page.locator(".document-review") });
+  const reason = drawer.getByLabel("Обоснование проверки основания", {
+    exact: true,
+  });
   await reason.fill("DEMO сохраняется при фильтре и странице");
+  await drawer
+    .getByRole("button", { name: "Закрыть карточку записи", exact: true })
+    .click();
   const pages = page.getByRole("navigation", { name: "Страницы документов" });
   await pages.getByRole("button", { name: "Следующая страница" }).click();
   await expect(cards.first()).toContainText("DEMO №11");
   await pages.getByRole("button", { name: "Предыдущая страница" }).click();
+  await cards
+    .first()
+    .getByRole("button", { name: /^Открыть документ:/ })
+    .click();
   await expect(reason).toHaveValue("DEMO сохраняется при фильтре и странице");
+  await drawer
+    .getByRole("button", { name: "Закрыть карточку записи", exact: true })
+    .click();
   await page.getByLabel("Найти документ", { exact: true }).fill("№25");
   await expect(cards).toHaveCount(1);
   await expect(cards).toContainText("DEMO №25");
@@ -70,6 +86,9 @@ test("document archive searches, filters and pages mounted forms; legacy documen
   }, bases[24].id);
   await expect(page.locator(`#dossier-document-${bases[24].id}`)).toBeFocused();
   await expect(page.locator(`#dossier-document-${bases[24].id}`)).toBeVisible();
+  await drawer
+    .getByRole("button", { name: "Закрыть карточку записи", exact: true })
+    .click();
   await expect(pages.getByRole("status")).toHaveText("Страница 3 из 3");
   expect(commands).toEqual([]);
 });

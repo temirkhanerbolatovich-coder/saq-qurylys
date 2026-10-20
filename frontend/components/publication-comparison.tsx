@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition, type CSSProperties } from "react";
 import { date } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 import type { Advertisement, Asset, Extraction, Page } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { PdfDownload } from "@/components/pdf-download";
@@ -390,6 +391,8 @@ function ComparisonResult({ path }: { path: string }) {
 }
 
 export function PublicationComparisonView() {
+  // Re-render saved comparison dates when the active language changes.
+  useLocale();
   const params = useSearchParams();
   const router = useRouter();
   const [pending, startTransition] = useTransition();

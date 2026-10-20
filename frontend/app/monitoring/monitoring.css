@@ -1,6 +1,104 @@
 .monitoring-workspace {
   min-width: 0;
 }
+.monitoring-source-catalog,
+.monitoring-runs .panel {
+  padding: var(--space-6);
+  min-width: 0;
+}
+.monitoring-source-catalog {
+  margin-bottom: var(--space-6);
+}
+.monitoring-runs {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+.monitoring-source-table,
+.monitoring-runs-table {
+  min-width: 800px;
+}
+.monitoring-source-table td {
+  max-width: 360px;
+}
+.monitoring-source-catalog p,
+.monitoring-runs p {
+  margin-block: var(--space-3);
+}
+.monitoring-runs .table-scroll {
+  margin-block: var(--space-4);
+}
+.monitoring-run-detail {
+  overflow-wrap: anywhere;
+}
+.monitoring-run-text {
+  white-space: pre-wrap;
+}
+.monitoring-run-facts {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(0, 3fr);
+  gap: var(--space-3);
+}
+.monitoring-run-facts dd {
+  margin: 0;
+}
+.monitor-state {
+  font-weight: 600;
+}
+.monitor-state-error,
+.monitor-state-blocked {
+  color: var(--color-danger);
+}
+.monitor-state-rate_limited,
+.monitor-state-interrupted {
+  color: var(--color-warning);
+}
+.monitor-state-succeeded,
+.monitor-state-empty {
+  color: var(--color-success);
+}
+.csv-import {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+.csv-import .panel {
+  min-width: 0;
+  padding: var(--space-6);
+}
+.csv-import h3 {
+  margin-top: var(--space-6);
+}
+.csv-import .table-scroll {
+  margin-block: var(--space-4);
+}
+.csv-import-table {
+  min-width: 760px;
+}
+.csv-import-table td {
+  max-width: 360px;
+  overflow-wrap: anywhere;
+}
+.csv-import-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  max-height: 360px;
+  overflow: auto;
+}
+.csv-import-receipt h3,
+.csv-import button {
+  overflow-wrap: anywhere;
+}
+.csv-import .monitoring-fields {
+  margin-bottom: var(--space-4);
+}
+.monitoring-workspace .monitoring-link-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
 .monitoring-workspace .monitoring-boundary {
   border-left: 4px solid var(--color-info);
   background: var(--color-info-bg);
@@ -186,5 +284,122 @@
 @media (max-width: 767px) {
   .monitoring-tool {
     padding-inline: var(--space-3);
+  }
+}
+.monitoring-query-list {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+.monitoring-query-list button {
+  max-width: 100%;
+  height: auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.monitoring-saved-profiles {
+  margin-block: var(--space-4);
+  min-width: 0;
+}
+.monitoring-schedules,
+.monitoring-schedule-form,
+.monitoring-schedule-detail {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.monitoring-schedule-detail {
+  border-top: 1px solid var(--color-control-border);
+  padding-top: var(--space-4);
+}
+.monitoring-schedule-form label {
+  display: grid;
+  gap: var(--space-2);
+}
+.monitoring-schedules table {
+  min-width: 38rem;
+}
+.monitoring-schedules button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.monitoring-url {
+  overflow-wrap: anywhere;
+}
+.monitoring-saved-profiles > fieldset,
+.monitoring-profile-detail {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.monitoring-schedules {
+  padding: var(--space-4);
+}
+.monitoring-schedules > .panel-heading,
+.monitoring-schedule-detail > .panel-heading {
+  padding: 0 0 var(--space-3);
+}
+
+.monitoring-v2,
+.v2-panel,
+.v2-profile,
+.monitoring-v2 fieldset {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.monitoring-v2 .v2-panel {
+  padding: var(--space-6);
+}
+.monitoring-v2 .panel-heading {
+  padding: 0;
+}
+.monitoring-v2 .monitoring-tool {
+  margin: 0;
+  padding-block: var(--space-3);
+}
+.v2-profile,
+.v2-editor {
+  border-top: 1px solid var(--color-control-border);
+  padding-top: var(--space-4);
+}
+.monitoring-v2 button,
+.monitoring-v2 select,
+.monitoring-v2 input,
+.monitoring-v2 textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+.monitoring-v2 button {
+  height: auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.monitoring-v2 p,
+.monitoring-v2 li,
+.monitoring-v2 dd {
+  overflow-wrap: anywhere;
+}
+.v2-original {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  max-height: 28rem;
+  overflow: auto;
+  padding: var(--space-3);
+  background: var(--color-canvas);
+}
+.v2-findings-table {
+  min-width: 44rem;
+}
+.v2-findings-table td {
+  max-width: 22rem;
+}
+@media (max-width: 767px) {
+  .monitoring-v2 .v2-panel {
+    padding: var(--space-3);
   }
 }

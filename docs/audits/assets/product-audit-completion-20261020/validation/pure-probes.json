@@ -1,0 +1,24 @@
+{
+  "SQ04_payment_offer": false,
+  "SQ04_hypothesis_fields": [
+    "PROPERTY_NAME",
+    "AMOUNT",
+    "STAGE"
+  ],
+  "SQ02_marker_presence": {
+    "PERIOD_FROM_MARKER": false,
+    "PERIOD_UNTIL_MARKER": false,
+    "VERIFY_AS_OF_MARKER": false
+  },
+  "SQ02_valid_status_visible": true,
+  "SQ03_green_visible": true,
+  "SQ03_unknown_risk_codes_visible": {
+    "R1": false,
+    "R2": false,
+    "R3": false,
+    "R4": false,
+    "R5": false,
+    "R6": false
+  },
+  "SQ03_green_caveat_visible": false
+}

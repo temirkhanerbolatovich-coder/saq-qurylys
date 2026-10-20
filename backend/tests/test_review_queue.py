@@ -136,6 +136,65 @@ def queue(signed, **params):
     return response.json()
 
 
+@pytest.mark.parametrize('q', ['құрылыс', '  ӨСКЕМЕН  ', '%', '_', '\\'])
+def test_material_search_literal_original_and_source(signed, cases, q):
+    target = cases()
+    target.ad.original_text = 'DEMO Құрылыс 20% _ \\ literal'
+    target.ad.source_label = 'DEMO Өскемен'
+    other = cases()
+    other.ad.original_text = 'DEMO unrelated'
+    target.db.flush()
+    for path in ['/api/v1/advertisements', PATH]:
+        response = signed.get(path, params=FILTER | {'q': q})
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data['total'] == 1
+        row = data['items'][0]
+        assert row.get('id', row.get('advertisement_id')) == str(target.ad.id)
+
+
+def test_material_search_counts_pagination_filters_and_no_mutations(signed, cases):
+    first, second = cases(), cases(is_demo=False)
+    cases()
+    for case in [first, second]:
+        case.ad.original_text = 'DEMO searchneedle'
+    first.db.flush()
+    before = signed.get(f'/api/v1/advertisements/{first.ad.id}').json()
+    for path in ['/api/v1/advertisements', PATH]:
+        pages = [
+            signed.get(path, params=FILTER | {'q': 'searchneedle', 'page_size': 1, 'page': n}).json() for n in [1, 2]
+        ]
+        assert [page['total'] for page in pages] == [2, 2]
+        assert pages[0]['items'] != pages[1]['items']
+        empty = signed.get(path, params=FILTER | {'q': "' OR 1=1 --"}).json()
+        assert empty['total'] == 0
+        blank = signed.get(path, params=FILTER | {'q': '   '}).json()
+        assert blank['total'] == 3
+        assert signed.get(path, params={'q': 'a' * 301}).status_code == 422
+    filtered = queue(signed, q='searchneedle', is_demo=True, action='REVIEW_HYPOTHESES')
+    assert filtered['total'] == filtered['action_totals']['REVIEW_HYPOTHESES'] == 1
+    assert filtered['items'][0]['advertisement_id'] == str(first.ad.id)
+    for demo, expected in [(True, first), (False, second)]:
+        library = signed.get('/api/v1/advertisements', params=FILTER | {'q': 'searchneedle', 'is_demo': demo}).json()
+        assert library['total'] == 1
+        assert library['items'][0]['id'] == str(expected.ad.id)
+    assert (
+        signed.get('/api/v1/advertisements', params=FILTER | {'q': 'searchneedle', 'status': 'NEW'}).json()['total']
+        == 0
+    )
+    assert signed.get(f'/api/v1/advertisements/{first.ad.id}').json() == before
+
+
+def test_material_search_excludes_analysis_and_external_url(signed, cases):
+    case = cases()
+    case.ad.source_url = 'https://example.invalid/notoriginalneedle'
+    case.extraction.analysis_text = 'notoriginalneedle'
+    case.extraction.original_ocr_text = 'notoriginalneedle'
+    case.db.flush()
+    for path in ['/api/v1/advertisements', PATH]:
+        assert signed.get(path, params=FILTER | {'q': 'notoriginalneedle'}).json()['total'] == 0
+
+
 def post(signed, path, body):
     response = signed.post('/api/v1' + path, json=body, headers=mutation_headers(signed))
     assert response.status_code in {200, 201}, response.text

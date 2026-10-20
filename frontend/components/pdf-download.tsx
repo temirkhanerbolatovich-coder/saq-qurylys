@@ -1,7 +1,8 @@
 "use client";
+import { useLocale } from "@/lib/locale";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { pdfDownloadFilename } from "@/lib/presentation";
+import { pdfReadMessage, readPdf, savePdf } from "@/lib/pdf-read";
 
 /** Read-only export: downloads real PDF bytes; never confirms or saves a business record. */
 export function PdfDownload({
@@ -17,72 +18,71 @@ export function PdfDownload({
   query?: string;
   description?: string;
 }) {
+  const { t, locale } = useLocale();
   const descriptionId = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const pending = useRef<AbortController | null>(null);
-  useEffect(() => () => pending.current?.abort(), []);
+  useEffect(
+    () => () => {
+      pending.current?.abort();
+      pending.current = null;
+      setBusy(false);
+      setError("");
+    },
+    [kind, id, query],
+  );
   async function download() {
+    if (pending.current) return;
     const controller = new AbortController();
     pending.current = controller;
     setBusy(true);
     setError("");
-    const timeout = setTimeout(() => controller.abort(), 25000);
     try {
-      const response = await fetch(
+      const { blob, filename } = await readPdf(
         `/api/v1/exports/${kind}/${encodeURIComponent(id)}/pdf${query ? `?${query}` : ""}`,
-        { cache: "no-store", signal: controller.signal },
-      );
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(
-          body?.error?.message ||
-            "Не удалось подготовить PDF. Повторите скачивание.",
-        );
-      }
-      const blob = await response.blob();
-      if (
-        !response.headers.get("content-type")?.includes("application/pdf") ||
-        new TextDecoder().decode(await blob.slice(0, 5).arrayBuffer()) !==
-          "%PDF-"
-      )
-        throw new Error("Сервер не вернул PDF. Повторите скачивание.");
-      const filename = pdfDownloadFilename(
-        response.headers.get("content-disposition"),
+        controller.signal,
         `saq-${kind}-${id}.pdf`,
       );
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (pending.current === controller && !controller.signal.aborted)
+        savePdf(blob, filename);
     } catch (cause) {
-      if (controller.signal.aborted)
-        setError("Подготовка PDF прервана. Можно повторить скачивание.");
-      else setError((cause as Error).message);
+      if (pending.current === controller)
+        setError(pdfReadMessage(cause, locale));
     } finally {
-      clearTimeout(timeout);
-      setBusy(false);
-      pending.current = null;
+      if (pending.current === controller) {
+        setBusy(false);
+        pending.current = null;
+      }
     }
   }
   return (
     <span className="pdf-download">
       <Button
+        type="button"
         variant="outline"
+        aria-busy={busy}
         disabled={busy}
         aria-describedby={description ? descriptionId : undefined}
         onClick={() => void download()}
       >
-        {busy ? "Готовим PDF…" : label}
+        {busy ? t("Готовим PDF…") : t(label)}
       </Button>
       {description && (
         <span id={descriptionId} className="field-help">
           {description}
         </span>
       )}
-      {busy && <span role="status">Подготовка файла</span>}
+      {busy && <span role="status">{t("Подготовка файла")}</span>}
+      {busy && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => pending.current?.abort()}
+        >
+          {t("Отменить подготовку", "Дайындауды тоқтату")}
+        </Button>
+      )}
       {error && <span role="alert">{error}</span>}
     </span>
   );

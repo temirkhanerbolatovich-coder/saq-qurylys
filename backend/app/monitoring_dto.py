@@ -53,10 +53,55 @@ class CandidateCreate(Identity, Reasoned):
 
 class CandidateOut(Identity):
     id: UUID
+    property_id: UUID | None = None
+    property_link_kind: Literal['CREATED', 'LINKED'] | None = None
     is_demo: bool
     revision: int
     created_at: datetime
     last_result: ComparisonResult | None = None
+
+
+class CandidateIdentityDecision(Reasoned):
+    expected_revision: int = Field(ge=1)
+    identity_checked: Literal[True]
+
+    @field_validator('identity_checked', mode='before')
+    @classmethod
+    def explicit_check(cls, value):
+        if value is not True:
+            raise ValueError('Подтвердите проверку идентичности объекта')
+        return value
+
+
+class CandidateDossierLink(CandidateIdentityDecision):
+    property_id: UUID
+    expected_property_revision: int = Field(ge=1)
+
+
+class CandidateDossierUnlink(Reasoned):
+    expected_revision: int = Field(ge=1)
+    property_id: UUID
+    expected_property_revision: int = Field(ge=1)
+    unlink_confirmed: Literal[True]
+
+    @field_validator('unlink_confirmed', mode='before')
+    @classmethod
+    def explicit_unlink(cls, value):
+        if value is not True:
+            raise ValueError('Подтвердите отмену ошибочной связи')
+        return value
+
+
+class CandidateDossierCreate(CandidateIdentityDecision):
+    name: str = Field(min_length=2, max_length=300)
+    address: str = Field(min_length=2, max_length=300)
+    developer_name: str = Field(min_length=2, max_length=300)
+    developer_bin: str | None = Field(default=None, pattern=r'^[0-9]{12}$')
+
+    @field_validator('name', 'address', 'developer_name', 'developer_bin', mode='before')
+    @classmethod
+    def trim_fields(cls, value):
+        return value.strip() if isinstance(value, str) else value
 
 
 class RegistryEntry(Identity):

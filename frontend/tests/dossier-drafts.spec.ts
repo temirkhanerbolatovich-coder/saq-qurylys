@@ -101,10 +101,15 @@ test("dossier fields and files survive other objects and Back; reload explains m
     .getByRole("link", { name: other.name, exact: true })
     .first()
     .click();
+  await expect(page.locator("#appeal-reason")).toHaveCount(0);
+  await openDossierTools(page);
   await expect(page.locator("#appeal-reason")).toHaveValue("");
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/properties/${other.id}`));
   await page.goBack();
   await expect(page).toHaveURL(/\/properties(?:\?|$)/);
   await page.goBack();
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
   await openDossierTools(page);
   await expect(page).toHaveURL(new RegExp(`/properties/${row.id}`));
   for (const [id, value] of Object.entries(fields))
@@ -127,6 +132,7 @@ test("dossier fields and files survive other objects and Back; reload explains m
     return dialog.accept();
   });
   await page.reload();
+  await page.getByRole("tab", { name: "Документы", exact: true }).click();
   await openDossierTools(page);
   expect(reloadWarned).toBe(true);
   for (const [id, value] of Object.entries(fields))
@@ -213,6 +219,22 @@ test("R4 conflict keeps input and retry key through navigation; successful decis
   await expect(page.locator("#appeal-reason")).toHaveValue(
     "DEMO revised review after conflict",
   );
+  let releaseRefresh!: () => void;
+  let refreshReads = 0;
+  let failRefresh = true;
+  const refreshGate = new Promise<void>((resolve) => {
+    releaseRefresh = resolve;
+  });
+  await page.route(`**/api/v1/properties/${row.id}`, async (route) => {
+    refreshReads++;
+    await refreshGate;
+    if (failRefresh)
+      await route.fulfill({
+        status: 503,
+        json: { error: { message: "DEMO refresh temporarily unavailable" } },
+      });
+    else await route.continue();
+  });
   await page
     .getByRole("button", { name: "Подтвердить R4 · +15", exact: true })
     .click();
@@ -222,8 +244,34 @@ test("R4 conflict keeps input and retry key through navigation; successful decis
   expect(keys).toHaveLength(3);
   expect(keys[2]).not.toBe(keys[1]);
   expect(targets).toEqual([[newEvidenceId], [newEvidenceId], [newEvidenceId]]);
+  await expect.poll(() => refreshReads).toBeGreaterThan(0);
+  const reject = page.getByRole("button", {
+    name: "Отклонить R4",
+    exact: true,
+  });
+  await expect(reject).toBeDisabled();
+  const failedRead = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/v1/properties/${row.id}`) &&
+      response.status() === 503,
+  );
+  releaseRefresh();
+  await failedRead;
+  await expect(reject).toBeDisabled();
+  await expect(page.locator("#appeal-reason")).toHaveValue(
+    "DEMO revised review after conflict",
+  );
+  failRefresh = false;
+  await page
+    .getByRole("button", {
+      name: "Обновить сохранённое решение R4",
+      exact: true,
+    })
+    .click();
+  await expect(reject).toBeEnabled();
+  expect(keys).toHaveLength(3);
   // Leave the isolated DEMO factor rejected for the rest of the suite.
-  await page.getByRole("button", { name: "Отклонить R4", exact: true }).click();
+  await reject.click();
   await expect(
     page.getByRole("status").filter({ hasText: "R4 отклонён" }),
   ).toBeVisible();
@@ -308,7 +356,11 @@ test("legal basis decision restores its own reason and date after navigation and
   await page.goto(`/properties/${row.id}`);
   await openDossierTools(page);
   await page.getByRole("tab", { name: "Документы", exact: true }).click();
-  await page.locator(".dossier-document > summary").first().click();
+  await page
+    .locator("#dossier-bases .dossier-records tbody tr")
+    .first()
+    .getByRole("button", { name: /^Открыть документ:/ })
+    .click();
   const reason = page
     .getByLabel("Обоснование проверки основания", { exact: true })
     .first();
@@ -322,9 +374,18 @@ test("legal basis decision restores its own reason and date after navigation and
     if (request.method() === "POST") commands.push(request.url());
   });
   revision = 2;
+  await page
+    .getByRole("dialog")
+    .filter({ has: page.locator(".document-review") })
+    .getByRole("button", { name: "Закрыть карточку записи", exact: true })
+    .click();
   await leaveAndReturn(page, row.name);
   await page.getByRole("tab", { name: "Документы", exact: true }).click();
-  await page.locator(".dossier-document > summary").first().click();
+  await page
+    .locator("#dossier-bases .dossier-records tbody tr")
+    .first()
+    .getByRole("button", { name: /^Открыть документ:/ })
+    .click();
   await expect(reason).toHaveValue(
     "DEMO basis review stays a draft after revision change",
   );

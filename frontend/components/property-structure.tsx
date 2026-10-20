@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/lib/locale";
 
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -20,6 +21,7 @@ export function PropertyStructure({
   row: Property;
   registryQuery: string;
 }) {
+  const { t } = useLocale();
   const [childrenPage, setChildrenPage] = useState(1);
   const [siblingsPage, setSiblingsPage] = useState(1);
   const content = useRef<HTMLDivElement>(null);
@@ -35,9 +37,9 @@ export function PropertyStructure({
   return (
     <section
       className="property-structure"
-      aria-label="Структура жилого комплекса"
+      aria-label={t("Структура жилого комплекса")}
     >
-      <nav aria-label="Положение объекта в структуре">
+      <nav aria-label={t("Положение объекта в структуре")}>
         <ol className="property-ancestors">
           {data?.ancestors.map((ancestor) => (
             <li key={ancestor.id}>
@@ -55,7 +57,7 @@ export function PropertyStructure({
       </nav>
       <details>
         <summary>
-          Очереди и корпуса
+          {t("Очереди и корпуса")}
           {settled && result.error ? " · связи не загружены" : ""}
         </summary>
         <div
@@ -72,19 +74,22 @@ export function PropertyStructure({
           ) : (
             <>
               <p className="field-help">
-                Только сохранённые связи. Документы, правовой статус и риск
-                проверяются отдельно для каждого объекта.
+                {t(
+                  "Только сохранённые связи. Документы, правовой статус и риск проверяются отдельно для каждого объекта.",
+                )}
               </p>
-              {!data.ancestors.length && <p>Родительский объект не указан.</p>}
+              {!data.ancestors.length && (
+                <p>{t("Родительский объект не указан.")}</p>
+              )}
               <RelatedObjects
-                title="В составе этого объекта"
+                title={t("В составе этого объекта")}
                 rows={data.children}
                 registryQuery={registryQuery}
                 onPage={(page) => changePage("children", page)}
               />
               {!!data.ancestors.length && (
                 <RelatedObjects
-                  title="С тем же родительским объектом"
+                  title={t("С тем же родительским объектом")}
                   rows={data.siblings}
                   registryQuery={registryQuery}
                   onPage={(page) => changePage("siblings", page)}
@@ -109,15 +114,20 @@ function RelatedObjects({
   registryQuery: string;
   onPage: (page: number) => void;
 }) {
+  const { t } = useLocale();
   return (
     <section aria-label={title}>
       <h2>
         {title} · {rows.total}
       </h2>
       {!rows.total ? (
-        <p>Связанные объекты не указаны.</p>
+        <p>{t("Связанные объекты не указаны.")}</p>
       ) : !rows.items.length ? (
-        <p>На этой странице нет объектов. Вернитесь на предыдущую страницу.</p>
+        <p>
+          {t(
+            "На этой странице нет объектов. Вернитесь на предыдущую страницу.",
+          )}
+        </p>
       ) : (
         <ul className="property-relations">
           {rows.items.map((item) => (

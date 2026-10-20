@@ -1,5 +1,6 @@
-"""Idempotent, additive synthetic fixtures. Never resets user-created records."""
+"""Idempotent analyst bootstrap and optional additive synthetic fixtures."""
 
+import argparse
 import json
 import secrets
 from datetime import datetime, timezone
@@ -20,8 +21,8 @@ def demo_id(key: str):
     return uuid5(NAMESPACE_URL, f'saq-qurylys/demo/v1/{key}')
 
 
-def seed(db: Session, settings: Settings):
-    fixtures = json.loads((ROOT / 'data/seed/fixtures.json').read_text(encoding='utf-8'))
+def seed(db: Session, settings: Settings, *, include_demo: bool = True):
+    """Ensure the configured analyst exists, optionally adding DEMO data; never reset existing accounts."""
     db.execute(text('SELECT pg_advisory_xact_lock(7310142026)'))
     user = db.scalar(select(User).where(User.username == settings.bootstrap_analyst_username))
     if not user:
@@ -33,6 +34,12 @@ def seed(db: Session, settings: Settings):
         )
         db.add(user)
         db.flush()
+    # An empty installation must remain usable with DEMO disabled. Account creation
+    # is independent of fixtures and preserves existing passwords, roles and profiles.
+    if not include_demo:
+        db.commit()
+        return 0
+    fixtures = json.loads((ROOT / 'data/seed/fixtures.json').read_text(encoding='utf-8'))
     author_id = demo_id('reviewer')
     if not db.get(User, author_id):
         db.add(
@@ -219,9 +226,15 @@ def seed(db: Session, settings: Settings):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--bootstrap-only', action='store_true', help='Ensure login without adding DEMO data.')
+    args = parser.parse_args()
     config = Settings()
     engine = create_engine(config.database_url)
     with Session(engine) as session:
-        added = seed(session, config)
+        added = seed(session, config, include_demo=not args.bootstrap_only)
     engine.dispose()
-    print(f'DEMO seed complete; added {added} properties. Existing records preserved.')
+    if args.bootstrap_only:
+        print('Analyst bootstrap checked; existing accounts preserved. DEMO data was not added.')
+    else:
+        print(f'DEMO seed complete; added {added} properties. Existing records preserved.')

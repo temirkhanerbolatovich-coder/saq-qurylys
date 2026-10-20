@@ -12,7 +12,11 @@ def factor_views(db: Session, property_id) -> list[dto.RiskFactorOut]:
     return [
         dto.RiskFactorOut.model_validate(
             {
-                **{name: getattr(row, name) for name in dto.RiskFactorOut.model_fields if name != 'weight'},
+                **{
+                    name: getattr(row, name)
+                    for name in dto.RiskFactorOut.model_fields
+                    if name not in {'weight', 'reviewed_by_details'}
+                },
                 'weight': WEIGHTS[row.code],
             }
         )

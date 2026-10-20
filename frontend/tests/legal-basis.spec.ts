@@ -57,11 +57,13 @@ test("legal document stays pending until a dated human review, rejection never c
   await expect(
     page.getByRole("status").filter({ hasText: "Основание сохранено" }),
   ).toContainText("Основание сохранено");
-  const card = page
-    .locator(".document")
-    .filter({ has: page.getByRole("heading", { name: new RegExp(number) }) });
+  const documentTrigger = page.getByRole("button", {
+    name: `Открыть документ: ${number}`,
+    exact: true,
+  });
+  await documentTrigger.click();
+  const card = page.getByRole("dialog", { name: number, exact: true });
   await expect(card).toContainText("На проверке");
-  await card.locator(":scope > summary").click();
   await card
     .getByLabel("Обоснование проверки основания")
     .fill("Применимость к корпусу Б и дате подтверждена по оригиналу");
@@ -76,8 +78,8 @@ test("legal document stays pending until a dated human review, rejection never c
   expect(detail.property.risk.score).toBe(before.summary.score);
   expect(detail.property.risk.confirmed_codes).not.toContain("R1");
   await page.reload();
+  await documentTrigger.click();
   await expect(card).toContainText("Документ подтверждён");
-  await card.locator(":scope > summary").click();
   await card
     .getByLabel("Обоснование проверки основания")
     .fill("Учебная повторная проверка: документ отклонён");

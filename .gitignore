@@ -18,3 +18,7 @@ coverage/
 /*.zip
 *.tsbuildinfo
 frontend/next-env.d.ts
+*.dump
+*.sqlite
+*.sqlite3
+.coverage

@@ -12,6 +12,70 @@ def test_contract_is_valid_openapi():
     validate(json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8')))
 
 
+def test_monitoring_findings_contract_matches_live(client):
+    spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
+    live = client.app.openapi()
+    for path, operations in live['paths'].items():
+        if path.startswith('/api/v1/monitoring/findings') or path == '/api/v1/monitoring/query-profiles/{id}/runs':
+            assert spec['paths'][path] == operations
+    for name, schema in live['components']['schemas'].items():
+        if name.startswith(('Finding', 'Page_Finding', 'ProfileRunInput')):
+            assert spec['components']['schemas'][name] == schema
+
+
+def test_url_schedule_contract_matches_live(client):
+    spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
+    live = client.app.openapi()
+    for path in live['paths']:
+        if path.startswith('/api/v1/monitoring/url-schedules'):
+            assert spec['paths'][path] == live['paths'][path]
+    for name in live['components']['schemas']:
+        if name.startswith('UrlSchedule') or name == 'Page_UrlScheduleRunOut_':
+            assert spec['components']['schemas'][name] == live['components']['schemas'][name]
+
+
+def test_candidate_dossier_contract_matches_live(client):
+    spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
+    live = client.app.openapi()
+    for path in [
+        '/api/v1/monitoring/candidates/{id}/dossier',
+        '/api/v1/monitoring/candidates/{id}/link-dossier',
+        '/api/v1/monitoring/candidates/{id}/unlink-dossier',
+        '/api/v1/monitoring/candidates/{id}/dossier-history',
+    ]:
+        assert spec['paths'][path] == live['paths'][path]
+    for name in ['CandidateOut', 'CandidateDossierCreate', 'CandidateDossierLink', 'CandidateDossierUnlink']:
+        assert spec['components']['schemas'][name] == live['components']['schemas'][name]
+    assert (
+        spec['components']['schemas']['PropertyDetail']['properties']['source_candidate_id']
+        == (live['components']['schemas']['PropertyDetailOut']['properties']['source_candidate_id'])
+    )
+    assert (
+        spec['components']['schemas']['PropertyDetail']['properties']['linked_candidate_count']
+        == (live['components']['schemas']['PropertyDetailOut']['properties']['linked_candidate_count'])
+    )
+    path = '/api/v1/monitoring/candidates'
+    assert next(p for p in spec['paths'][path]['get']['parameters'] if p['name'] == 'property_id') == (
+        next(p for p in live['paths'][path]['get']['parameters'] if p['name'] == 'property_id')
+    )
+
+
+def test_material_search_contract_matches_live_parameters(client):
+    spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
+    for path in ['/api/v1/advertisements', '/api/v1/advertisements/review-queue']:
+        documented = next(p for p in spec['paths'][path]['get']['parameters'] if p['name'] == 'q')
+        actual = next(p for p in client.app.openapi()['paths'][path]['get']['parameters'] if p['name'] == 'q')
+        assert documented == actual
+
+
+def test_material_demo_filter_contract_matches_live_parameter(client):
+    spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
+    path = '/api/v1/advertisements'
+    documented = next(p for p in spec['paths'][path]['get']['parameters'] if p['name'] == 'is_demo')
+    actual = next(p for p in client.app.openapi()['paths'][path]['get']['parameters'] if p['name'] == 'is_demo')
+    assert documented == actual
+
+
 def test_registry_search_description_matches_live_parameters(client):
     spec = json.loads((ROOT / 'contracts/openapi.yaml').read_text(encoding='utf-8'))
     live = client.app.openapi()

@@ -1,0 +1,62 @@
+[
+  {
+    "route": "/dashboard",
+    "h1": "Рабочий обзор",
+    "geometry": {
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "width": 1440
+    },
+    "alerts": [
+      ""
+    ]
+  },
+  {
+    "route": "/advertisements",
+    "h1": "Реклама",
+    "geometry": {
+      "clientWidth": 1440,
+      "scrollWidth": 1440,
+      "width": 1440
+    },
+    "alerts": [
+      ""
+    ]
+  },
+  {
+    "route": "/review?queue=actions",
+    "h1": "Оригинал → гипотезы → решение",
+    "geometry": {
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "width": 1440
+    },
+    "alerts": [
+      ""
+    ]
+  },
+  {
+    "route": "/signals",
+    "h1": "Сигналы для проверки",
+    "geometry": {
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "width": 1440
+    },
+    "alerts": [
+      ""
+    ]
+  },
+  {
+    "route": "/monitoring?section=sources",
+    "h1": "Мониторинг рекламы",
+    "geometry": {
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "width": 1440
+    },
+    "alerts": [
+      ""
+    ]
+  }
+]

@@ -149,9 +149,14 @@ test("new text draft survives navigation and saves exact input", async ({
     .click();
   await expect(page.getByRole("heading", { name: label })).toBeVisible();
   await expect(page.locator(".original-text")).toHaveText(text);
-  await expect(page.locator("dd").first()).toHaveText("Не установлена");
+  await expect(page.locator("dd").first()).toHaveText(
+    "Дата публикации неизвестна",
+  );
   await page.reload();
   await expect(page.locator(".original-text")).toHaveText(text);
+  await expect(page.locator("dd").first()).toHaveText(
+    "Дата публикации неизвестна",
+  );
   await page.screenshot({
     path: "../output/qa/new-advertisement.png",
     fullPage: true,

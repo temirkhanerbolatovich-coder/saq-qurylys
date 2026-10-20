@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/lib/locale";
 import Link from "next/link";
 import { useState } from "react";
 import { date } from "@/lib/api";
@@ -37,6 +38,7 @@ function RecordPage({
   page: number;
   onPage: (page: number) => void;
 }) {
+  const { t } = useLocale();
   const result = useData<Page<Advertisement | Signal>>(
     `/${kind}?property_id=${propertyId}&page=${page}&page_size=10`,
   );
@@ -45,12 +47,13 @@ function RecordPage({
   return (
     <section
       className="panel padded object-records"
-      aria-label={
-        kind === "signals" ? "Версии сигналов объекта" : "Публикации объекта"
-      }
+      aria-label={t(
+        kind === "signals" ? "Версии сигналов объекта" : "Публикации объекта",
+      )}
     >
       <p className="field-help" role="status">
-        Всего записей: {result.data.total}
+        {t("Всего записей: ")}
+        {result.data.total}
       </p>
       {result.data.items.map((row) => {
         const signal = "state" in row;
@@ -74,18 +77,20 @@ function RecordPage({
             <PdfDownload
               kind={kind}
               id={row.id}
-              label={signal ? "PDF этой версии" : "PDF публикации"}
+              label={t(signal ? "PDF этой версии" : "PDF публикации")}
             />
           </article>
         );
       })}
-      {!result.data.items.length && <p className="empty">Записей пока нет.</p>}
+      {!result.data.items.length && (
+        <p className="empty">{t("Записей пока нет.")}</p>
+      )}
       <Pagination
-        label={
+        label={t(
           kind === "signals"
             ? "Страницы сигналов объекта"
-            : "Страницы публикаций объекта"
-        }
+            : "Страницы публикаций объекта",
+        )}
         page={result.data.page}
         pageSize={result.data.page_size}
         total={result.data.total}

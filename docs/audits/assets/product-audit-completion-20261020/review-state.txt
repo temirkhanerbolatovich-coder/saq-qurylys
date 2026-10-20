@@ -1,0 +1,88 @@
+- alert
+- link "Перейти к содержимому":
+  - /url: "#main-content"
+- banner:
+  - link "SAQ QURYLYS":
+    - /url: /dashboard
+    - text: SAQ QURYLYS
+    - generic: Аналитика строительства
+  - search "Поиск объекта":
+    - generic: Найти объект или адрес
+    - searchbox "Найти объект или адрес"
+    - button "Найти объект":
+  - generic: Язык интерфейса
+  - combobox "Язык интерфейса":
+    - option "RU" [selected]
+    - option "KZ"
+  - generic: А
+  - strong: Аналитик
+  - generic: Аналитик
+  - button "Выйти":
+- complementary:
+  - navigation "Основная навигация":
+    - link "Обзор":
+      - /url: /dashboard
+      - generic: Обзор
+    - link "Объекты":
+      - /url: /properties
+      - generic: Объекты
+    - link "Реклама":
+      - /url: /advertisements
+      - generic: Реклама
+    - link "Проверка":
+      - /url: /review?queue=actions
+      - generic: Проверка
+    - link "Сигналы":
+      - /url: /signals
+      - generic: Сигналы
+  - link "Источники":
+    - /url: /sources
+    - generic: Источники
+  - button "Подробный вид":
+    - generic: Подробный вид
+- generic: Рабочее место аналитика
+- navigation "Проверки":
+  - link "Материалы":
+    - /url: /review?queue=actions
+  - link "Сравнение публикаций":
+    - /url: /comparison
+  - link "Сверка":
+    - /url: /monitoring
+- main:
+  - paragraph: РУЧНАЯ ПРОВЕРКА
+  - heading "Оригинал → гипотезы → решение" [level=1]
+  - paragraph: OCR и сходство названий помогают найти факты. Только аналитик подтверждает привязку, доказательство и фактор риска.
+  - navigation "Виды очереди проверки":
+    - link "Нерешённые действия":
+      - /url: /review?queue=actions
+    - link "Состояния обработки":
+      - /url: /review?queue=processing
+  - region "Нерешённые действия материалов":
+    - generic "Нерешённые действия материалов"
+    - heading "Материалы с нерешёнными действиями" [level=2]
+    - button "Обновить очередь решений"
+    - paragraph: Завершение обработки не означает принятие решений. Здесь показаны задачи последнего анализа; оригиналы, ошибки и новый анализ доступны в «Состояниях обработки».
+    - search "Поиск материалов":
+      - generic: Текст публикации или название источника
+      - searchbox "Текст публикации или название источника"
+      - button "Найти материалы"
+      - paragraph: По всему списку с учётом фильтров. OCR и гипотезы не входят в поиск.
+    - text: Нерешённое действие
+    - combobox "Нерешённое действие":
+      - option "Все действия" [selected]
+      - option "Проверить гипотезы"
+      - option "Проверить привязку к объекту"
+      - option "Сохранить доказательство оплаты"
+      - option "Проверить решение R2"
+    - text: Режим материалов
+    - combobox "Режим материалов":
+      - option "DEMO и реальные" [selected]
+      - option "Только DEMO"
+      - option "Только реальные"
+    - text: Материалов с действиями на странице
+    - combobox "Материалов с действиями на странице":
+      - option "10"
+      - option "20" [selected]
+      - option "50"
+    - status: Загрузка данных…
+- contentinfo: SAQ QURYLYS · Прототип · Сигнал не устанавливает факт правонарушенияDEMO отмечено отдельно

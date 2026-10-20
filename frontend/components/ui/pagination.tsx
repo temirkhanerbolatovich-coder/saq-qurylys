@@ -11,6 +11,7 @@ export function Pagination({
   label,
   previousLabel = "Предыдущая страница",
   nextLabel = "Следующая страница",
+  statusLabel,
 }: {
   page: number;
   pageSize: number;
@@ -19,6 +20,7 @@ export function Pagination({
   label: string;
   previousLabel?: string;
   nextLabel?: string;
+  statusLabel?: string;
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   return (
@@ -32,7 +34,7 @@ export function Pagination({
         {previousLabel}
       </Button>
       <span role="status" aria-live="polite" aria-atomic="true">
-        Страница {page} из {pages}
+        {statusLabel || `Страница ${page} из ${pages}`}
       </span>
       <Button
         type="button"

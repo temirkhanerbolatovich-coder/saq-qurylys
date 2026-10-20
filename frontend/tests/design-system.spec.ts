@@ -59,6 +59,8 @@ test("keyboard skip link, dossier anchors and R1 reason remain usable without co
   await login(page);
   await page.goto("/properties");
   await expect(page.locator("tbody tr")).toHaveCount(8);
+  // Next's development launcher precedes the app in the tab order.
+  await page.addStyleTag({ content: "nextjs-portal { display: none; }" });
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("link", { name: "Перейти к содержимому", exact: true }),

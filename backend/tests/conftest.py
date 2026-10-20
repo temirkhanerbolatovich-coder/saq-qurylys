@@ -5,13 +5,14 @@ from uuid import uuid4
 import pytest
 from alembic.config import Config
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from alembic import command
 from app.config import Settings
 from app.main import create_app
+from app.models import AnalysisJob
 from app.seed import seed
 
 
@@ -57,7 +58,27 @@ def settings(tmp_path_factory):
 @pytest.fixture
 def client(settings):
     with TestClient(create_app(settings), base_url='http://localhost:3000') as value:
-        yield value
+        try:
+            yield value
+        finally:
+            # Cases share a disposable schema, but must not consume each other's work.
+            # Keep rows and referenced artifacts for historical assertions; never drain
+            # a leftover job through production integrations during test cleanup.
+            finish_test_jobs(value.app.state.sessions)
+
+
+def finish_test_jobs(sessions):
+    with sessions.begin() as db:
+        for job in db.scalars(select(AnalysisJob).where(AnalysisJob.state.in_(['QUEUED', 'RUNNING']))):
+            job.state, job.claim_token, job.lease_until = 'FAILED', None, None
+            job.error = {
+                'error': {
+                    'code': 'TEST_TEARDOWN',
+                    'message': 'Disposable test case finished',
+                    'request_id': str(job.request_id),
+                    'fields': [],
+                }
+            }
 
 
 @pytest.fixture

@@ -1,0 +1,43 @@
+{
+  "image": "saq-oracle-frontend:20261020-micro-v2",
+  "name": "saq-audit-ui-56c0963268bc",
+  "network": "saq-audit-ui-net-56c0963268bc",
+  "scope": "existing synthetic presentation fixtures only; no real API",
+  "image_id": "sha256:09385a26c7109ce8adff29160c0020d32a1f40dd2678d680e7d1ba7e8330a90a",
+  "network_internal": false,
+  "base_url": "http://127.0.0.1:65444",
+  "command": [
+    "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\frontend\\node_modules\\.bin\\playwright.cmd",
+    "test",
+    "tests/shell-redesign.spec.ts",
+    "tests/report-options.spec.ts",
+    "tests/functional-safety.spec.ts",
+    "--grep-invert",
+    "shell keeps five labelled|report options keep mandatory",
+    "--output",
+    "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\output\\qa\\product-audit-20261020-56c0963268bc",
+    "--reporter",
+    "list"
+  ],
+  "output_directory": "C:\\Users\\Админ\\Desktop\\УС ВТиПО-25-2\\Хакатоны\\Хакатон 8.0 Оскемен Октябрь\\output\\qa\\product-audit-20261020-56c0963268bc",
+  "exit_code": 0,
+  "seconds": 14.61,
+  "container_cleanup": "removed exact own container",
+  "network_cleanup": "removed exact own dedicated bridge network",
+  "default_viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "responsive_cases": {
+    "case_count": 5,
+    "widths": [
+      375,
+      768,
+      1024,
+      1440
+    ],
+    "height": 1000,
+    "assertion": "no page overflow"
+  },
+  "new_production_build": false
+}

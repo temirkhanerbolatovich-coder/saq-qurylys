@@ -49,6 +49,47 @@ const user = {
 };
 const articleUrl =
   "https://primeminister.kz/ru/news/zhilishchnaya-programma-123";
+test("commercial page import waits for explicit submit and retains URL context", async ({
+  page,
+}) => {
+  await auth(page);
+  const posts: string[] = [];
+  await page.route("**/api/v1/advertisements/import-url", async (route) => {
+    posts.push(route.request().method());
+    expect(route.request().postDataJSON()).toEqual({
+      url: "https://www.angroups.kz/payment",
+      is_demo: false,
+    });
+    await route.fulfill({ status: 202, json: importJob(jobIds[0], "RUNNING") });
+  });
+  await page.route(`**/api/v1/analysis-jobs/${jobIds[0]}`, (route) =>
+    route.fulfill({ json: importJob(jobIds[0]) }),
+  );
+  await page.goto("/advertisements/import-url?q=retained");
+  await expect(
+    page.getByRole("heading", { name: "Поддерживаемые страницы" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/текст настольной версии может отличаться/),
+  ).toBeVisible();
+  await page
+    .getByLabel("Ссылка на публикацию")
+    .fill("https://www.angroups.kz/payment");
+  expect(posts).toEqual([]);
+  await page
+    .getByRole("button", { name: "Сохранить публикацию", exact: true })
+    .click();
+  await expect(
+    page.getByRole("link", { name: "Открыть сохранённую публикацию" }),
+  ).toHaveAttribute("href", `/advertisements/${objectId}`);
+  expect(posts).toEqual(["POST"]);
+  await expect(page).toHaveURL(/q=retained/);
+  await page.reload();
+  await expect(
+    page.getByRole("link", { name: "Открыть сохранённую публикацию" }),
+  ).toBeVisible();
+  expect(posts).toEqual(["POST"]);
+});
 async function auth(page: Page, role = "analyst") {
   await page.route("**/api/v1/auth/me", (route) =>
     route.fulfill({ json: { ...user, role } }),
@@ -56,6 +97,54 @@ async function auth(page: Page, role = "analyst") {
   await page.route("**/api/v1/auth/csrf", (route) =>
     route.fulfill({ json: { csrf_token: "presentation-csrf" } }),
   );
+}
+for (const [publisher, sourceUrl, licensed] of [
+  ["AN GROUPS", "https://www.angroups.kz/payment", false],
+  ["Primeminister.kz", articleUrl, true],
+] as const) {
+  test(`HTML attribution belongs to ${publisher} only`, async ({ page }) => {
+    await auth(page);
+    await page.route(`**/api/v1/advertisements/${objectId}`, (route) =>
+      route.fulfill({
+        json: {
+          id: objectId,
+          revision: 1,
+          source_label: `DEMO ${publisher}`,
+          source_url: sourceUrl,
+          captured_at: "2026-10-19T12:00:00Z",
+          published_at: null,
+          original_text: "DEMO исходный текст",
+          is_demo: true,
+          status: "NEW",
+          confirmed_property_id: null,
+          assets: [
+            {
+              id: objectId,
+              kind: "HTML",
+              mime_type: "text/html",
+              byte_size: 100,
+              sha256: "a".repeat(64),
+              is_demo: true,
+            },
+          ],
+        },
+      }),
+    );
+    for (const locale of ["ru", "kk"]) {
+      await page.addInitScript(
+        (l) => localStorage.setItem("saq-locale", l),
+        locale,
+      );
+      await page.goto(`/advertisements/${objectId}`);
+      const original = page.locator(".publication-original");
+      await expect(original).toContainText("DEMO исходный текст");
+      if (licensed) await expect(original).toContainText("CC BY 4.0");
+      else {
+        await expect(original).not.toContainText("CC BY");
+        await expect(original).not.toContainText("Primeminister.kz");
+      }
+    }
+  });
 }
 const registry = {
   id: objectId,
@@ -268,6 +357,7 @@ test("invalid job links make no request and missing job retry only reads status"
 }) => {
   await auth(page);
   let reads = 0;
+  let recovered = false;
   let posts = 0;
   page.on("request", (request) => {
     if (request.method() === "POST") posts++;
@@ -275,7 +365,7 @@ test("invalid job links make no request and missing job retry only reads status"
   await page.route("**/api/v1/analysis-jobs/*", (route) => {
     reads++;
     return route.fulfill(
-      reads === 1
+      !recovered
         ? { status: 404, json: { error: { message: "Задание не найдено" } } }
         : { json: importJob(jobIds[0]) },
     );
@@ -298,13 +388,15 @@ test("invalid job links make no request and missing job retry only reads status"
   await expect(
     page.getByRole("button", { name: "Сохранить публикацию", exact: true }),
   ).toBeDisabled();
+  const readsBeforeRetry = reads;
+  recovered = true;
   await page
     .getByRole("button", { name: "Проверить состояние снова", exact: true })
     .click();
   await expect(
     page.getByRole("link", { name: "Открыть сохранённую публикацию" }),
   ).toBeVisible();
-  expect(reads).toBe(2);
+  expect(reads).toBe(readsBeforeRetry + 1);
   expect(posts).toBe(0);
 });
 
@@ -312,17 +404,17 @@ test("new job selection and browser Back ignore a late status response", async (
   page,
 }) => {
   await auth(page);
-  let release: (() => Promise<void>) | undefined;
-  let first = true;
+  const pending: (() => Promise<void>)[] = [];
+  let holdFirstSelection = true;
   const otherAdvertisement = "44444444-4444-4444-8444-444444444444";
   await page.route(`**/api/v1/analysis-jobs/${jobIds[0]}`, async (route) => {
-    if (first) {
-      first = false;
+    // Dev StrictMode may read the same selection twice; delay every such read.
+    if (holdFirstSelection) {
       await new Promise<void>((resolve) => {
-        release = async () => {
+        pending.push(async () => {
           await route.fulfill({ json: importJob(jobIds[0]) });
           resolve();
-        };
+        });
       });
     } else await route.fulfill({ json: importJob(jobIds[0]) });
   });
@@ -332,7 +424,7 @@ test("new job selection and browser Back ignore a late status response", async (
     }),
   );
   await page.goto(`/advertisements/import-url?job=${jobIds[0]}`);
-  await expect.poll(() => Boolean(release)).toBe(true);
+  await expect.poll(() => pending.length).toBeGreaterThan(0);
   await expect(
     page.getByText("Восстанавливаем состояние импорта…"),
   ).toBeVisible();
@@ -347,7 +439,8 @@ test("new job selection and browser Back ignore a late status response", async (
     "href",
     `/advertisements/${otherAdvertisement}`,
   );
-  await release!();
+  holdFirstSelection = false;
+  await Promise.all(pending.map((release) => release()));
   await expect(link).toHaveAttribute(
     "href",
     `/advertisements/${otherAdvertisement}`,

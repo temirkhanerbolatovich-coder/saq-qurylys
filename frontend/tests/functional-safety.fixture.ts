@@ -13,6 +13,7 @@ export const fixtureUser: User = {
   role: "analyst",
 };
 export const fixtureProperty: Property = {
+  revision: 1,
   id: "60000000-0000-4000-8000-000000000002",
   parent_id: null,
   level: "PHASE",

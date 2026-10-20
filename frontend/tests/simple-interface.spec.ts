@@ -26,7 +26,7 @@ test("workspace has five permanent destinations and uses real scores at all scre
       }
       const foreground = luminance(getComputedStyle(element).color);
       const background = luminance(
-        getComputedStyle(element.closest(".sidebar")!).backgroundColor,
+        getComputedStyle(element.closest(".topbar")!).backgroundColor,
       );
       return (
         (Math.max(foreground, background) + 0.05) /
@@ -190,8 +190,12 @@ test("simple dossier keeps expert drafts and file selection across mode changes"
   page,
 }) => {
   await login(page, { detailed: false });
+  const registry = await (await page.request.get("/api/v1/properties")).json();
   await page.goto("/properties");
-  await expect(page.locator(".registry-desktop-table tbody tr")).toHaveCount(8);
+  await expect(page.locator(".registry-desktop-table tbody tr")).toHaveCount(
+    registry.items.length,
+  );
+  await page.addStyleTag({ content: "nextjs-portal { display: none; }" });
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("link", { name: "Перейти к содержимому", exact: true }),

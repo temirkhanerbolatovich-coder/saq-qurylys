@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { login, openDossierTools } from "./support";
+import { login, openDossierTools, testOrigin } from "./support";
 
 const labels = [
   "Обзор",
@@ -87,9 +87,14 @@ test("real tabs preserve drafts and files, support keyboard, URL, Back and legac
     page.getByText("Выберите файл повторно: tab-memory.txt.", { exact: true }),
   ).toBeVisible();
   expect(commands).toEqual([]);
-  expect(
-    await (await page.request.get(`/api/v1/properties/${row.id}/risk`)).json(),
-  ).toEqual(before);
+  const after = await (
+    await page.request.get(`/api/v1/properties/${row.id}/risk`)
+  ).json();
+  // With no saved factor the server stamps its read time; compare stored state.
+  expect({
+    ...after,
+    summary: { ...after.summary, as_of: before.summary.as_of },
+  }).toEqual(before);
 });
 
 test("viewer sees one panel, reads selected evidence and tabs reflow at required widths", async ({
@@ -134,7 +139,11 @@ test("viewer sees one panel, reads selected evidence and tabs reflow at required
   await expect(page.locator("#dossier-evidence .evidence")).toHaveCount(
     new Set(factor.evidence_ids).size,
   );
-  expect(reads).toHaveLength(new Set(factor.evidence_ids).size);
+  expect([...new Set(reads)].sort()).toEqual(
+    [...new Set(factor.evidence_ids)]
+      .map((id) => `${testOrigin}/api/v1/evidence/${id}`)
+      .sort(),
+  );
   for (const width of [375, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     for (const tab of await tabs.getByRole("tab").all()) {

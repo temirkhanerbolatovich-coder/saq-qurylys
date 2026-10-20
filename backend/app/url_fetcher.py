@@ -1,8 +1,8 @@
 """Bounded HTML transport for a single approved source; not an enabled collector.
 
 The public entry point always uses a subprocess so DNS, TLS, headers and slow
-response bodies share one wall-clock deadline. Source permission is established
-by an operator, never inferred from a public URL or robots.txt.
+response bodies share one wall-clock deadline. Host/path policies are reviewed
+server-side configuration, never supplied by an import request.
 """
 
 import base64
@@ -52,9 +52,9 @@ class FetchError(Exception):
 class SourcePolicy:
     """Trusted server-side configuration, never accepted from an import request.
 
-    Prefixes name path subtrees (including their root), not arbitrary strings.
-    No source is configured by this module. A policy requires documented source
-    permission before it may be wired into a production job.
+    Prefixes name path subtrees by default; allow_subpaths=False selects exact
+    paths. allow_query=False also applies to every redirect before connection.
+    No source is configured by this module; callers supply reviewed policies.
     """
 
     hostname: str
@@ -62,6 +62,8 @@ class SourcePolicy:
     max_bytes: int = 2_097_152
     timeout_seconds: int = 20
     max_redirects: int = 3
+    allow_subpaths: bool = True
+    allow_query: bool = True
 
     def __post_init__(self):
         if not _HOST.fullmatch(self.hostname):
@@ -79,6 +81,8 @@ class SourcePolicy:
             raise ValueError('Invalid response size limit')
         if not 1 <= self.timeout_seconds <= 60 or not 0 <= self.max_redirects <= 5:
             raise ValueError('Invalid timeout or redirect limit')
+        if not isinstance(self.allow_subpaths, bool) or not isinstance(self.allow_query, bool):
+            raise ValueError('Expected boolean path/query policy')
 
 
 @dataclass(frozen=True)
@@ -113,8 +117,9 @@ def validate_url(url: str, policy: SourcePolicy) -> str:
             or '//' in path
             or ';' in decoded_path
             or any(part in {'.', '..'} for part in decoded_path.split('/'))
+            or (parts.query and not policy.allow_query)
             or not any(
-                path == prefix.rstrip('/') or path.startswith(prefix.rstrip('/') + '/')
+                path == prefix.rstrip('/') or (policy.allow_subpaths and path.startswith(prefix.rstrip('/') + '/'))
                 for prefix in policy.path_prefixes
             )
         ):

@@ -27,6 +27,26 @@ const sourceField = (page: Page) =>
 const textField = (page: Page) =>
   page.getByLabel("Оригинальный текст", { exact: true });
 
+test("a REAL dossier without a developer BIN is not labelled DEMO", async ({
+  page,
+}) => {
+  const fixture = await mount(page);
+  fixture.detail.property.is_demo = false;
+  fixture.detail.property.developer.bin = null;
+  await page.goto(`/properties/${fixtureProperty.id}`);
+  const toggle = page.getByRole("button", {
+    name: "Подробный вид",
+    exact: true,
+  });
+  if (await toggle.isVisible()) await toggle.click();
+  await expect(page.getByText("Не указан · DEMO", { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.locator(".fact-list dd").filter({ hasText: /^Не указан$/ }),
+  ).toBeVisible();
+});
+
 test("publication draft survives navigation and reload and clears only after successful saving", async ({
   page,
 }) => {

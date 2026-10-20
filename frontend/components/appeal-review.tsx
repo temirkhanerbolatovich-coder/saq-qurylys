@@ -21,6 +21,9 @@ export function AppealReview({
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
   const [reason, setReason] = useState("");
+  const [savedFactorRevision, setSavedFactorRevision] = useState<number | null>(
+    null,
+  );
   const draft = useDossierFormDraft(
     userId,
     `${detail.property.id}:R4`,
@@ -51,6 +54,11 @@ export function AppealReview({
     current: crypto.randomUUID(),
   }));
   const factor = detail.factors.find((f) => f.code === "R4");
+  const refreshingFactor = Boolean(
+    factor &&
+    savedFactorRevision !== null &&
+    factor.revision < savedFactorRevision,
+  );
   function key(payload: string) {
     if (!keys.current.has(payload))
       keys.current.set(payload, crypto.randomUUID());
@@ -124,7 +132,7 @@ export function AppealReview({
   }
   const ids = evidenceId ? [evidenceId] : factor?.evidence_ids || [];
   async function review(status: string) {
-    if (!factor) return;
+    if (!factor || refreshingFactor) return;
     await run(async () => {
       const body = {
         expected_revision: factor.revision,
@@ -132,11 +140,13 @@ export function AppealReview({
         evidence_ids: ids,
         reason,
       };
-      await command(
+      const reviewed = await command<{ factor: { revision: number } }>(
         `/risk-factors/${factor.id}/review`,
         body,
         key(JSON.stringify(body)),
       );
+      // The parent reload is asynchronous; another decision needs its fresh revision.
+      setSavedFactorRevision(reviewed.factor.revision);
       setMessage(
         status === "CONFIRMED"
           ? "R4 подтверждён: +15 баллов."
@@ -157,6 +167,17 @@ export function AppealReview({
         <p>
           Текущий статус R4: <b>{statusLabel(factor.status)}</b>
         </p>
+      )}
+      {refreshingFactor && (
+        <div>
+          <p role="status">
+            Обновляем сохранённое решение R4. Следующее решение станет доступно
+            после загрузки актуальной версии.
+          </p>
+          <Button type="button" variant="outline" onClick={onSaved}>
+            Обновить сохранённое решение R4
+          </Button>
+        </div>
       )}
       <form
         onSubmit={save}
@@ -222,7 +243,7 @@ export function AppealReview({
           maxLength={2000}
           required
         />
-        <Button disabled={busy || !reason.trim()}>
+        <Button disabled={busy || refreshingFactor || !reason.trim()}>
           Сохранить документ обращения
         </Button>
       </form>
@@ -235,14 +256,20 @@ export function AppealReview({
       {factor && (
         <div className="review-actions">
           <Button
-            disabled={busy || !reason.trim() || !ids.length || needsCapture}
+            disabled={
+              busy ||
+              refreshingFactor ||
+              !reason.trim() ||
+              !ids.length ||
+              needsCapture
+            }
             onClick={() => void review("CONFIRMED")}
           >
             Подтвердить R4 · +15
           </Button>
           <Button
             variant="outline"
-            disabled={busy || !reason.trim()}
+            disabled={busy || refreshingFactor || !reason.trim()}
             onClick={() => void review("REJECTED")}
           >
             Отклонить R4

@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
+import { useLocale } from "@/lib/locale";
+import { MaterialSearch } from "@/components/material-search";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -8,14 +11,16 @@ import {
   Building2,
   Check,
   ClipboardCheck,
-  FileText,
+  Database,
   LayoutDashboard,
   LogOut,
+  Megaphone,
   MapPin,
   ListFilter,
   Plus,
   Search,
   ShieldCheck,
+  ShieldAlert,
   Siren,
   SlidersHorizontal,
 } from "lucide-react";
@@ -34,6 +39,7 @@ import type {
   AdvertisementReviewPage,
   Dashboard,
   Evidence,
+  Extraction,
   Page,
   Property,
   PropertyDetail,
@@ -50,11 +56,19 @@ import {
   useWorkspaceSection,
 } from "@/components/ui/workspace-tabs";
 import { PdfDownload } from "@/components/pdf-download";
+import { ManualAnnotation } from "@/components/manual-annotation";
 import { ObjectRecords } from "@/components/object-records";
 import { PropertyHistory } from "@/components/property-history";
 import { PropertyStructure } from "@/components/property-structure";
 import { clearReviewDrafts, useReviewDraft } from "@/lib/use-review-draft";
 import { clearDossierFormDrafts } from "@/lib/use-dossier-form-draft";
+import {
+  DossierOverview,
+  DossierRiskStatistics,
+} from "@/components/dossier-overview";
+import { DossierRecords } from "@/components/dossier-records";
+import { ReportOptions } from "@/components/report-options";
+import { SourceSummary } from "@/components/source-summary";
 import { statusLabel } from "@/lib/status-labels";
 import { propertyNextAction } from "@/lib/property-priority";
 import {
@@ -107,14 +121,15 @@ const stageLabels: Record<string, string> = {
   COMPLETED: "Завершён",
 };
 const nav = [
-  { href: "/dashboard", label: "Обзор", icon: LayoutDashboard },
-  { href: "/properties", label: "Объекты", icon: Building2 },
-  { href: "/advertisements", label: "Реклама", icon: FileText },
-  { href: "/review", label: "Проверка", icon: ClipboardCheck },
-  { href: "/signals", label: "Сигналы", icon: Siren },
+  { href: "/dashboard", label: "Обзор", kk: "Шолу", icon: LayoutDashboard },
+  { href: "/properties", label: "Объекты", kk: "Нысандар", icon: Building2 },
+  { href: "/advertisements", label: "Реклама", kk: "Жарнама", icon: Megaphone },
+  { href: "/review", label: "Проверка", kk: "Тексеру", icon: ClipboardCheck },
+  { href: "/signals", label: "Сигналы", kk: "Сигналдар", icon: ShieldAlert },
 ];
 
 function GlobalSearch() {
+  const { t } = useLocale();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
@@ -142,13 +157,13 @@ function GlobalSearch() {
           if (!open) requestAnimationFrame(() => input.current?.focus());
         }}
       >
-        <Search size={16} aria-hidden="true" /> Поиск
+        <Search size={20} aria-hidden="true" /> {t("Поиск", "Іздеу")}
       </button>
       <form
         id="global-search-form"
         className="topbar-search"
         role="search"
-        aria-label="Поиск объекта"
+        aria-label={t("Поиск объекта", "Нысанды іздеу")}
         onSubmit={submit}
         onKeyDown={(event) => {
           if (event.key === "Escape" && toggle.current?.offsetParent) {
@@ -160,18 +175,21 @@ function GlobalSearch() {
       >
         <Search size={16} aria-hidden="true" />
         <label className="sr-only" htmlFor="global-property-search">
-          Найти объект или адрес
+          {t("Найти объект или адрес", "Нысанды немесе мекенжайды табу")}
         </label>
         <input
           ref={input}
           id="global-property-search"
           name="q"
           type="search"
-          placeholder="Найти объект или адрес"
+          placeholder={t(
+            "Найти объект или адрес",
+            "Нысанды немесе мекенжайды табу",
+          )}
           autoComplete="off"
           maxLength={300}
         />
-        <button type="submit" aria-label="Найти объект">
+        <button type="submit" aria-label={t("Найти объект", "Нысанды табу")}>
           <ArrowRight size={16} aria-hidden="true" />
         </button>
       </form>
@@ -180,43 +198,57 @@ function GlobalSearch() {
 }
 
 function WorkspaceContext({ pathname }: { pathname: string }) {
+  const { t } = useLocale();
   let parent: { href: string; label: string } | null = null;
   let title = "";
   if (pathname.startsWith("/properties/")) {
-    parent = { href: "/properties", label: "Объекты" };
-    title = "Досье объекта";
+    parent = { href: "/properties", label: t("Объекты", "Нысандар") };
+    title = t("Досье объекта", "Нысан дерекнамасы");
   } else if (pathname.startsWith("/advertisements/")) {
-    parent = { href: "/advertisements", label: "Реклама" };
+    parent = { href: "/advertisements", label: t("Реклама", "Жарнама") };
     title =
       (
         {
-          "/advertisements/new": "Добавить текст",
-          "/advertisements/upload": "Загрузить файл",
-          "/advertisements/import-url": "Импорт по ссылке",
+          "/advertisements/new": t("Добавить текст", "Мәтін қосу"),
+          "/advertisements/upload": t("Загрузить файл", "Файл жүктеу"),
+          "/advertisements/import-url": t(
+            "Импорт по ссылке",
+            "Сілтеме арқылы импорттау",
+          ),
         } as Record<string, string>
-      )[pathname] || "Оригинал публикации";
+      )[pathname] || t("Оригинал публикации", "Жарияланым түпнұсқасы");
   } else if (pathname.startsWith("/monitoring")) {
-    parent = { href: "/review", label: "Проверка" };
-    title = "Сверка находок";
+    parent = { href: "/review", label: t("Проверка", "Тексеру") };
+    title = t("Сверка находок", "Табылған деректерді салыстыру");
   } else if (pathname.startsWith("/comparison")) {
-    parent = { href: "/review?queue=actions", label: "Проверка" };
-    title = "Сравнение публикаций";
+    parent = { href: "/review?queue=actions", label: t("Проверка", "Тексеру") };
+    title = t("Сравнение публикаций", "Жарияланымдарды салыстыру");
   }
   return parent ? (
-    <nav className="breadcrumbs" aria-label="Путь к странице">
+    <nav
+      className="breadcrumbs"
+      aria-label={t("Путь к странице", "Бетке өту жолы")}
+    >
       <Link href={parent.href}>{parent.label}</Link>
       <span aria-hidden="true">/</span>
       <span aria-current="page">{title}</span>
     </nav>
   ) : (
-    <span>Рабочее место аналитика</span>
+    <span>
+      {pathname === "/sources"
+        ? t("Источники данных", "Дереккөздер")
+        : t("Рабочее место аналитика", "Талдаушының жұмыс орны")}
+    </span>
   );
 }
 
 export function Providers({ children }: { children: ReactNode }) {
+  const { locale, setLocale, t } = useLocale();
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
+  const [logoutError, setLogoutError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
   const [detailed, setDetailedState] = useState(false);
   useEffect(() => {
     try {
@@ -268,37 +300,98 @@ export function Providers({ children }: { children: ReactNode }) {
   if (pathname === "/login")
     return <Auth.Provider value={{ user, refresh }}>{children}</Auth.Provider>;
   if (!ready)
-    return <main className="boot">Подключение к рабочему месту…</main>;
+    return (
+      <main className="boot">
+        {t("Подключение к рабочему месту…", "Жұмыс орнына қосылу…")}
+      </main>
+    );
   if (error)
     return (
       <main className="boot">
         <Notice error={error} />
-        <Button onClick={refresh}>Повторить</Button>
+        <Button onClick={refresh}>{t("Повторить", "Қайталау")}</Button>
       </main>
     );
-  if (!user) return <main className="boot">Необходим вход…</main>;
+  if (!user)
+    return (
+      <main className="boot">{t("Необходим вход…", "Жүйеге кіру қажет…")}</main>
+    );
   return (
     <InterfaceMode.Provider value={{ detailed, setDetailed }}>
       <Auth.Provider value={{ user, refresh }}>
         <div
-          className={`workspace analyst-workspace ${detailed ? "detailed-view" : "simple-view"}`}
+          className={`workspace analyst-workspace shell-redesign ${detailed ? "detailed-view" : "simple-view"}`}
         >
           <a className="skip-link" href="#main-content">
-            Перейти к содержимому
+            {t("Перейти к содержимому", "Мазмұнға өту")}
           </a>
-          <aside className="sidebar">
-            <Link href="/dashboard" className="brand">
-              <span className="brand-symbol">
-                <ShieldCheck size={25} aria-hidden="true" />
-              </span>
-              <span>
-                SAQ <b>QURYLYS</b>
-                <small>Аналитика строительства</small>
-              </span>
+          <header className="topbar">
+            <Link href="/dashboard" className="brand" aria-label="SAQ QURYLYS">
+              <BrandLogo />
             </Link>
-            <p className="sidebar-caption">РАБОЧИЕ ЗОНЫ</p>
-            <nav aria-label="Основная навигация">
-              {nav.map(({ href, label, icon: Icon }) => {
+            <GlobalSearch />
+            <div className="shell-account">
+              <label className="shell-locale">
+                <span className="sr-only">
+                  {t("Язык интерфейса", "Интерфейс тілі")}
+                </span>
+                <select
+                  value={locale}
+                  onChange={(event) =>
+                    setLocale(event.target.value === "kk" ? "kk" : "ru")
+                  }
+                >
+                  <option value="ru">RU</option>
+                  <option value="kk">KZ</option>
+                </select>
+              </label>
+              <div className="user">
+                <span className="avatar" aria-hidden="true">
+                  {user.display_name.slice(0, 1)}
+                </span>
+                <div>
+                  <strong>{user.display_name}</strong>
+                  <small>
+                    {user.role === "analyst"
+                      ? t("Аналитик", "Талдаушы")
+                      : t("Просмотр", "Көру")}
+                  </small>
+                </div>
+                <button
+                  type="button"
+                  aria-label={t("Выйти", "Шығу")}
+                  disabled={loggingOut}
+                  aria-busy={loggingOut}
+                  onClick={async () => {
+                    setLoggingOut(true);
+                    setLogoutError("");
+                    try {
+                      await command("/auth/logout");
+                      clearReviewDrafts();
+                      clearDossierFormDrafts();
+                      clearRegistryContext();
+                      await refresh();
+                      router.replace("/login");
+                    } catch (failure) {
+                      setLogoutError((failure as Error).message);
+                    } finally {
+                      setLoggingOut(false);
+                    }
+                  }}
+                >
+                  <LogOut size={20} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+            {logoutError && (
+              <div className="shell-account-error">
+                <Notice error={logoutError} />
+              </div>
+            )}
+          </header>
+          <aside className="sidebar">
+            <nav aria-label={t("Основная навигация", "Негізгі навигация")}>
+              {nav.map(({ href, label, kk, icon: Icon }) => {
                 const active =
                   pathname.startsWith(href) || (href === "/review" && checking);
                 return (
@@ -306,67 +399,67 @@ export function Providers({ children }: { children: ReactNode }) {
                     key={href}
                     href={href === "/review" ? "/review?queue=actions" : href}
                     className={active ? "active" : ""}
+                    title={t(label, kk)}
                     aria-current={active ? "page" : undefined}
                   >
-                    <Icon size={18} aria-hidden="true" />
-                    {label}
+                    <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
+                    <span>{t(label, kk)}</span>
                   </Link>
                 );
               })}
             </nav>
-            <button
-              className="interface-toggle"
-              type="button"
-              aria-pressed={detailed}
-              onClick={() => setDetailed(!detailed)}
-            >
-              <SlidersHorizontal size={16} aria-hidden="true" />
-              {detailed ? "Краткий вид" : "Подробный вид"}
-            </button>
-            <div className="user">
-              <span className="avatar" aria-hidden="true">
-                {user.display_name.slice(0, 1)}
-              </span>
-              <div>
-                <strong>{user.display_name}</strong>
-                <small>
-                  {user.role === "analyst" ? "Аналитик" : "Просмотр"}
-                </small>
-              </div>
-              <button
-                aria-label="Выйти"
-                onClick={async () => {
-                  await command("/auth/logout");
-                  clearReviewDrafts();
-                  clearDossierFormDrafts();
-                  clearRegistryContext();
-                  await refresh();
-                  router.replace("/login");
-                }}
+            <div className="sidebar-tools">
+              <Link
+                href="/sources"
+                className={
+                  pathname === "/sources" ? "source-nav active" : "source-nav"
+                }
+                aria-current={pathname === "/sources" ? "page" : undefined}
+                title={t("Источники данных", "Дереккөздер")}
               >
-                <LogOut size={17} aria-hidden="true" />
+                <Database size={20} strokeWidth={1.75} aria-hidden="true" />
+                <span>{t("Источники", "Дереккөз")}</span>
+              </Link>
+              <button
+                className="interface-toggle"
+                type="button"
+                aria-pressed={detailed}
+                onClick={() => setDetailed(!detailed)}
+                title={
+                  detailed
+                    ? t("Краткий вид", "Қысқаша көрініс")
+                    : t("Подробный вид", "Толық көрініс")
+                }
+              >
+                <SlidersHorizontal
+                  size={20}
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
+                <span>
+                  {detailed
+                    ? t("Краткий вид", "Қысқаша көрініс")
+                    : t("Подробный вид", "Толық көрініс")}
+                </span>
               </button>
             </div>
           </aside>
           <div className="main-column">
-            <header className="topbar">
+            <div className="shell-context-row">
               <div className="topbar-context">
                 <WorkspaceContext pathname={pathname} />
               </div>
-              <GlobalSearch />
-              <div className="topbar-meta">
-                <span className="demo-label">
-                  Прототип · DEMO отмечено отдельно
-                </span>
-              </div>
-            </header>
+            </div>
             {checking && (
-              <nav className="checking-nav" aria-label="Проверки">
+              <nav
+                className="checking-nav"
+                aria-label={t("Проверки", "Тексерулер")}
+              >
                 <Link
                   href="/review?queue=actions"
                   aria-current={pathname === "/review" ? "page" : undefined}
                 >
-                  Материалы
+                  {t("Материалы", "Материалдар")}
                 </Link>
                 <Link
                   href="/comparison"
@@ -374,7 +467,7 @@ export function Providers({ children }: { children: ReactNode }) {
                     pathname.startsWith("/comparison") ? "page" : undefined
                   }
                 >
-                  Сравнение публикаций
+                  {t("Сравнение публикаций", "Жарияланымдарды салыстыру")}
                 </Link>
                 <Link
                   href="/monitoring"
@@ -382,7 +475,7 @@ export function Providers({ children }: { children: ReactNode }) {
                     pathname.startsWith("/monitoring") ? "page" : undefined
                   }
                 >
-                  Сверка
+                  {t("Сверка", "Салыстыру")}
                 </Link>
               </nav>
             )}
@@ -390,8 +483,14 @@ export function Providers({ children }: { children: ReactNode }) {
               {children}
             </main>
             <footer>
-              SAQ QURYLYS · Прототип · Сигнал не устанавливает факт
-              правонарушения
+              SAQ QURYLYS ·{" "}
+              {t(
+                "Прототип · Сигнал не устанавливает факт правонарушения",
+                "Прототип · Сигнал құқық бұзушылық фактісін анықтамайды",
+              )}
+              <span className="shell-context-note">
+                {t("DEMO отмечено отдельно", "DEMO бөлек белгіленген")}
+              </span>
             </footer>
           </div>
         </div>
@@ -411,30 +510,33 @@ export function Demo({ value = true }: { value?: boolean }) {
   return value ? <span className="demo-badge">DEMO</span> : null;
 }
 export function Zone({ risk }: { risk: Property["risk"] }) {
+  const { t } = useLocale();
   return (
     <span className={`zone ${risk.zone.toLowerCase()}`}>
       <span className="zone-dot" aria-hidden="true" />
-      <strong>{risk.score}</strong> {zoneLabels[risk.zone]}
+      <strong>{risk.score}</strong> {t(zoneLabels[risk.zone])}
     </span>
   );
 }
 
 function PropertyRisk({ row }: { row: Property }) {
+  const { t } = useLocale();
   const context = propertyRiskContext(row);
   return (
     <span className="property-risk">
       <Zone risk={row.risk} />
-      {context && <span className="property-risk-context">{context}</span>}
+      {context && <span className="property-risk-context">{t(context)}</span>}
     </span>
   );
 }
 
 export function RiskSummary({ risk }: { risk: Property["risk"] }) {
+  const { t } = useLocale();
   const { detailed } = useInterfaceMode();
   return (
     <section
       className={`risk-summary ${risk.zone.toLowerCase()}`}
-      aria-label="Рассчитанный приоритет проверки"
+      aria-label={t("Рассчитанный приоритет проверки")}
     >
       <div className="risk-summary-score">
         <span className="risk-number">
@@ -442,25 +544,30 @@ export function RiskSummary({ risk }: { risk: Property["risk"] }) {
           <small> / 100</small>
         </span>
         <span className={`zone ${risk.zone.toLowerCase()}`}>
-          {zoneLabels[risk.zone]} зона
+          {t(zoneLabels[risk.zone])} {t("зона")}
         </span>
       </div>
       <div>
-        <h2>Приоритет проверки</h2>
+        <h2>{t("Приоритет проверки")}</h2>
         <p>
-          Подтверждённые факторы:{" "}
-          <strong>{risk.confirmed_codes.join(" · ") || "нет"}</strong>
+          {t("Подтверждённые факторы:")}{" "}
+          <strong>{risk.confirmed_codes.join(" · ") || t("нет")}</strong>
         </p>
         <p className="field-help">
-          Балл рассчитан сервером. Красная зона не устанавливает нарушение;
-          зелёная не гарантирует безопасность.
+          {t(
+            "Балл рассчитан сервером. Красная зона не устанавливает нарушение; зелёная не гарантирует безопасность.",
+          )}
         </p>
       </div>
       <div className="risk-summary-meta" hidden={!detailed}>
         <span>
-          Ревизия {risk.revision} · {risk.rules_version}
+          {t("Ревизия ")}
+          {risk.revision} · {risk.rules_version}
         </span>
-        <span>Оценка на {date(risk.as_of)}</span>
+        <span>
+          {t("Оценка на ")}
+          {date(risk.as_of)}
+        </span>
       </div>
     </section>
   );
@@ -470,6 +577,8 @@ export function useData<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState("");
   const [resolvedPath, setResolvedPath] = useState<string | null>(null);
+  const [successfulPath, setSuccessfulPath] = useState<string | null>(null);
+  const [readAt, setReadAt] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
@@ -478,6 +587,8 @@ export function useData<T>(path: string) {
         setData(value);
         setError("");
         setResolvedPath(path);
+        setSuccessfulPath(path);
+        setReadAt(new Date().toISOString());
       })
       .catch((e) => {
         if (e.name !== "AbortError") {
@@ -491,6 +602,8 @@ export function useData<T>(path: string) {
     data,
     error,
     resolvedPath,
+    successfulPath,
+    readAt,
     reload: () => setVersion((value) => value + 1),
   };
 }
@@ -502,16 +615,17 @@ export function LoadState({
   error: string;
   retry: () => void;
 }) {
+  const { t } = useLocale();
   return error ? (
     <>
       <Notice error={error} />
       <Button type="button" variant="outline" onClick={retry}>
-        Повторить загрузку
+        {t("Повторить загрузку")}
       </Button>
     </>
   ) : (
     <p className="loading" role="status">
-      Загрузка данных…
+      {t("Загрузка данных…")}
     </p>
   );
 }
@@ -527,11 +641,12 @@ export function PageTitle({
   description: string;
   action?: boolean;
 }) {
+  const { t } = useLocale();
   const { user } = useContext(Auth);
   return (
     <div className="page-heading">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h1>{title}</h1>
         <p className="subtitle">{description}</p>
       </div>
@@ -539,7 +654,7 @@ export function PageTitle({
         <Button asChild>
           <Link href="/advertisements/new">
             <Plus size={16} />
-            Добавить публикацию
+            {t("Добавить публикацию")}
           </Link>
         </Button>
       )}
@@ -556,22 +671,27 @@ function PropertyTable({
   registryQuery?: string;
   selectedId?: string | null;
 }) {
+  const { t } = useLocale();
   if (!rows.length)
     return (
-      <div className="empty">Объекты по выбранным фильтрам не найдены.</div>
+      <div className="empty">
+        {t("Объекты по выбранным фильтрам не найдены.")}
+      </div>
     );
   return (
-    <TableRegion label="Реестр объектов — таблица с горизонтальной прокруткой">
+    <TableRegion
+      label={t("Реестр объектов — таблица с горизонтальной прокруткой")}
+    >
       <table>
         <thead>
           <tr>
-            <th scope="col">Объект / очередь</th>
-            <th scope="col">Правовое основание</th>
-            <th scope="col">Приоритет проверки</th>
-            <th scope="col">Подтверждённые причины</th>
-            <th scope="col">Последняя проверка</th>
+            <th scope="col">{t("Объект / очередь")}</th>
+            <th scope="col">{t("Правовое основание")}</th>
+            <th scope="col">{t("Приоритет проверки")}</th>
+            <th scope="col">{t("Подтверждённые причины")}</th>
+            <th scope="col">{t("Последняя проверка")}</th>
             <th scope="col">
-              <span className="sr-only">Открыть</span>
+              <span className="sr-only">{t("Открыть")}</span>
             </th>
           </tr>
         </thead>
@@ -593,14 +713,16 @@ function PropertyTable({
                 </small>
                 <small>{row.developer.name}</small>
                 {row.id === selectedId && (
-                  <small className="selected-row-label">Выбран на карте</small>
+                  <small className="selected-row-label">
+                    {t("Выбран на карте")}
+                  </small>
                 )}
               </td>
               <td>
                 <span
                   className={`legal ${row.legal_verification_status.toLowerCase()}`}
                 >
-                  {legalLabels[row.legal_verification_status]}
+                  {t(legalLabels[row.legal_verification_status])}
                 </span>
               </td>
               <td>
@@ -611,16 +733,16 @@ function PropertyTable({
                   {row.risk.confirmed_codes.length
                     ? row.risk.confirmed_codes.map((code) => (
                         <span key={code}>
-                          <b>{code}</b> · {factorLabels[code] || code}
+                          <b>{code}</b> · {t(factorLabels[code]) || code}
                         </span>
                       ))
-                    : "Нет подтверждённых"}
+                    : t("Нет подтверждённых")}
                 </span>
               </td>
               <td className="date-cell">{date(row.last_reviewed_at)}</td>
               <td>
                 <Link
-                  aria-label={`Открыть ${row.name}`}
+                  aria-label={`${t("Открыть")} ${row.name}`}
                   href={propertyDossierUrl(row.id, registryQuery)}
                 >
                   <ArrowRight size={18} />
@@ -641,6 +763,7 @@ function PropertyCards({
   rows: Property[];
   registryQuery?: string;
 }) {
+  const { t } = useLocale();
   return (
     <div className="property-cards">
       {rows.map((row) => (
@@ -661,22 +784,27 @@ function PropertyCards({
           <div className="property-card-state">
             <PropertyRisk row={row} />
             {!propertyRiskContext(row) && (
-              <span>{legalLabels[row.legal_verification_status]}</span>
+              <span>{t(legalLabels[row.legal_verification_status])}</span>
             )}
           </div>
           <p className="property-card-reason">
-            <strong>{propertyNextAction(row).label}. </strong>
+            <strong>{t(propertyNextAction(row).label)}. </strong>
             {row.risk.confirmed_codes.length
               ? row.risk.confirmed_codes
-                  .map((code) => `${code} · ${factorLabels[code] || code}`)
+                  .map((code) => `${code} · ${t(factorLabels[code]) || code}`)
                   .join(" · ")
-              : "Подтверждённых факторов нет. Полнота данных требует проверки."}
+              : t(
+                  "Подтверждённых факторов нет. Полнота данных требует проверки.",
+                )}
           </p>
           <div className="property-card-footer">
-            <span>Проверено: {date(row.last_reviewed_at)}</span>
+            <span>
+              {t("Проверено: ")}
+              {date(row.last_reviewed_at)}
+            </span>
             <Link
               href={propertyDossierUrl(row.id, registryQuery)}
-              aria-label={`Открыть ${row.name}`}
+              aria-label={`${t("Открыть")} ${row.name}`}
             >
               <ArrowRight size={20} aria-hidden="true" />
             </Link>
@@ -688,29 +816,33 @@ function PropertyCards({
 }
 
 function DashboardHeading() {
+  const { t } = useLocale();
   const { user } = useContext(Auth);
   return (
     <div className="dashboard-heading">
       <PageTitle
-        eyebrow="РАБОЧЕЕ ПРОСТРАНСТВО"
-        title="Рабочий обзор"
-        description="Продолжите проверку материалов, разберите ошибки или откройте сохранённые сигналы."
+        eyebrow={t("РАБОЧЕЕ ПРОСТРАНСТВО")}
+        title={t("Рабочий обзор")}
+        description={t(
+          "Продолжите проверку материалов, разберите ошибки или откройте сохранённые сигналы.",
+        )}
         action={false}
       />
       <div className="overview-links">
         {user?.role === "analyst" && (
           <Button asChild>
             <Link href="/advertisements/new">
-              <Plus size={16} aria-hidden="true" /> Добавить публикацию
+              <Plus size={16} aria-hidden="true" /> {t("Добавить публикацию")}
             </Link>
           </Button>
         )}
         <Link className="text-link" href="/properties">
-          Найти объект <ArrowRight size={15} aria-hidden="true" />
+          {t("Найти объект ")}
+          <ArrowRight size={15} aria-hidden="true" />
         </Link>
         {user?.role === "viewer" && (
           <Link className="text-link" href="/advertisements">
-            Открыть публикации
+            {t("Открыть публикации")}
           </Link>
         )}
       </div>
@@ -723,6 +855,7 @@ function DashboardQueues({
 }: {
   summary: ReturnType<typeof useData<Dashboard>>;
 }) {
+  const { t } = useLocale();
   const unresolved = useData<AdvertisementReviewPage>(
     "/advertisements/review-queue?page_size=1",
   );
@@ -731,40 +864,50 @@ function DashboardQueues({
   );
   const queues = [
     {
-      title: "Новые публикации",
+      title: t("Новые публикации"),
       count: summary.data?.new_advertisements,
       resource: summary,
-      note: "Сохранены и ожидают анализа. Подтверждения выполняются отдельно.",
+      note: t(
+        "Сохранены и ожидают анализа. Подтверждения выполняются отдельно.",
+      ),
       href: "/advertisements?status=NEW",
-      action: "Открыть новые материалы",
+      action: t("Открыть новые материалы"),
     },
     {
-      title: "Материалы с нерешёнными действиями",
+      title: t("Материалы с нерешёнными действиями"),
       count: unresolved.data?.total,
       resource: unresolved,
-      note: "Точное число материалов, где осталось проверить гипотезы, привязку, доказательство оплаты или R2. Один материал учитывается один раз.",
+      note: t(
+        "Точное число материалов, где осталось проверить гипотезы, привязку, доказательство оплаты или R2. Один материал учитывается один раз.",
+      ),
       href: "/review?queue=actions",
-      action: "Открыть очередь решений",
+      action: t("Открыть очередь решений"),
     },
     {
-      title: "Ошибки обработки",
+      title: t("Ошибки обработки"),
       count: failed.data?.total,
       resource: failed,
-      note: "Проверьте оригинал и причину ошибки перед явным повтором анализа.",
+      note: t(
+        "Проверьте оригинал и причину ошибки перед явным повтором анализа.",
+      ),
       href: "/review?status=FAILED",
-      action: "Открыть ошибки",
+      action: t("Открыть ошибки"),
     },
     {
-      title: "Сигналы без решения",
+      title: t("Сигналы без решения"),
       count: summary.data?.pending_signals,
       resource: summary,
-      note: "Сохранённые снимки ожидают отдельного решения аналитика.",
-      href: "/signals?state=DRAFT",
-      action: "Рассмотреть сигналы",
+      note: t("Сохранённые снимки ожидают отдельного решения аналитика."),
+      href: "/signals?state=DRAFT&is_stale=false",
+      action: t("Рассмотреть сигналы"),
     },
   ];
   return (
-    <div className="action-queues" role="group" aria-label="Следующие действия">
+    <div
+      className="action-queues"
+      role="group"
+      aria-label={t("Следующие действия")}
+    >
       {queues.map((queue, index) => (
         <section className="panel action-queue" key={queue.href}>
           <Link
@@ -785,7 +928,7 @@ function DashboardQueues({
             </strong>
           </Link>
           <details className="queue-explanation">
-            <summary>Что учитывается</summary>
+            <summary>{t("Что учитывается")}</summary>
             <p className="muted">{queue.note}</p>
           </details>
           {queue.resource.error ? (
@@ -795,7 +938,7 @@ function DashboardQueues({
             />
           ) : queue.count === undefined ? (
             <p className="loading" role="status">
-              Загрузка количества…
+              {t("Загрузка количества…")}
             </p>
           ) : null}
         </section>
@@ -813,20 +956,22 @@ function DashboardPriority({
   rows: Property[];
   limit: number;
 }) {
+  const { t } = useLocale();
   return (
     <div className="dashboard-workspace">
       <section className="panel priority-panel">
         <div className="panel-heading">
           <div>
-            <h2>С чего начать проверку</h2>
+            <h2>{t("С чего начать проверку")}</h2>
             <p>
-              Сначала решение по основанию, затем недостающие сведения. Внутри
-              группы — отсутствие даты, более давняя проверка, затем балл. Сроки
-              задач не установлены.
+              {t(
+                "Сначала решение по основанию, затем недостающие сведения. Внутри группы — отсутствие даты, более давняя проверка, затем балл. Сроки задач не установлены.",
+              )}
             </p>
           </div>
           <Link className="text-link" href="/properties">
-            Весь реестр <ArrowRight size={15} />
+            {t("Весь реестр ")}
+            <ArrowRight size={15} />
           </Link>
         </div>
         {registry.data && !registry.error ? (
@@ -849,63 +994,75 @@ function DashboardPriority({
                         ? row.risk.confirmed_codes
                             .map(
                               (code) =>
-                                `${code} · ${factorLabels[code] || code}`,
+                                `${code} · ${t(factorLabels[code]) || code}`,
                             )
                             .join("; ")
-                        : "Подтверждённых факторов нет. Проверьте полноту материалов."}
+                        : t(
+                            "Подтверждённых факторов нет. Проверьте полноту материалов.",
+                          )}
                     </p>
                   </div>
                   <div className="priority-action">
                     <PropertyRisk row={row} />
                     <p className="field-help">
-                      {propertyNextAction(row).label}
+                      {t(propertyNextAction(row).label)}
                     </p>
                     <Link className="text-link" href={`/properties/${row.id}`}>
-                      Открыть досье <ArrowRight size={14} aria-hidden="true" />
+                      {t("Открыть досье ")}
+                      <ArrowRight size={14} aria-hidden="true" />
                     </Link>
                   </div>
                 </li>
               ))}
             </ol>
             {!rows.length && (
-              <p className="empty">В реестре пока нет объектов.</p>
+              <p className="empty">{t("В реестре пока нет объектов.")}</p>
             )}
             <p className="queue-scope">
-              Показано {Math.min(rows.length, limit)} из {registry.data.total}{" "}
-              объектов. Порядок рассчитан по всему доступному реестру:
-              необходимое действие и давность проверки; балл используется при
-              равенстве.
+              {t("Показано ")}
+              {Math.min(rows.length, limit)} {t("из ")}
+              {registry.data.total}{" "}
+              {t(
+                "объектов. Порядок рассчитан по всему доступному реестру: необходимое действие и давность проверки; балл используется при равенстве.",
+              )}
             </p>
           </>
         ) : (
           <LoadState error={registry.error} retry={registry.reload} />
         )}
       </section>
-      <aside className="dashboard-rail" aria-label="Продолжить работу">
-        <nav className="workflow-links" aria-label="Основные рабочие сценарии">
+      <aside className="dashboard-rail" aria-label={t("Продолжить работу")}>
+        <nav
+          className="workflow-links"
+          aria-label={t("Основные рабочие сценарии")}
+        >
           <Link href="/review?queue=actions">
             <span>
-              Проверить факты <ArrowRight size={15} aria-hidden="true" />
+              {t("Проверить факты ")}
+              <ArrowRight size={15} aria-hidden="true" />
             </span>
-            <small>Оригинал, гипотезы и точная очередь</small>
+            <small>{t("Оригинал, гипотезы и точная очередь")}</small>
           </Link>
           <Link href="/signals">
             <span>
-              Сигналы и PDF <ArrowRight size={15} aria-hidden="true" />
+              {t("Сигналы и PDF ")}
+              <ArrowRight size={15} aria-hidden="true" />
             </span>
-            <small>Сохранённые версии и решения</small>
+            <small>{t("Сохранённые версии и решения")}</small>
           </Link>
-          <Link href="/properties?view=map" aria-label="Открыть карту">
+          <Link href="/properties?view=map" aria-label={t("Открыть карту")}>
             <span>
-              Открыть карту <MapPin size={15} aria-hidden="true" />
+              {t("Открыть карту ")}
+              <MapPin size={15} aria-hidden="true" />
             </span>
-            <small>Расположение объектов реестра</small>
+            <small>{t("Расположение объектов реестра")}</small>
           </Link>
         </nav>
         <p className="rail-note">
           <ShieldCheck size={18} aria-hidden="true" />
-          Гипотеза помогает найти факт. Окончательное решение принимает
-          аналитик.
+          {t(
+            "Гипотеза помогает найти факт. Окончательное решение принимает аналитик.",
+          )}
         </p>
       </aside>
     </div>
@@ -913,6 +1070,7 @@ function DashboardPriority({
 }
 
 function DashboardPublicationOverview() {
+  const { t } = useLocale();
   const publications = useData<Page<Advertisement>>(
     "/advertisements?page_size=100",
   );
@@ -925,7 +1083,7 @@ function DashboardPublicationOverview() {
     { status: "REVIEWED", tone: "green" },
     { status: "FAILED", tone: "red" },
   ].map(({ status, tone }) => ({
-    label: statusLabel(status),
+    label: t(statusLabel(status)),
     value: rows.filter((ad) => ad.status === status).length,
     tone,
   }));
@@ -939,27 +1097,31 @@ function DashboardPublicationOverview() {
     else sources.text += 1;
   }
   const sourceRows = [
-    { label: "Сайты и ссылки", value: sources.site, tone: "blue" },
-    { label: "Текстовые материалы", value: sources.text, tone: "green" },
-    { label: "Изображения", value: sources.image, tone: "yellow" },
-    { label: "DEMO-материалы", value: sources.demo, tone: "neutral" },
+    { label: t("Сайты и ссылки"), value: sources.site, tone: "blue" },
+    { label: t("Текстовые материалы"), value: sources.text, tone: "green" },
+    { label: t("Изображения"), value: sources.image, tone: "yellow" },
+    { label: t("DEMO-материалы"), value: sources.demo, tone: "neutral" },
   ];
   return (
     <div className="dashboard-publication-overview">
       {[
         {
-          title: "Статус публикаций",
-          eyebrow: "СОСТОЯНИЕ ОБРАБОТКИ",
+          title: t("Статус публикаций"),
+          eyebrow: t("СОСТОЯНИЕ ОБРАБОТКИ"),
           className: "publication-status-card",
           items: statusRows,
-          help: "Готовность обработки не означает завершения решений аналитика. Точные оставшиеся действия — в очереди проверки.",
+          help: t(
+            "Готовность обработки не означает завершения решений аналитика. Точные оставшиеся действия — в очереди проверки.",
+          ),
         },
         {
-          title: "Материалы по источникам",
-          eyebrow: "ИСТОЧНИКИ",
+          title: t("Материалы по источникам"),
+          eyebrow: t("ИСТОЧНИКИ"),
           className: "source-distribution-card",
           items: sourceRows,
-          help: "Каждый материал учтён один раз: DEMO, затем изображение, сайт или текст. Тип источника не подтверждает его достоверность.",
+          help: t(
+            "Каждый материал учтён один раз: DEMO, затем изображение, сайт или текст. Тип источника не подтверждает его достоверность.",
+          ),
         },
       ].map((section) => (
         <section
@@ -973,16 +1135,21 @@ function DashboardPublicationOverview() {
               <h2>{section.title}</h2>
             </div>
             <Link className="text-link" href="/advertisements">
-              Открыть <ArrowRight size={14} aria-hidden="true" />
+              {t("Открыть ")}
+              <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
           {data ? (
             <>
               <p className="analytics-caption">
-                Показано {rows.length} из {data.total} публикаций.
+                {t("Показано ")}
+                {rows.length} {t("из ")}
+                {data.total} {t("публикаций.")}
                 {data.total > rows.length
-                  ? " Распределение только по первым 100 материалам, не по всему реестру."
-                  : " Распределение по сохранённым материалам."}
+                  ? t(
+                      " Распределение только по первым 100 материалам, не по всему реестру.",
+                    )
+                  : t(" Распределение по сохранённым материалам.")}
               </p>
               {rows.length ? (
                 <div className="analytics-bars">
@@ -1004,7 +1171,7 @@ function DashboardPublicationOverview() {
                   ))}
                 </div>
               ) : (
-                <p className="empty">Сохранённых публикаций пока нет.</p>
+                <p className="empty">{t("Сохранённых публикаций пока нет.")}</p>
               )}
               <p className="field-help">{section.help}</p>
             </>
@@ -1018,6 +1185,7 @@ function DashboardPublicationOverview() {
 }
 
 export function DashboardView() {
+  const { t } = useLocale();
   const { detailed } = useInterfaceMode();
   const summary = useData<Dashboard>("/dashboard/summary");
   const registry = useData<Page<Property>>(
@@ -1030,14 +1198,18 @@ export function DashboardView() {
     : 0;
   const riskRows = summary.data
     ? [
-        { label: "Красная зона", value: summary.data.zones.RED, tone: "red" },
         {
-          label: "Жёлтая зона",
+          label: t("Красная зона"),
+          value: summary.data.zones.RED,
+          tone: "red",
+        },
+        {
+          label: t("Жёлтая зона"),
           value: summary.data.zones.YELLOW,
           tone: "yellow",
         },
         {
-          label: "Зелёная зона",
+          label: t("Зелёная зона"),
           value: summary.data.zones.GREEN,
           tone: "green",
         },
@@ -1059,39 +1231,40 @@ export function DashboardView() {
       <DashboardQueues summary={summary} />
       <DashboardPriority registry={registry} rows={priorityRows} limit={5} />
       <div className="context-line">
-        <span className="live-dot" /> Сведения реестра <span>·</span>{" "}
+        <span className="live-dot" /> {t("Сведения реестра ")}
+        <span>·</span>{" "}
         {summary.data
-          ? `Обновлено ${date(summary.data.calculated_at)}`
-          : "Подключение…"}
+          ? `${t("Обновлено")} ${date(summary.data.calculated_at)}`
+          : t("Подключение…")}
       </div>
       {summary.error && <Notice error={summary.error} />}
-      <section className="metrics" aria-label="Ключевые показатели">
+      <section className="metrics" aria-label={t("Ключевые показатели")}>
         {[
           [
-            "Объектов в реестре",
+            t("Объектов в реестре"),
             summary.data?.property_count,
-            "ЖК, очереди и корпуса",
+            t("ЖК, очереди и корпуса"),
             "neutral",
             "/properties",
           ],
           [
-            "Приоритетная проверка",
+            t("Приоритетная проверка"),
             summary.data?.zones.RED,
-            "Красная зона · подтверждены R1 + R2",
+            t("Красная зона · подтверждены R1 + R2"),
             "red",
             "/properties?zone=RED",
           ],
           [
-            "Сигналов",
+            t("Сигналов"),
             signals.error ? undefined : signals.data?.total,
-            "Сохранённые версии и решения",
+            t("Сохранённые версии и решения"),
             "green",
             "/signals",
           ],
           [
-            "Основание не проверено",
+            t("Основание не проверено"),
             summary.data?.unknown_legal_bases,
-            "Неизвестность не даёт R1",
+            t("Неизвестность не даёт R1"),
             "neutral",
             "/properties",
           ],
@@ -1101,7 +1274,8 @@ export function DashboardView() {
             <strong>{count ?? "—"}</strong>
             <small>{note}</small>
             <span className="metric-action" aria-hidden="true">
-              Открыть <ArrowRight size={14} />
+              {t("Открыть ")}
+              <ArrowRight size={14} />
             </span>
           </Link>
         ))}
@@ -1110,11 +1284,12 @@ export function DashboardView() {
         <section className="panel analytics-card risk-distribution">
           <div className="analytics-heading">
             <div>
-              <p className="eyebrow">СТРУКТУРА РЕЕСТРА</p>
-              <h2>Распределение по приоритету</h2>
+              <p className="eyebrow">{t("СТРУКТУРА РЕЕСТРА")}</p>
+              <h2>{t("Распределение по приоритету")}</h2>
             </div>
             <Link className="text-link" href="/properties">
-              Реестр <ArrowRight size={14} />
+              {t("Реестр ")}
+              <ArrowRight size={14} />
             </Link>
           </div>
           {summary.data ? (
@@ -1143,8 +1318,8 @@ export function DashboardView() {
         <section className="panel analytics-card verification-card">
           <div className="analytics-heading">
             <div>
-              <p className="eyebrow">СТАТУСЫ ОСНОВАНИЯ</p>
-              <h2>Решения по основаниям</h2>
+              <p className="eyebrow">{t("СТАТУСЫ ОСНОВАНИЯ")}</p>
+              <h2>{t("Решения по основаниям")}</h2>
             </div>
           </div>
           {summary.data ? (
@@ -1160,16 +1335,19 @@ export function DashboardView() {
               >
                 <span>
                   <strong>{reviewedLegal}</strong>
-                  <small>из {riskTotal}</small>
+                  <small>
+                    {t("из ")}
+                    {riskTotal}
+                  </small>
                 </span>
               </div>
               <dl className="verification-legend">
                 <div>
-                  <dt>Решение зафиксировано</dt>
+                  <dt>{t("Решение зафиксировано")}</dt>
                   <dd>{reviewedLegal}</dd>
                 </div>
                 <div>
-                  <dt>Не проверено или на проверке</dt>
+                  <dt>{t("Не проверено или на проверке")}</dt>
                   <dd>{summary.data.unknown_legal_bases}</dd>
                 </div>
               </dl>
@@ -1178,42 +1356,48 @@ export function DashboardView() {
             <LoadState error={summary.error} retry={summary.reload} />
           )}
           <p className="field-help">
-            Решение включает подтверждение, установленное отсутствие или
-            отклонение. Это не число действующих правовых оснований.
+            {t(
+              "Решение включает подтверждение, установленное отсутствие или отклонение. Это не число действующих правовых оснований.",
+            )}
           </p>
         </section>
         <section className="panel analytics-card history-card">
           <div className="analytics-heading">
             <div>
-              <p className="eyebrow">ДИНАМИКА</p>
-              <h2>Сигналы во времени</h2>
+              <p className="eyebrow">{t("ДИНАМИКА")}</p>
+              <h2>{t("Сигналы во времени")}</h2>
             </div>
           </div>
           <div className="insufficient-data">
             <Siren size={24} aria-hidden="true" />
-            <strong>Недостаточно данных</strong>
+            <strong>{t("Недостаточно данных")}</strong>
             <p>
-              Для сопоставимого временного ряда пока недостаточно данных.
-              Сохранённые версии и решения доступны в разделе «Сигналы».
+              {t(
+                "Для сопоставимого временного ряда пока недостаточно данных. Сохранённые версии и решения доступны в разделе «Сигналы».",
+              )}
             </p>
             {signals.error ? (
               <LoadState error={signals.error} retry={signals.reload} />
             ) : signals.data ? (
-              <span>Всего сигналов: {signals.data.total}</span>
+              <span>
+                {t("Всего сигналов: ")}
+                {signals.data.total}
+              </span>
             ) : (
-              <p role="status">Загрузка количества сигналов…</p>
+              <p role="status">{t("Загрузка количества сигналов…")}</p>
             )}
           </div>
         </section>
       </div>
       <DashboardPublicationOverview />
+      <SourceSummary />
     </>
   );
 }
 
 export function PropertiesView() {
+  const { t } = useLocale();
   const params = useSearchParams();
-  const router = useRouter();
   const textSource = JSON.stringify([
     params.get("q") || "",
     params.get("city") || "",
@@ -1240,15 +1424,22 @@ export function PropertiesView() {
     )
       return;
     const timer = setTimeout(() => {
+      const next = new URLSearchParams(window.location.search);
+      // Back/Forward owns newer URL text; an older draft must not overwrite it.
+      if (
+        JSON.stringify([next.get("q") || "", next.get("city") || ""]) !==
+        textSource
+      )
+        return;
       for (const key of ["q", "city"] as const) {
         if (text[key]) next.set(key, text[key]);
         else next.delete(key);
       }
       next.delete("page");
-      router.replace(`/properties?${next}`, { scroll: false });
+      window.history.replaceState(null, "", `/properties?${next}`);
     }, 350);
     return () => clearTimeout(timer);
-  }, [text, textSource, paramsText, router]);
+  }, [text, textSource, paramsText]);
   const apiParams = new URLSearchParams(params);
   apiParams.delete("view");
   const query = apiParams.toString();
@@ -1259,14 +1450,15 @@ export function PropertiesView() {
   );
   function clearFilters() {
     setText({ source: textSource, q: "", city: "" });
-    const next = new URLSearchParams(params);
+    const next = new URLSearchParams(window.location.search);
     for (const name of ["q", "city", "zone", "legal_status", "page"])
       next.delete(name);
-    router.replace(`/properties?${next.toString()}`, { scroll: false });
+    window.history.replaceState(null, "", `/properties?${next}`);
     requestAnimationFrame(() => searchInput.current?.focus());
   }
   function filter(name: string, value: string) {
-    const next = new URLSearchParams(params);
+    // Query-only client filters commit synchronously, so rapid controls merge.
+    const next = new URLSearchParams(window.location.search);
     for (const key of ["q", "city"] as const) {
       if (text[key]) next.set(key, text[key]);
       else next.delete(key);
@@ -1274,17 +1466,21 @@ export function PropertiesView() {
     if (value) next.set(name, value);
     else next.delete(name);
     if (name !== "page" && name !== "view") next.delete("page");
-    router.replace(`/properties?${next.toString()}`, { scroll: false });
+    window.history.replaceState(null, "", `/properties?${next}`);
   }
   return (
     <>
       <PageTitle
-        eyebrow="РЕЕСТР СТРОИТЕЛЬСТВА"
-        title={showMap ? "Карта объектов" : "Объекты"}
+        eyebrow={t("РЕЕСТР СТРОИТЕЛЬСТВА")}
+        title={showMap ? t("Карта объектов") : t("Объекты")}
         description={
           showMap
-            ? "Найдите объект, сравните приоритет проверки и откройте его досье."
-            : "Каждая очередь и корпус проверяются по своим документам и датам."
+            ? t(
+                "Найдите объект, сравните приоритет проверки и откройте его досье.",
+              )
+            : t(
+                "Каждая очередь и корпус проверяются по своим документам и датам.",
+              )
         }
         action={!showMap}
       />
@@ -1293,14 +1489,14 @@ export function PropertiesView() {
           <div className="search">
             <Search size={17} aria-hidden="true" />
             <label className="sr-only" htmlFor="search">
-              Поиск ЖК или адреса, застройщика или БИН
+              {t("Поиск ЖК или адреса, застройщика или БИН")}
             </label>
             <input
               id="search"
               ref={searchInput}
               type="search"
               maxLength={300}
-              placeholder="ЖК, адрес, застройщик или БИН"
+              placeholder={t("ЖК, адрес, застройщик или БИН")}
               value={text.q}
               onChange={(event) => setText({ ...text, q: event.target.value })}
               onKeyDown={(event) => {
@@ -1309,9 +1505,9 @@ export function PropertiesView() {
             />
           </div>
           <label>
-            Город · точное название
+            {t("Город · точное название")}
             <input
-              aria-label="Фильтр по городу"
+              aria-label={t("Фильтр по городу")}
               maxLength={300}
               value={text.city}
               onChange={(event) =>
@@ -1323,71 +1519,85 @@ export function PropertiesView() {
             />
           </label>
           <label>
-            Зона
+            {t("Зона")}
             <select
-              aria-label="Фильтр по зоне"
+              aria-label={t("Фильтр по зоне")}
               value={params.get("zone") || ""}
               onChange={(e) => filter("zone", e.target.value)}
             >
-              <option value="">Все зоны</option>
-              <option value="RED">Красная</option>
-              <option value="YELLOW">Жёлтая</option>
-              <option value="GREEN">Зелёная</option>
+              <option value="">{t("Все зоны")}</option>
+              <option value="RED">{t("Красная")}</option>
+              <option value="YELLOW">{t("Жёлтая")}</option>
+              <option value="GREEN">{t("Зелёная")}</option>
             </select>
           </label>
           <label>
-            Основание
+            {t("Основание")}
             <select
-              aria-label="Фильтр по основанию"
+              aria-label={t("Фильтр по основанию")}
               value={params.get("legal_status") || ""}
               onChange={(e) => filter("legal_status", e.target.value)}
             >
-              <option value="">Все статусы</option>
+              <option value="">{t("Все статусы")}</option>
               {Object.entries(legalLabels).map(([key, label]) => (
                 <option key={key} value={key}>
-                  {label}
+                  {t(label)}
                 </option>
               ))}
             </select>
           </label>
         </div>
-        <div className="registry-views" role="group" aria-label="Вид реестра">
+        <div
+          className="registry-views"
+          role="group"
+          aria-label={t("Вид реестра")}
+        >
           <Button
             variant="outline"
             aria-pressed={!showMap}
             onClick={() => filter("view", "")}
           >
-            Список
+            {t("Список")}
           </Button>
           <Button
             variant="outline"
             aria-pressed={showMap}
             onClick={() => filter("view", "map")}
           >
-            Карта и список
+            {t("Карта и список")}
           </Button>
           {hasFilters && (
             <Button type="button" variant="ghost" onClick={clearFilters}>
-              Сбросить фильтры
+              {t("Сбросить фильтры")}
             </Button>
           )}
         </div>
         {hasFilters && (
-          <div className="active-filters" aria-label="Активные фильтры">
+          <div className="active-filters" aria-label={t("Активные фильтры")}>
             <ListFilter size={16} aria-hidden="true" />
-            {params.get("q") && <span>Поиск: {params.get("q")}</span>}
-            {params.get("city") && <span>Город: {params.get("city")}</span>}
+            {params.get("q") && (
+              <span>
+                {t("Поиск: ")}
+                {params.get("q")}
+              </span>
+            )}
+            {params.get("city") && (
+              <span>
+                {t("Город: ")}
+                {params.get("city")}
+              </span>
+            )}
             {params.get("zone") && (
               <span>
-                Зона:{" "}
-                {zoneLabels[params.get("zone") as keyof typeof zoneLabels] ||
+                {t("Зона:")}{" "}
+                {t(zoneLabels[params.get("zone") as keyof typeof zoneLabels]) ||
                   params.get("zone")}
               </span>
             )}
             {params.get("legal_status") && (
               <span>
-                Основание:{" "}
-                {legalLabels[params.get("legal_status")!] ||
+                {t("Основание:")}{" "}
+                {t(legalLabels[params.get("legal_status")!]) ||
                   params.get("legal_status")}
               </span>
             )}
@@ -1417,6 +1627,7 @@ function PropertyResults({
   showMap: boolean;
   onPage: (page: number) => void;
 }) {
+  const { t } = useLocale();
   const { detailed } = useInterfaceMode();
   const registry = useData<Page<Property>>(`/properties?${query}`);
   const { user } = useContext(Auth);
@@ -1432,8 +1643,12 @@ function PropertyResults({
   return (
     <div onClickCapture={remember}>
       <div className="list-caption" role="status" aria-live="polite">
-        Найдено объектов: {data.total}
-        <span>На странице: {data.items.length}</span>
+        {t("Найдено объектов: ")}
+        {data.total}
+        <span>
+          {t("На странице: ")}
+          {data.items.length}
+        </span>
       </div>
       {showMap && (
         <PropertyMap
@@ -1446,16 +1661,17 @@ function PropertyResults({
       {showMap && (
         <div className="registry-list-heading">
           <div>
-            <p className="eyebrow">СПИСОК</p>
-            <h2>Все объекты текущей страницы</h2>
+            <p className="eyebrow">{t("СПИСОК")}</p>
+            <h2>{t("Все объекты текущей страницы")}</h2>
           </div>
           <p>
-            Объекты без координат остаются здесь. Таблица содержит статусы,
-            подтверждённые факторы и дату проверки.
+            {t(
+              "Объекты без координат остаются здесь. Таблица содержит статусы, подтверждённые факторы и дату проверки.",
+            )}
           </p>
         </div>
       )}
-      <div id="property-list" tabIndex={-1} aria-label="Список объектов">
+      <div id="property-list" tabIndex={-1} aria-label={t("Список объектов")}>
         <div className={detailed ? undefined : "registry-desktop-table"}>
           <PropertyTable
             rows={data.items}
@@ -1468,20 +1684,22 @@ function PropertyResults({
             {data.items.length ? (
               <PropertyCards rows={data.items} registryQuery={registryQuery} />
             ) : (
-              <p className="empty">Объекты по выбранным фильтрам не найдены.</p>
+              <p className="empty">
+                {t("Объекты по выбранным фильтрам не найдены.")}
+              </p>
             )}
           </div>
         )}
       </div>
       {(pages > 1 || data.page > 1) && (
         <Pagination
-          label="Страницы реестра"
+          label={t("Страницы реестра")}
           page={data.page}
           pageSize={data.page_size}
           total={data.total}
           onPageChange={onPage}
-          previousLabel="Предыдущая"
-          nextLabel="Следующая"
+          previousLabel={t("Предыдущая")}
+          nextLabel={t("Следующая")}
         />
       )}
       {registry.error && <Notice error={registry.error} />}
@@ -1490,70 +1708,95 @@ function PropertyResults({
 }
 
 function EvidenceItem({ id }: { id: string }) {
+  const { t } = useLocale();
   const item = useData<Evidence>(`/evidence/${id}`);
   return item.data ? (
     <div className="evidence">
       <Demo value={item.data.is_demo} />
       <strong>{item.data.source_label}</strong>
       <p>{item.data.description}</p>
-      {item.data.event_at && <p>Дата источника: {date(item.data.event_at)}</p>}
+      {item.data.event_at && (
+        <p>
+          {t("Дата источника: ")}
+          {date(item.data.event_at)}
+        </p>
+      )}
       {item.data.signatory_count && (
-        <p>Заявителей: {item.data.signatory_count}</p>
+        <p>
+          {t("Заявителей: ")}
+          {item.data.signatory_count}
+        </p>
       )}
       {item.data.construction_stage && (
-        <p>Стадия: {stageLabels[item.data.construction_stage]}</p>
+        <p>
+          {t("Стадия: ")}
+          {t(stageLabels[item.data.construction_stage])}
+        </p>
       )}
       {item.data.measurement_percent != null && (
         <p>
           {item.data.measurement_role === "DECLARED"
-            ? "Заявленная"
-            : "Проверенная"}{" "}
-          готовность: {item.data.measurement_percent}%
+            ? t("Заявленная")
+            : t("Проверенная")}{" "}
+          {t("готовность: ")}
+          {item.data.measurement_percent}%
           <br />
-          Область сравнения: {item.data.comparison_key}
+          {t("Область сравнения: ")}
+          {item.data.comparison_key}
         </p>
       )}
       {item.data.planned_completion_at && (
         <p>
-          Плановое завершение: {date(item.data.planned_completion_at)}
+          {t("Плановое завершение: ")}
+          {date(item.data.planned_completion_at)}
           <br />
           {item.data.delay_status === "NOT_COMPLETED"
-            ? "Не завершено на дату источника"
-            : `Фактическое завершение: ${date(item.data.actual_completion_at || null)}`}
+            ? t("Не завершено на дату источника")
+            : `${t("Фактическое завершение:")} ${date(item.data.actual_completion_at || null)}`}
         </p>
       )}
-      {item.data.methodology && <p>Методика: {item.data.methodology}</p>}
+      {item.data.methodology && (
+        <p>
+          {t("Методика: ")}
+          {item.data.methodology}
+        </p>
+      )}
       {item.data.absence_as_of && (
         <p>
-          Дата проверки отсутствия: {date(item.data.absence_as_of)}
+          {t("Дата проверки отсутствия: ")}
+          {date(item.data.absence_as_of)}
           <br />
-          Охват: {item.data.scope_description}
+          {t("Охват: ")}
+          {item.data.scope_description}
         </p>
       )}
       {item.data.legal_checks?.map((check) => (
         <p key={check.mechanism}>
-          {mechanismLabels[check.mechanism]}:{" "}
+          {t(mechanismLabels[check.mechanism])}:{" "}
           {check.result === "DOCUMENTED_ABSENT"
-            ? "Отсутствие документировано"
+            ? t("Отсутствие документировано")
             : check.result === "NOT_FOUND"
-              ? "Не найдено в выборке — недостаточно для R1"
+              ? t("Не найдено в выборке — недостаточно для R1")
               : check.result === "UNAVAILABLE"
-                ? "Источник недоступен"
-                : "Не проверено"}
+                ? t("Источник недоступен")
+                : t("Не проверено")}
           <br />
           {check.reason}
         </p>
       ))}
       <a className="text-link" href={`/api/v1/assets/${item.data.asset_id}`}>
-        Скачать исходник <ArrowRight size={14} />
+        {t("Скачать исходник ")}
+        <ArrowRight size={14} />
       </a>
       <PdfDownload
         kind="assets"
         id={item.data.asset_id}
-        label="Получить источник в PDF"
-        description="Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия."
+        label={t("Получить источник в PDF")}
+        description={t(
+          "Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия.",
+        )}
       />
-      <PdfDownload kind="evidence" id={id} label="PDF доказательства" />
+      <PdfDownload kind="evidence" id={id} label={t("PDF доказательства")} />
     </div>
   ) : (
     <LoadState error={item.error} retry={item.reload} />
@@ -1565,12 +1808,15 @@ function DossierProgress({
   writable,
   openTools,
   openFactor,
+  importedAdvertisementId,
 }: {
   detail: PropertyDetail;
   writable: boolean;
   openTools: () => void;
   openFactor: (code: string) => void;
+  importedAdvertisementId?: string;
 }) {
+  const { t } = useLocale();
   const row = detail.property;
   const pendingFactors = detail.factors.filter(
     (factor) => factor.status === "PENDING",
@@ -1592,69 +1838,85 @@ function DossierProgress({
       className="panel padded dossier-next-action"
       aria-labelledby="dossier-progress-title"
     >
-      <h2 id="dossier-progress-title">Ход проверки</h2>
+      <h2 id="dossier-progress-title">{t("Ход проверки")}</h2>
       <dl className="dossier-progress">
-        <dt>Что сделать дальше</dt>
+        <dt>{t("Что сделать дальше")}</dt>
         <dd>
           {!writable ? (
             <Link className="text-link" href="#dossier-factors">
-              Изучите решения и доказательства
+              {t("Изучите решения и доказательства")}
             </Link>
           ) : pendingDocuments.length > 0 ? (
             <Button variant="outline" onClick={openTools}>
-              Проверьте ожидающие решения документы
+              {t("Проверьте ожидающие решения документы")}
             </Button>
           ) : pendingEditor ? (
             <Button
               variant="outline"
               onClick={() => openFactor(pendingEditor.code)}
             >
-              Проверить {pendingEditor.code}: {factorLabels[pendingEditor.code]}
+              {t("Проверить ")}
+              {pendingEditor.code}: {t(factorLabels[pendingEditor.code])}
             </Button>
+          ) : !hasMaterials && importedAdvertisementId ? (
+            <Link
+              className="text-link"
+              href={`/review?advertisement_id=${importedAdvertisementId}`}
+            >
+              {t(
+                "Проверьте сохранённый материал и его связь с объектом",
+                "Сақталған материалды және оның нысанмен байланысын тексеріңіз",
+              )}
+            </Link>
           ) : !hasMaterials ? (
             <Link className="text-link" href="/advertisements/new">
-              Добавьте публикацию, затем подтвердите её связь с объектом
+              {t("Добавьте публикацию, затем подтвердите её связь с объектом")}
             </Link>
           ) : needsDecision ? (
             <Link
               className="text-link"
               href={`/advertisements?property_id=${row.id}`}
             >
-              Откройте связанные публикации и проверьте гипотезы
+              {t("Откройте связанные публикации и проверьте гипотезы")}
             </Link>
           ) : (
             <Link
               className="text-link"
               href={`/advertisements?property_id=${row.id}`}
             >
-              Проверьте связанные публикации и даты источников
+              {t("Проверьте связанные публикации и даты источников")}
             </Link>
           )}
         </dd>
-        <dt>Что найдено</dt>
+        <dt>{t("Что найдено")}</dt>
         <dd>
-          Связанные публикации: {detail.advertisement_ids.length}. Документы:{" "}
-          {detail.legal_bases.length}. Их наличие ещё не означает подтверждение.
+          {t("Связанные публикации: ")}
+          {detail.advertisement_ids.length}
+          {t(". Документы:")} {detail.legal_bases.length}
+          {t(". Их наличие ещё не означает подтверждение.")}
         </dd>
-        <dt>Что подтверждено</dt>
+        <dt>{t("Что подтверждено")}</dt>
         <dd>
-          Факторы:{" "}
+          {t("Факторы:")}{" "}
           {row.risk.confirmed_codes.length
             ? row.risk.confirmed_codes.join(", ")
-            : "пока нет"}
-          . Проверенные документы: {confirmedDocuments.length}. Оценка на{" "}
-          {date(row.risk.as_of)}.
+            : t("пока нет")}
+          {t(". Проверенные документы: ")}
+          {confirmedDocuments.length}
+          {t(". Оценка на")} {date(row.risk.as_of)}.
         </dd>
-        <dt>Чего не хватает</dt>
+        <dt>{t("Чего не хватает")}</dt>
         <dd>
-          {!hasMaterials && "Нужна публикация для проверки. "}
+          {!hasMaterials && t("Нужна публикация для проверки. ")}
           {pendingDocuments.length > 0 &&
-            `Ожидают решения документы: ${pendingDocuments.length}. `}
+            `${t("Ожидают решения документы:")} ${pendingDocuments.length}. `}
           {pendingFactors.length > 0 &&
-            `Ожидают решения факторы: ${pendingFactors.length}. `}
+            `${t("Ожидают решения факторы:")} ${pendingFactors.length}. `}
           {row.risk.unknown_codes.length > 0
-            ? `Не установлены: ${row.risk.unknown_codes.join(", ")}. Неизвестность не подтверждает нарушение.`
-            : "Все факторы имеют сохранённое решение. Даты и область документов проверяются отдельно."}
+            ? `${t("Не установлены:")} ${row.risk.unknown_codes.join(", ")}. ${t("Неизвестность не подтверждает нарушение.")}`
+            : t(
+                "Все факторы имеют сохранённое решение. Даты и область документов проверяются отдельно.",
+              )}
         </dd>
       </dl>
     </section>
@@ -1694,6 +1956,12 @@ function dossierSectionForHash(hash: string) {
 }
 
 export function PropertyView({ id }: { id: string }) {
+  // Visited panels and transient selections belong to one exact property.
+  return <PropertyDossier key={id} id={id} />;
+}
+
+function PropertyDossier({ id }: { id: string }) {
+  const { locale, t } = useLocale();
   const { user } = useContext(Auth);
   const { detailed, setDetailed } = useInterfaceMode();
   const params = useSearchParams();
@@ -1701,11 +1969,28 @@ export function PropertyView({ id }: { id: string }) {
     params.get("registry") || "",
   ).toString();
   const sections = useWorkspaceSection(dossierTabs, dossierSectionForHash);
+  const [visitedSections, setVisitedSections] = useState([sections.active]);
+  useEffect(() => {
+    setVisitedSections((visited) =>
+      visited.includes(sections.active)
+        ? visited
+        : [...visited, sections.active],
+    );
+  }, [sections.active]);
+  function isSectionMounted(section: string) {
+    // Deep links need their target in the first active render, before effects.
+    return sections.active === section || visitedSections.includes(section);
+  }
   const pendingTarget = useRef<string | null>(null);
   const [documentSearch, setDocumentSearch] = useState("");
   const [documentStatus, setDocumentStatus] = useState("");
   const [documentPage, setDocumentPage] = useState(1);
-  const detail = useData<PropertyDetail>(`/properties/${id}`);
+  const detailPath = `/properties/${id}`;
+  const detail = useData<PropertyDetail>(detailPath);
+  const provenancePath = `/properties/${id}/provenance`;
+  const provenance = useData<import("@/lib/types").AuditEvent | null>(
+    provenancePath,
+  );
   const [evidence, setEvidence] = useState<string | null>(null);
   const setDetailedRef = useRef(setDetailed);
   setDetailedRef.current = setDetailed;
@@ -1743,9 +2028,17 @@ export function PropertyView({ id }: { id: string }) {
     revealDossierTarget(pendingTarget.current);
     pendingTarget.current = null;
   }, [sections.active, documentPage, documentSearch, documentStatus, evidence]);
-  if (!detail.data)
+  if (!detail.data || detail.successfulPath !== detailPath)
     return <LoadState error={detail.error} retry={detail.reload} />;
   const row = detail.data.property;
+  const sourceEvent =
+    provenance.successfulPath === provenancePath &&
+    provenance.data?.entity_id === id &&
+    provenance.data.action === "SOURCE_PACKAGE_IMPORTED"
+      ? provenance.data
+      : null;
+  const sourceEvents = sourceEvent ? [sourceEvent] : [];
+  const importedAdvertisementId = sourceEvent?.details.advertisement_id;
   const matchedDocuments = detail.data.legal_bases.filter(
     (basis) =>
       (!documentStatus || basis.verification_status === documentStatus) &&
@@ -1768,6 +2061,13 @@ export function PropertyView({ id }: { id: string }) {
         (basis) => `dossier-document-${basis.id}` === target,
       );
       setDocumentPage(index < 0 ? 1 : Math.floor(index / 10) + 1);
+      requestAnimationFrame(() => {
+        window.dispatchEvent(
+          new CustomEvent("saq-open-document", {
+            detail: target.slice("dossier-document-".length),
+          }),
+        );
+      });
     }
     if (sections.active === section) {
       requestAnimationFrame(() => {
@@ -1781,12 +2081,12 @@ export function PropertyView({ id }: { id: string }) {
   const groups = [
     ...detail.data.factors.map((factor) => ({
       id: factor.id,
-      label: `${factor.code} · ${factorLabels[factor.code] || factor.code}`,
+      label: `${factor.code} · ${t(factorLabels[factor.code]) || factor.code}`,
       ids: factor.evidence_ids,
     })),
     ...detail.data.legal_bases.map((basis) => ({
       id: `basis:${basis.id}`,
-      label: `Основание · ${basis.document_number || "Номер не указан"}`,
+      label: `${t("Основание")} · ${basis.document_number || t("Номер не указан")}`,
       ids: basis.evidence_ids,
     })),
   ];
@@ -1802,56 +2102,149 @@ export function PropertyView({ id }: { id: string }) {
   }
   return (
     <div className="dossier-workspace">
-      <Link
-        href={registryQuery ? `/properties?${registryQuery}` : "/properties"}
-        className="back"
-      >
-        <ArrowLeft size={15} /> К реестру
-      </Link>
-      <PageTitle
-        eyebrow="КАРТОЧКА ОБЪЕКТА"
-        title={row.name}
-        description={`${row.city} · ${row.address}`}
-        action={false}
-      />
-      <div className="object-summary">
-        <Demo value={row.is_demo} />
-        <span>{row.developer.name}</span>
-        <span>{legalLabels[row.legal_verification_status]}</span>
-      </div>
-      <div className="dossier-compact-state">
-        <PropertyRisk row={row} />
-        <span>
-          {row.risk.confirmed_codes.length
-            ? `Подтверждены: ${row.risk.confirmed_codes.join(", ")}`
-            : "Подтверждённых факторов пока нет"}
-        </span>
-        <Button
-          variant="outline"
-          onClick={() =>
-            user?.role === "analyst" ? openEditor() : sections.select("review")
-          }
+      {detail.error && (
+        <div
+          className="notice error"
+          role="alert"
+          data-testid="dossier-stale-warning"
         >
-          Открыть проверку
-        </Button>
+          <p>
+            {t(
+              "Не удалось обновить; показаны предыдущие данные на ",
+              "Жаңарту мүмкін болмады; көрсетілген алдыңғы мәліметтер уақыты: ",
+            )}
+            {date(detail.readAt)}.
+          </p>
+          <p>{detail.error}</p>
+          <Button type="button" variant="outline" onClick={detail.reload}>
+            {t("Повторить загрузку досье", "Досьені қайта жүктеу")}
+          </Button>
+        </div>
+      )}
+      <div className="dossier-actionbar">
+        <Link
+          href={registryQuery ? `/properties?${registryQuery}` : "/properties"}
+          className="back"
+        >
+          <ArrowLeft size={15} aria-hidden="true" />{" "}
+          {t("К реестру", "Тізілімге")}
+        </Link>
+        <div className="dossier-report-actions">
+          <ReportOptions
+            propertyId={id}
+            propertyName={row.name}
+            language={locale}
+          />
+          <Button
+            variant="outline"
+            onClick={() => sections.select("documents")}
+          >
+            {t("Документы объекта", "Нысан құжаттары")}
+          </Button>
+        </div>
+        <span className="dossier-data-date">
+          {t("Проверено:", "Тексерілген:")} {date(row.last_reviewed_at)}
+        </span>
       </div>
-      <p className="field-help">
-        Красная зона не устанавливает нарушение, зелёная не гарантирует
-        безопасность.
-      </p>
-      <PropertyStructure key={row.id} row={row} registryQuery={registryQuery} />
-      <WorkspaceTabs
-        tabs={dossierTabs}
-        active={sections.active}
-        onSelect={sections.select}
-        prefix="dossier"
-        label="Разделы карточки объекта"
-      />
+      <section
+        className="dossier-header"
+        aria-label={t("Карточка объекта", "Нысан карточкасы")}
+      >
+        <PageTitle
+          eyebrow=""
+          title={row.name}
+          description={`${row.city} · ${row.address}`}
+          action={false}
+        />
+        {detail.data.source_candidate_id && (
+          <p className="field-help">
+            {t("Создано из")}{" "}
+            <Link
+              href={`/monitoring?candidate_id=${detail.data.source_candidate_id}&section=candidates`}
+            >
+              {t("кандидата и его исходных материалов")}
+            </Link>
+            {t(
+              ". Создание досье не подтверждает привязку публикаций или правовое основание.",
+            )}
+          </p>
+        )}
+        {!!detail.data.linked_candidate_count && (
+          <p className="field-help">
+            <Link href={`/monitoring?property_id=${row.id}&section=candidates`}>
+              {t("Связанные кандидаты: ")}
+              {detail.data.linked_candidate_count}
+            </Link>
+            {t(
+              ". Связь кандидата не подтверждает привязку публикаций или правовое основание.",
+            )}
+          </p>
+        )}
+        <div className="object-summary">
+          <Demo value={row.is_demo} />
+          <span>{row.developer.name}</span>
+          <span>{t(legalLabels[row.legal_verification_status])}</span>
+        </div>
+        <div className="dossier-compact-state">
+          <PropertyRisk row={row} />
+          <span>
+            {row.risk.confirmed_codes.length
+              ? `${t("Подтверждены:")} ${row.risk.confirmed_codes.join(", ")}`
+              : t("Подтверждённых факторов пока нет")}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() =>
+              user?.role === "analyst"
+                ? openEditor()
+                : sections.select("review")
+            }
+          >
+            {t("Открыть проверку", "Тексеруді ашу")}
+          </Button>
+        </div>
+        <p className="field-help">
+          {t(
+            "Красная зона не устанавливает нарушение, зелёная не гарантирует безопасность.",
+          )}
+        </p>
+        <PropertyStructure
+          key={row.id}
+          row={row}
+          registryQuery={registryQuery}
+        />
+        <WorkspaceTabs
+          tabs={dossierTabs.map((tab) => ({
+            ...tab,
+            label: t(
+              tab.label,
+              (
+                {
+                  overview: "Шолу",
+                  documents: "Құжаттар",
+                  review: "Тексеру және тәуекелдер",
+                  publications: "Жарияланымдар",
+                  signals: "Сигналдар мен есептер",
+                  history: "Тарих",
+                } as Record<string, string>
+              )[tab.id],
+            ),
+          }))}
+          active={sections.active}
+          onSelect={sections.select}
+          prefix="dossier"
+          label={t("Разделы карточки объекта", "Нысан карточкасының бөлімдері")}
+        />
+      </section>
       <WorkspacePanel id="overview" active={sections.active} prefix="dossier">
         {detail.data.unknown_information.length > 0 && (
-          <div className="notice">
-            {detail.data.unknown_information.join(" ")}
-          </div>
+          <details className="notice dossier-unknown-information">
+            <summary>
+              {t("Неизвестные сведения", "Белгісіз мәліметтер")} ·{" "}
+              {detail.data.unknown_information.length}
+            </summary>
+            <p>{detail.data.unknown_information.join(" ")}</p>
+          </details>
         )}
         <section
           id="dossier-summary"
@@ -1859,473 +2252,490 @@ export function PropertyView({ id }: { id: string }) {
           className="dossier-section"
           aria-labelledby="dossier-summary-title"
         >
-          <h2 id="dossier-summary-title">Обзор</h2>
-          <div className="detail-grid dossier-overview">
-            <DossierProgress
-              detail={detail.data}
-              writable={user?.role === "analyst"}
-              openFactor={openEditor}
-              openTools={() => {
-                setDetailed(true);
-                const pending = detail.data?.legal_bases.find(
-                  (basis) => basis.verification_status === "PENDING",
-                );
-                if (pending)
-                  openTarget("documents", `dossier-document-${pending.id}`);
-              }}
-            />
-            <section className="panel padded dossier-object-facts">
-              <h2>Сведения об объекте</h2>
-              <dl className="dossier-facts">
-                <div>
-                  <dt>БИН</dt>
-                  <dd>{row.developer.bin || "Не указан · DEMO"}</dd>
-                </div>
-                <div>
-                  <dt>Стадия</dt>
-                  <dd>{stageLabels[row.stage] || "Не проверена"}</dd>
-                </div>
-                <div>
-                  <dt>Готовность</dt>
-                  <dd>
-                    {row.progress_percent === null
-                      ? "Не проверена"
-                      : `${row.progress_percent}% · DEMO`}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Правовой статус</dt>
-                  <dd>{legalLabels[row.legal_verification_status]}</dd>
-                </div>
-                <div>
-                  <dt>Проверено</dt>
-                  <dd>{date(row.last_reviewed_at)}</dd>
-                </div>
-                {row.legal_absence_as_of && (
-                  <div>
-                    <dt>Отсутствие документировано на дату</dt>
-                    <dd>{date(row.legal_absence_as_of)} · решение R1</dd>
-                  </div>
-                )}
-              </dl>
-              <Link
-                className="text-link"
-                href={`/advertisements?property_id=${row.id}`}
-              >
-                Связанные публикации: {detail.data.advertisement_ids.length}{" "}
-                <ArrowRight size={14} />
-              </Link>
-            </section>
-          </div>
+          <h2 id="dossier-summary-title" className="sr-only">
+            {t("Обзор", "Шолу")}
+          </h2>
+          <DossierOverview
+            detail={detail.data}
+            provenance={{
+              data: sourceEvent,
+              error:
+                provenance.resolvedPath === provenancePath
+                  ? provenance.error
+                  : "",
+              loaded: provenance.resolvedPath === provenancePath,
+              reload: provenance.reload,
+            }}
+            onDocuments={() => sections.select("documents")}
+            progress={
+              <DossierProgress
+                detail={detail.data}
+                importedAdvertisementId={
+                  typeof importedAdvertisementId === "string" &&
+                  /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(
+                    importedAdvertisementId,
+                  )
+                    ? importedAdvertisementId
+                    : undefined
+                }
+                writable={user?.role === "analyst"}
+                openFactor={openEditor}
+                openTools={() => {
+                  setDetailed(true);
+                  const pending = detail.data?.legal_bases.find(
+                    (basis) => basis.verification_status === "PENDING",
+                  );
+                  if (pending)
+                    openTarget("documents", `dossier-document-${pending.id}`);
+                }}
+              />
+            }
+          />
         </section>
       </WorkspacePanel>
       <WorkspacePanel id="documents" active={sections.active} prefix="dossier">
-        <section className="panel padded" id="dossier-bases" tabIndex={-1}>
-          <h2>Основания и документы</h2>
-          {!detailed && user?.role === "analyst" && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDetailed(true);
-                revealDossierTarget("dossier-bases");
-              }}
-            >
-              Проверить или добавить основание
-            </Button>
-          )}
-          <div className="document-filters">
-            <label>
-              Найти документ
-              <input
-                type="search"
-                value={documentSearch}
-                maxLength={300}
-                onChange={(event) => {
-                  setDocumentSearch(event.target.value);
-                  setDocumentPage(1);
-                }}
-              />
-            </label>
-            <label>
-              Статус документа
-              <select
-                aria-label="Статус документа"
-                value={documentStatus}
-                onChange={(event) => {
-                  setDocumentStatus(event.target.value);
-                  setDocumentPage(1);
-                }}
-              >
-                <option value="">Все статусы</option>
-                {["PENDING", "VERIFIED_VALID", "REJECTED"].map((status) => (
-                  <option key={status} value={status}>
-                    {legalLabels[status]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <p className="field-help" role="status">
-            Документов по фильтру: {matchedDocuments.length}
-          </p>
-          {detail.data.legal_bases.length ? (
-            detail.data.legal_bases.map((basis) => (
-              <details
-                className="document dossier-document"
-                hidden={!visibleDocuments.has(basis.id)}
-                key={basis.id}
-                id={`dossier-document-${basis.id}`}
-                tabIndex={-1}
-              >
-                <summary>
-                  <Demo value={basis.is_demo} />
-                  <h3>
-                    {basis.document_number || "Номер не указан"} ·{" "}
-                    {basis.document_date || "Дата не установлена"}
-                  </h3>
-                  <span>
-                    {mechanismLabels[basis.mechanism] || basis.mechanism} ·{" "}
-                    {legalLabels[basis.verification_status] ||
-                      basis.verification_status}
-                  </span>
-                  <span>Охват: {basis.scope_description}</span>
-                  <span>
-                    Период: {date(basis.applies_from)} —{" "}
-                    {date(basis.applies_until)}
-                  </span>
-                </summary>
-                <p>Источник: {basis.issuer}</p>
-                <PdfDownload
-                  kind="assets"
-                  id={basis.asset_id}
-                  label="Получить документ в PDF"
-                  description="Исходный PDF скачивается без изменений; для текста или изображения создаётся PDF-копия."
-                />
-                <PdfDownload
-                  kind="legal-bases"
-                  id={basis.id}
-                  label="PDF проверки документа"
-                />
-                <LegalBasisDecision
-                  key={`${basis.id}:${basis.revision}`}
-                  basis={basis}
-                  userId={user?.id || ""}
-                  onSaved={detail.reload}
-                  writable={user?.role === "analyst"}
-                  showControls={detailed}
-                />
-                <a
-                  className="text-link"
-                  href={`/api/v1/assets/${basis.asset_id}`}
+        {isSectionMounted("documents") && (
+          <>
+            <section className="panel padded" id="dossier-bases" tabIndex={-1}>
+              <h2>{t("Основания и документы")}</h2>
+              {!detailed && user?.role === "analyst" && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDetailed(true);
+                    revealDossierTarget("dossier-bases");
+                  }}
                 >
-                  Открыть сохранённый материал <ArrowRight size={14} />
-                </a>
-              </details>
-            ))
-          ) : (
-            <p className="muted">
-              Документы об основании в карточку не добавлены. Это само по себе
-              не подтверждает его отсутствие.
-            </p>
-          )}
-          {matchedDocuments.length > 10 && (
-            <Pagination
-              label="Страницы документов"
-              page={documentPage}
-              pageSize={10}
-              total={matchedDocuments.length}
-              onPageChange={setDocumentPage}
-            />
-          )}
-          {detail.data.legal_bases.length > 0 && !matchedDocuments.length && (
-            <p className="empty">Документы по этим условиям не найдены.</p>
-          )}
-          <div hidden={!detailed}>
-            {user?.role === "analyst" && (
-              <LegalBasisCreate
-                key={row.id}
-                userId={user.id}
-                detail={detail.data}
-                onSaved={detail.reload}
-              />
-            )}
-          </div>
-        </section>
-        <section
-          className="panel padded"
-          id="dossier-evidence"
-          tabIndex={-1}
-          aria-labelledby="dossier-evidence-title"
-        >
-          <h2 id="dossier-evidence-title">Доказательства</h2>
-          <p>
-            Доказательства сохранённых факторов и оснований: {evidenceCount}. У
-            одного материала может быть несколько связей; это не отдельные
-            нарушения.
-          </p>
-          {groups.length > 0 ? (
-            <>
-              <label htmlFor="dossier-evidence-selection">
-                Материалы фактора или основания
-              </label>
-              <select
-                id="dossier-evidence-selection"
-                value={selected?.id || ""}
-                onChange={(event) => setEvidence(event.target.value || null)}
-              >
-                <option value="">Выберите, чьи доказательства изучить</option>
-                {groups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.label} · {new Set(group.ids).size}
-                  </option>
-                ))}
-              </select>
-              {selected ? (
-                <div
-                  className="evidence-list"
-                  id={`factor-evidence-${selected.id}`}
-                >
-                  <h3>{selected.label}</h3>
-                  {selected.ids.length ? (
-                    Array.from(new Set(selected.ids)).map((value) => (
-                      <EvidenceItem key={value} id={value} />
-                    ))
-                  ) : (
-                    <p className="empty">
-                      К этому решению доказательства не прикреплены.
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="muted">
-                  Выберите фактор или основание. Источник, дата и сохранённый
-                  исходник загружаются по запросу.
-                </p>
+                  {t("Проверить или добавить основание")}
+                </Button>
               )}
-            </>
-          ) : (
-            <p className="empty">
-              Доказательства ещё не привязаны к факторам или основаниям.
-            </p>
-          )}
-        </section>
-      </WorkspacePanel>
-      <WorkspacePanel id="review" active={sections.active} prefix="dossier">
-        <section
-          className="panel"
-          id="dossier-factors"
-          tabIndex={-1}
-          aria-labelledby="dossier-factors-title"
-        >
-          <div className="panel-heading">
-            <div>
-              <h2 id="dossier-factors-title">Факторы риска и решения</h2>
-              <p>
-                Только подтверждённые факторы участвуют в серверном балле.
-                DEMO-решения отмечены отдельно. Отсутствие данных не
-                подтверждает нарушение.
-              </p>
-            </div>
-          </div>
-          {Object.entries(factorLabels).map(([code, label]) => {
-            const factor = detail.data!.factors.find(
-              (item) => item.code === code,
-            );
-            return (
-              <div
-                className={`factor-row factor-${factor?.status.toLowerCase() || "unknown"}`}
-                key={code}
-              >
-                <span className="factor-token">{code}</span>
-                <div>
-                  <strong>{label}</strong>
-                  <small>
-                    {factor?.reason ||
-                      "Сохранённого фактора нет. Нужны материалы и отдельное решение."}
-                  </small>
-                  {factor && <small>Дата оценки: {date(factor.as_of)}</small>}
-                </div>
-                <span className="points">
-                  {factor?.status === "CONFIRMED" ? `+${factor.weight}` : "0"}
-                  <small>
-                    {factor ? statusLabel(factor.status) : "Не зафиксирован"}
-                  </small>
-                </span>
-                <div className="dossier-factor-actions">
-                  {factor && (
-                    <PdfDownload
-                      kind="risk-factors"
-                      id={factor.id}
-                      label="PDF решения"
-                    />
-                  )}
-                  {factor && (
-                    <Button
-                      variant="outline"
-                      aria-expanded={evidence === factor.id}
-                      aria-controls={`factor-evidence-${factor.id}`}
-                      onClick={() =>
-                        showEvidence(evidence === factor.id ? null : factor.id)
-                      }
-                    >
-                      Доказательства
-                    </Button>
-                  )}
-                  {user?.role === "analyst" &&
-                    (code === "R2" ? (
-                      <Link
-                        className="text-link"
-                        href={`/advertisements?property_id=${row.id}`}
-                      >
-                        Проверить у публикации
-                      </Link>
-                    ) : (
-                      <a
-                        className="text-link"
-                        href={`#dossier-editor-${code}`}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          openEditor(code);
-                        }}
-                      >
-                        Проверить {code}
-                      </a>
+              <div className="document-filters">
+                <label>
+                  {t("Найти документ")}
+                  <input
+                    type="search"
+                    value={documentSearch}
+                    maxLength={300}
+                    onChange={(event) => {
+                      setDocumentSearch(event.target.value);
+                      setDocumentPage(1);
+                    }}
+                  />
+                </label>
+                <label>
+                  {t("Статус документа")}
+                  <select
+                    aria-label={t("Статус документа")}
+                    value={documentStatus}
+                    onChange={(event) => {
+                      setDocumentStatus(event.target.value);
+                      setDocumentPage(1);
+                    }}
+                  >
+                    <option value="">{t("Все статусы")}</option>
+                    {["PENDING", "VERIFIED_VALID", "REJECTED"].map((status) => (
+                      <option key={status} value={status}>
+                        {t(legalLabels[status])}
+                      </option>
                     ))}
-                </div>
+                  </select>
+                </label>
               </div>
-            );
-          })}
-          {!detailed && user?.role === "analyst" && (
-            <div className="expert-invitation">
-              <div>
-                <h3>Нужно дополнить проверку?</h3>
-                <p>
-                  Документы и решения открываются без потери введённых данных.
-                </p>
-              </div>
-              <Button variant="outline" onClick={() => openEditor()}>
-                Открыть инструменты
-              </Button>
-            </div>
-          )}
-          <div hidden={!detailed}>
-            {user?.role === "analyst" && (
-              <details
-                className="dossier-tools"
-                id="dossier-materials"
-                tabIndex={-1}
-              >
-                <summary>
-                  <h3>Материалы и проверки</h3>
-                  <span>R1, R3–R6 · загрузка и решения</span>
-                </summary>
-                <p className="muted">
-                  Сохраните источник и область его применения. Подтверждение
-                  каждого фактора выполняется отдельно.
-                </p>
-                <div id="dossier-editor-R1" tabIndex={-1}>
-                  {user?.role === "analyst" && (
-                    <LegalAbsenceReview
-                      key={row.id}
+              <p className="field-help" role="status">
+                {t("Документов по фильтру: ")}
+                {matchedDocuments.length}
+              </p>
+              <DossierRecords
+                propertyId={id}
+                kind="documents"
+                detail={detail.data}
+                visibleDocumentIds={visibleDocuments}
+                renderDocumentReview={(basis) => (
+                  <>
+                    {detail.error && (
+                      <Notice
+                        error={`${t("Не удалось обновить; показаны предыдущие данные на ", "Жаңарту мүмкін болмады; көрсетілген алдыңғы мәліметтер уақыты: ")}${date(detail.readAt)}.`}
+                      />
+                    )}
+                    <LegalBasisDecision
+                      key={basis.id}
+                      basis={basis}
                       userId={user?.id || ""}
-                      detail={detail.data}
                       onSaved={detail.reload}
+                      writable={user?.role === "analyst"}
+                      showControls={detailed}
                     />
-                  )}
-                </div>
-                <div id="dossier-editor-R4" tabIndex={-1}>
-                  {user?.role === "analyst" && (
-                    <AppealReview
-                      key={row.id}
-                      userId={user?.id || ""}
-                      detail={detail.data}
-                      onSaved={detail.reload}
-                    />
-                  )}
-                </div>
+                  </>
+                )}
+              />
+              {matchedDocuments.length > 10 && (
+                <Pagination
+                  label={t("Страницы документов")}
+                  page={documentPage}
+                  pageSize={10}
+                  total={matchedDocuments.length}
+                  onPageChange={setDocumentPage}
+                />
+              )}
+              {detail.data.legal_bases.length > 0 &&
+                !matchedDocuments.length && (
+                  <p className="empty">
+                    {t("Документы по этим условиям не найдены.")}
+                  </p>
+                )}
+              <div hidden={!detailed}>
                 {user?.role === "analyst" && (
-                  <ConstructionReview
+                  <LegalBasisCreate
                     key={row.id}
-                    userId={user?.id || ""}
+                    userId={user.id}
                     detail={detail.data}
                     onSaved={detail.reload}
                   />
                 )}
-              </details>
-            )}
-          </div>
-        </section>
+              </div>
+            </section>
+            <section
+              className="panel padded"
+              id="dossier-evidence"
+              tabIndex={-1}
+              aria-labelledby="dossier-evidence-title"
+            >
+              <h2 id="dossier-evidence-title">{t("Доказательства")}</h2>
+              <p>
+                {t("Доказательства сохранённых факторов и оснований: ")}
+                {evidenceCount}
+                {t(
+                  ". У одного материала может быть несколько связей; это не отдельные нарушения.",
+                )}
+              </p>
+              {groups.length > 0 ? (
+                <>
+                  <label htmlFor="dossier-evidence-selection">
+                    {t("Материалы фактора или основания")}
+                  </label>
+                  <select
+                    id="dossier-evidence-selection"
+                    value={selected?.id || ""}
+                    onChange={(event) =>
+                      setEvidence(event.target.value || null)
+                    }
+                  >
+                    <option value="">
+                      {t("Выберите, чьи доказательства изучить")}
+                    </option>
+                    {groups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.label} · {new Set(group.ids).size}
+                      </option>
+                    ))}
+                  </select>
+                  {selected ? (
+                    <div
+                      className="evidence-list"
+                      id={`factor-evidence-${selected.id}`}
+                    >
+                      <h3>{selected.label}</h3>
+                      {selected.ids.length ? (
+                        Array.from(new Set(selected.ids)).map((value) => (
+                          <EvidenceItem key={value} id={value} />
+                        ))
+                      ) : (
+                        <p className="empty">
+                          {t("К этому решению доказательства не прикреплены.")}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="muted">
+                      {t(
+                        "Выберите фактор или основание. Источник, дата и сохранённый исходник загружаются по запросу.",
+                      )}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="empty">
+                  {t(
+                    "Доказательства ещё не привязаны к факторам или основаниям.",
+                  )}
+                </p>
+              )}
+            </section>
+          </>
+        )}
+      </WorkspacePanel>
+      <WorkspacePanel id="review" active={sections.active} prefix="dossier">
+        {isSectionMounted("review") && (
+          <>
+            <section
+              className="panel"
+              id="dossier-factors"
+              tabIndex={-1}
+              aria-labelledby="dossier-factors-title"
+            >
+              <div className="panel-heading">
+                <div>
+                  <h2 id="dossier-factors-title">
+                    {t("Факторы риска и решения")}
+                  </h2>
+                  <p>
+                    {t(
+                      "Только подтверждённые факторы участвуют в серверном балле. DEMO-решения отмечены отдельно. Отсутствие данных не подтверждает нарушение.",
+                    )}
+                  </p>
+                </div>
+              </div>
+              <DossierRiskStatistics detail={detail.data} />
+              {Object.entries(factorLabels).map(([code, label]) => {
+                const factor = detail.data!.factors.find(
+                  (item) => item.code === code,
+                );
+                return (
+                  <div
+                    className={`factor-row factor-${factor?.status.toLowerCase() || "unknown"}`}
+                    key={code}
+                  >
+                    <span className="factor-token">{code}</span>
+                    <div>
+                      <strong>{t(label)}</strong>
+                      <small>
+                        {factor?.reason ||
+                          t(
+                            "Сохранённого фактора нет. Нужны материалы и отдельное решение.",
+                          )}
+                      </small>
+                      {factor && (
+                        <>
+                          <small>
+                            {t("Дата оценки: ")}
+                            {date(factor.as_of)}
+                          </small>
+                          <small>
+                            {t("Проверивший: ", "Тексеруші: ")}
+                            {factor.reviewed_by ||
+                              t("Не зафиксирован", "Тіркелмеген")}
+                            {" · "}
+                            {t("Решение принято: ", "Шешім қабылданған күні: ")}
+                            {date(factor.reviewed_at || null)}
+                          </small>
+                        </>
+                      )}
+                    </div>
+                    <span className="points">
+                      {factor?.status === "CONFIRMED"
+                        ? `+${factor.weight}`
+                        : "0"}
+                      <small>
+                        {factor
+                          ? t(statusLabel(factor.status))
+                          : t("Не зафиксирован")}
+                      </small>
+                    </span>
+                    <div className="dossier-factor-actions">
+                      {factor && (
+                        <PdfDownload
+                          kind="risk-factors"
+                          id={factor.id}
+                          label={t("PDF решения")}
+                        />
+                      )}
+                      {factor && (
+                        <Button
+                          variant="outline"
+                          aria-expanded={evidence === factor.id}
+                          aria-controls={`factor-evidence-${factor.id}`}
+                          onClick={() =>
+                            showEvidence(
+                              evidence === factor.id ? null : factor.id,
+                            )
+                          }
+                        >
+                          {t("Доказательства")}
+                        </Button>
+                      )}
+                      {user?.role === "analyst" &&
+                        (code === "R2" ? (
+                          <Link
+                            className="text-link"
+                            href={`/advertisements?property_id=${row.id}`}
+                          >
+                            {t("Проверить у публикации")}
+                          </Link>
+                        ) : (
+                          <a
+                            className="text-link"
+                            href={`#dossier-editor-${code}`}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              openEditor(code);
+                            }}
+                          >
+                            {t("Проверить ")}
+                            {code}
+                          </a>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {!detailed && user?.role === "analyst" && (
+                <div className="expert-invitation">
+                  <div>
+                    <h3>{t("Нужно дополнить проверку?")}</h3>
+                    <p>
+                      {t(
+                        "Документы и решения открываются без потери введённых данных.",
+                      )}
+                    </p>
+                  </div>
+                  <Button variant="outline" onClick={() => openEditor()}>
+                    {t("Открыть инструменты")}
+                  </Button>
+                </div>
+              )}
+              <div hidden={!detailed}>
+                {user?.role === "analyst" && (
+                  <details
+                    className="dossier-tools"
+                    id="dossier-materials"
+                    tabIndex={-1}
+                  >
+                    <summary>
+                      <h3>{t("Материалы и проверки")}</h3>
+                      <span>{t("R1, R3–R6 · загрузка и решения")}</span>
+                    </summary>
+                    <p className="muted">
+                      {t(
+                        "Сохраните источник и область его применения. Подтверждение каждого фактора выполняется отдельно.",
+                      )}
+                    </p>
+                    <div id="dossier-editor-R1" tabIndex={-1}>
+                      {user?.role === "analyst" && (
+                        <LegalAbsenceReview
+                          key={row.id}
+                          userId={user?.id || ""}
+                          detail={detail.data}
+                          onSaved={detail.reload}
+                        />
+                      )}
+                    </div>
+                    <div id="dossier-editor-R4" tabIndex={-1}>
+                      {user?.role === "analyst" && (
+                        <AppealReview
+                          key={row.id}
+                          userId={user?.id || ""}
+                          detail={detail.data}
+                          onSaved={detail.reload}
+                        />
+                      )}
+                    </div>
+                    {user?.role === "analyst" && (
+                      <ConstructionReview
+                        key={row.id}
+                        userId={user?.id || ""}
+                        detail={detail.data}
+                        onSaved={detail.reload}
+                      />
+                    )}
+                  </details>
+                )}
+              </div>
+            </section>
+          </>
+        )}
       </WorkspacePanel>
       <WorkspacePanel
         id="publications"
         active={sections.active}
         prefix="dossier"
       >
-        <section
-          className="panel padded"
-          id="dossier-advertisements"
-          tabIndex={-1}
-          aria-labelledby="dossier-advertisements-title"
-        >
-          <h2 id="dossier-advertisements-title">Реклама и публикации</h2>
-          <p>
-            Связанные публикации: {detail.data.advertisement_ids.length}.
-            Оригиналы, источники, даты и отдельные решения доступны в списке
-            публикаций объекта.
-          </p>
-          <div className="dossier-actions">
-            <Button asChild variant="outline">
-              <Link href={`/advertisements?property_id=${row.id}`}>
-                Открыть публикации объекта
-              </Link>
-            </Button>
-            {user?.role === "analyst" && (
-              <Link className="text-link" href="/advertisements/new">
-                Добавить публикацию и проверить привязку
-              </Link>
-            )}
-          </div>
-          <p className="muted">
-            Наличие публикации не подтверждает фактор. R2 проверяется у
-            оригинала после проверки гипотезы и привязки к объекту.
-          </p>
-        </section>
-        <ObjectRecords propertyId={row.id} kind="advertisements" />
+        {isSectionMounted("publications") && (
+          <>
+            <section
+              className="panel padded"
+              id="dossier-advertisements"
+              tabIndex={-1}
+              aria-labelledby="dossier-advertisements-title"
+            >
+              <h2 id="dossier-advertisements-title">
+                {t("Реклама и публикации")}
+              </h2>
+              <p>
+                {t("Связанные публикации: ")}
+                {detail.data.advertisement_ids.length}
+                {t(
+                  ". Оригиналы, источники, даты и отдельные решения доступны в списке публикаций объекта.",
+                )}
+              </p>
+              <div className="dossier-actions">
+                <Button asChild variant="outline">
+                  <Link href={`/advertisements?property_id=${row.id}`}>
+                    {t("Открыть публикации объекта")}
+                  </Link>
+                </Button>
+                {user?.role === "analyst" && (
+                  <Link className="text-link" href="/advertisements/new">
+                    {t("Добавить публикацию и проверить привязку")}
+                  </Link>
+                )}
+              </div>
+              <p className="muted">
+                {t(
+                  "Наличие публикации не подтверждает фактор. R2 проверяется у оригинала после проверки гипотезы и привязки к объекту.",
+                )}
+              </p>
+            </section>
+            <DossierRecords
+              propertyId={id}
+              kind="publications"
+              detail={detail.data}
+              sourceEvents={sourceEvents}
+            />
+          </>
+        )}
       </WorkspacePanel>
       <WorkspacePanel id="signals" active={sections.active} prefix="dossier">
-        <section
-          className="panel padded"
-          id="dossier-signals"
-          tabIndex={-1}
-          aria-labelledby="dossier-signals-title"
-        >
-          <h2 id="dossier-signals-title">Сигналы по объекту</h2>
-          <p>
-            Сигнал сохраняет снимок проверенных материалов и решений. Изменение
-            текущего досье не переписывает прежние версии и PDF.
-          </p>
-          <div className="dossier-actions">
-            <Button asChild variant="outline">
-              <Link href={`/signals?property_id=${row.id}`}>
-                Открыть версии сигналов
-              </Link>
-            </Button>
-            <CreateSignalButton property={row} onChange={detail.reload} />
-          </div>
-          <p className="muted">
-            Сигнал указывает на необходимость проверки и не является обвинением
-            или юридическим заключением.
-          </p>
-        </section>
-        <ObjectRecords propertyId={row.id} kind="signals" />
-        <PdfDownload
-          kind="properties"
-          id={row.id}
-          label="Скачать отчёт по объекту"
-        />
+        {isSectionMounted("signals") && (
+          <>
+            <section
+              className="panel padded"
+              id="dossier-signals"
+              tabIndex={-1}
+              aria-labelledby="dossier-signals-title"
+            >
+              <h2 id="dossier-signals-title">{t("Сигналы по объекту")}</h2>
+              <p>
+                {t(
+                  "Сигнал сохраняет снимок проверенных материалов и решений. Изменение текущего досье не переписывает прежние версии и PDF.",
+                )}
+              </p>
+              <div className="dossier-actions">
+                <Button asChild variant="outline">
+                  <Link href={`/signals?property_id=${row.id}`}>
+                    {t("Открыть версии сигналов")}
+                  </Link>
+                </Button>
+                <CreateSignalButton property={row} onChange={detail.reload} />
+              </div>
+              <p className="muted">
+                {t(
+                  "Сигнал указывает на необходимость проверки и не является обвинением или юридическим заключением.",
+                )}
+              </p>
+            </section>
+            <ObjectRecords propertyId={row.id} kind="signals" />
+            <PdfDownload
+              kind="properties"
+              id={row.id}
+              label={t("Скачать отчёт по объекту")}
+            />
+          </>
+        )}
       </WorkspacePanel>
       <WorkspacePanel id="history" active={sections.active} prefix="dossier">
-        <PropertyHistory key={id} id={id} revision={row.risk.revision} />
+        {isSectionMounted("history") && (
+          <PropertyHistory key={id} id={id} revision={row.risk.revision} />
+        )}
       </WorkspacePanel>
     </div>
   );
@@ -2333,11 +2743,12 @@ export function PropertyView({ id }: { id: string }) {
 
 function advertisementExcerpt(value: string) {
   const text = value.replace(/\s+/g, " ").trim();
-  if (!text) return "Исходный файл · оригинал доступен в карточке";
+  if (!text) return "";
   return text.length > 220 ? `${text.slice(0, 220).trimEnd()}…` : text;
 }
 
 export function AdvertisementsView() {
+  const { t } = useLocale();
   const params = useSearchParams();
   const router = useRouter();
   const statusFilter = useRef<HTMLSelectElement>(null);
@@ -2347,7 +2758,12 @@ export function AdvertisementsView() {
   const data =
     result.resolvedPath === path && !result.error ? result.data : null;
   const currentError = result.resolvedPath === path ? result.error : "";
-  const hasFilters = !!(params.get("status") || params.get("property_id"));
+  const hasFilters = !!(
+    params.get("q") ||
+    params.get("is_demo") ||
+    params.get("status") ||
+    params.get("property_id")
+  );
   function filter(name: string, value: string) {
     const next = new URLSearchParams(params);
     if (value) next.set(name, value);
@@ -2358,43 +2774,62 @@ export function AdvertisementsView() {
   return (
     <>
       <PageTitle
-        eyebrow="РЕКЛАМНЫЕ МАТЕРИАЛЫ"
-        title="Реклама"
-        description="Сохранённый оригинал, происхождение и время фиксации каждой публикации."
+        eyebrow={t("РЕКЛАМНЫЕ МАТЕРИАЛЫ")}
+        title={t("Реклама")}
+        description={t(
+          "Сохранённый оригинал, происхождение и время фиксации каждой публикации.",
+        )}
       />
       <section
         className="registry-list-guide advertisements-start-guide"
         aria-labelledby="advertisements-start-guide-title"
       >
         <div>
-          <p className="eyebrow">С ЧЕГО НАЧАТЬ</p>
+          <p className="eyebrow">{t("С ЧЕГО НАЧАТЬ")}</p>
           <h2 id="advertisements-start-guide-title">
-            Добавьте материал для проверки
+            {t("Добавьте материал для проверки")}
           </h2>
         </div>
         <p>
-          Добавьте текст или загрузите PNG, JPEG либо TXT. Сохраните оригинал,
-          затем перейдите к анализу и отдельной ручной проверке.
+          {t(
+            "Добавьте текст или загрузите PNG, JPEG либо TXT. Сохраните оригинал, затем перейдите к анализу и отдельной ручной проверке.",
+          )}
         </p>
       </section>
       <section className="panel advertisements-panel">
+        <div className="padded">
+          <MaterialSearch
+            query={params.get("q") || ""}
+            onSearch={(value) => filter("q", value)}
+          />
+        </div>
         <div className="panel-heading">
           <div>
-            <h2>Публикации</h2>
+            <h2>{t("Публикации")}</h2>
             <p>
-              {data ? `${data.total} материалов` : "Загрузка…"} · Оригиналы,
-              состояние обработки и ручная проверка
+              {data ? `${data.total} ${t("материалов")}` : t("Загрузка…")}{" "}
+              {t("· Оригиналы, состояние обработки и ручная проверка")}
             </p>
           </div>
           <div className="publication-filters">
-            <label htmlFor="ad-status">Состояние обработки</label>
+            <label htmlFor="ad-demo">{t("Режим материалов")}</label>
+            <select
+              id="ad-demo"
+              value={params.get("is_demo") || ""}
+              onChange={(event) => filter("is_demo", event.target.value)}
+            >
+              <option value="">{t("DEMO и реальные")}</option>
+              <option value="true">{t("Только DEMO")}</option>
+              <option value="false">{t("Только реальные")}</option>
+            </select>
+            <label htmlFor="ad-status">{t("Состояние обработки")}</label>
             <select
               id="ad-status"
               ref={statusFilter}
               value={params.get("status") || ""}
               onChange={(event) => filter("status", event.target.value)}
             >
-              <option value="">Все состояния</option>
+              <option value="">{t("Все состояния")}</option>
               {[
                 "NEW",
                 "ANALYZING",
@@ -2403,7 +2838,7 @@ export function AdvertisementsView() {
                 "FAILED",
               ].map((status) => (
                 <option value={status} key={status}>
-                  {statusLabel(status)}
+                  {t(statusLabel(status))}
                 </option>
               ))}
             </select>
@@ -2413,27 +2848,33 @@ export function AdvertisementsView() {
           <div className="active-filters">
             <ListFilter size={16} aria-hidden="true" />
             {params.get("status") && (
-              <span>{statusLabel(params.get("status")!)}</span>
+              <span>{t(statusLabel(params.get("status")!))}</span>
             )}
             {params.get("property_id") && (
               <Link
                 className="text-link"
                 href={`/properties/${params.get("property_id")}`}
               >
-                Материалы выбранного объекта
+                {t("Материалы выбранного объекта")}
               </Link>
             )}
             <Button
               variant="ghost"
               onClick={() => {
                 const next = new URLSearchParams(params);
-                for (const key of ["status", "property_id", "page"])
+                for (const key of [
+                  "q",
+                  "is_demo",
+                  "status",
+                  "property_id",
+                  "page",
+                ])
                   next.delete(key);
                 router.replace(`/advertisements?${next}`, { scroll: false });
                 requestAnimationFrame(() => statusFilter.current?.focus());
               }}
             >
-              Сбросить фильтры
+              {t("Сбросить фильтры")}
             </Button>
           </div>
         )}
@@ -2451,22 +2892,28 @@ export function AdvertisementsView() {
                     <span
                       className={`material-state state-${ad.status.toLowerCase()} ad-status ad-status-${ad.status.toLowerCase()}`}
                     >
-                      {statusLabel(ad.status)}
+                      {t(statusLabel(ad.status))}
                     </span>
                   </div>
                   <span className="object-name">{ad.source_label}</span>
                   {ad.confirmed_property_id && (
                     <span className="ad-property">
-                      Связанный объект: {ad.confirmed_property_id.slice(0, 8)}…
+                      {t("Связанный объект: ")}
+                      {ad.confirmed_property_id.slice(0, 8)}…
                     </span>
                   )}
-                  <p>{advertisementExcerpt(ad.original_text)}</p>
+                  <p>
+                    {advertisementExcerpt(ad.original_text) ||
+                      t("Исходный файл · оригинал доступен в карточке")}
+                  </p>
                   <div className="ad-dates">
                     <span className="ad-date">
-                      Опубликовано: {date(ad.published_at)}
+                      {t("Опубликовано: ")}
+                      {date(ad.published_at)}
                     </span>
                     <span className="ad-date">
-                      Зафиксировано: {date(ad.captured_at)}
+                      {t("Зафиксировано: ")}
+                      {date(ad.captured_at)}
                     </span>
                   </div>
                 </div>
@@ -2479,7 +2926,7 @@ export function AdvertisementsView() {
                   className="text-link"
                   href={`/review?advertisement_id=${ad.id}`}
                 >
-                  Проверить публикацию{" "}
+                  {t("Проверить публикацию")}{" "}
                   <ArrowRight size={15} aria-hidden="true" />
                 </Link>
               </div>
@@ -2491,18 +2938,20 @@ export function AdvertisementsView() {
         {data?.total === 0 && (
           <div className="empty">
             {hasFilters
-              ? "Нет публикаций по выбранным фильтрам. Измените состояние или сбросьте фильтры."
-              : "Публикаций пока нет. Добавьте текст или исходный файл."}
+              ? t(
+                  "Нет публикаций по запросу и фильтрам. Измените или сбросьте поиск и фильтры.",
+                )
+              : t("Публикаций пока нет. Добавьте текст или исходный файл.")}
           </div>
         )}
         {data && (data.total > data.page_size || data.page > 1) && (
           <Pagination
-            label="Страницы публикаций"
+            label={t("Страницы публикаций")}
             page={data.page}
             pageSize={data.page_size}
             total={data.total}
-            previousLabel="Предыдущая"
-            nextLabel="Следующая"
+            previousLabel={t("Предыдущая")}
+            nextLabel={t("Следующая")}
             onPageChange={(page) => filter("page", String(page))}
           />
         )}
@@ -2511,7 +2960,69 @@ export function AdvertisementsView() {
   );
 }
 
+function AdvertisementAnnotation({ ad }: { ad: Advertisement }) {
+  const { t } = useLocale();
+  const { user } = useContext(Auth);
+  const result = useData<Extraction[]>(`/advertisements/${ad.id}/extractions`);
+  const extraction =
+    result.resolvedPath === `/advertisements/${ad.id}/extractions`
+      ? result.data?.[0]
+      : null;
+  if (result.error)
+    return <LoadState error={result.error} retry={result.reload} />;
+  if (!extraction) return null;
+  const proposals = extraction.hypotheses.filter(
+    (item) => item.origin === "MANUAL",
+  );
+  return (
+    <section className="panel padded">
+      <ManualAnnotation
+        advertisementId={ad.id}
+        sourceLabel={ad.source_label}
+        extraction={extraction}
+        userId={user?.id || ""}
+        writable={user?.role === "analyst" && ad.status !== "ANALYZING"}
+        onChange={result.reload}
+      />
+      {proposals.length > 0 && (
+        <div
+          aria-label={t("Ручные предложения", "Қолмен енгізілген ұсыныстар")}
+        >
+          {proposals.map((item) => (
+            <article className="hypothesis" key={item.id}>
+              <strong>{t(statusLabel(item.review_status))}</strong>
+              <blockquote>{item.fragment.quote}</blockquote>
+              <p>
+                {t("Предложил: ", "Ұсынған: ")}
+                {item.proposed_by?.display_name ||
+                  t("Не зафиксировано", "Тіркелмеген")}{" "}
+                · {date(item.proposed_at || null)}
+              </p>
+              <p>{item.proposal_reason}</p>
+              {item.reviewed_by && (
+                <p>
+                  {t("Проверил: ", "Тексерген: ")}
+                  {item.reviewed_by.display_name} ·{" "}
+                  {date(item.reviewed_at || null)}
+                </p>
+              )}
+              {item.review_reason && <p>{item.review_reason}</p>}
+            </article>
+          ))}
+          <Link
+            href={`/review?advertisement_id=${ad.id}`}
+            className="text-link"
+          >
+            {t("Открыть независимую проверку", "Тәуелсіз тексеруді ашу")}
+          </Link>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function AdvertisementView({ id }: { id: string }) {
+  const { t } = useLocale();
   const { detailed } = useInterfaceMode();
   const params = useSearchParams();
   const materials = new URLSearchParams(
@@ -2522,21 +3033,33 @@ export function AdvertisementView({ id }: { id: string }) {
     return <LoadState error={result.error} retry={result.reload} />;
   const ad = result.data;
   const importedHtml = ad.assets.some((asset) => asset.kind === "HTML");
+  const importedObservation = ad.original_text?.startsWith(
+    "ИМПОРТИРОВАННОЕ НАБЛЮДЕНИЕ ИЗ ФАЙЛА.",
+  );
   return (
     <>
       <Link
         href={materials ? `/advertisements?${materials}` : "/advertisements"}
         className="back"
       >
-        <ArrowLeft size={15} /> К публикациям
+        <ArrowLeft size={15} /> {t("К публикациям")}
       </Link>
       <PageTitle
-        eyebrow="СОХРАНЁННЫЙ МАТЕРИАЛ"
+        eyebrow={t("СОХРАНЁННЫЙ МАТЕРИАЛ")}
         title={ad.source_label}
         description={
-          importedHtml
-            ? "HTML-оригинал сохранён отдельно. Ниже — извлечённый текст; анализ запускается отдельно."
-            : "Оригинал сохранён без изменений. Анализ не запускается автоматически."
+          importedObservation
+            ? t(
+                "Пересказ из пользовательского файла. Исходная интернет-страница не получена; правовой статус и связь требуют отдельной проверки.",
+                "Пайдаланушы файлындағы мазмұндама. Бастапқы интернет-бет алынбаған; құқықтық мәртебе мен байланыс бөлек тексеріледі.",
+              )
+            : importedHtml
+              ? t(
+                  "HTML-оригинал сохранён отдельно. Ниже — извлечённый текст; анализ запускается отдельно.",
+                )
+              : t(
+                  "Оригинал сохранён без изменений. Анализ не запускается автоматически.",
+                )
         }
         action={false}
       />
@@ -2545,63 +3068,89 @@ export function AdvertisementView({ id }: { id: string }) {
           <Demo value={ad.is_demo} />
           <span>
             {ad.status === "NEW"
-              ? "Новый · ожидает анализа"
-              : statusLabel(ad.status)}
+              ? t("Новый · ожидает анализа")
+              : t(statusLabel(ad.status))}
           </span>
-          <span className="advertisement-revision">Версия {ad.revision}</span>
+          <span className="advertisement-revision">
+            {t("Версия ")}
+            {ad.revision}
+          </span>
         </div>
         <span className="advertisement-status-hint">
-          Оригинал сохранён без изменений
+          {importedObservation
+            ? t("Сохранено наблюдение из файла", "Файлдағы бақылау сақталған")
+            : t("Оригинал сохранён без изменений")}
         </span>
         <Button asChild>
           <Link href={`/review?advertisement_id=${id}`}>
-            Открыть анализ и проверку
+            {t("Открыть анализ и проверку")}
           </Link>
         </Button>
       </div>
       <section className="panel padded publication-original advertisement-detail-panel">
         <div className="advertisement-detail-heading">
           <div>
-            <p className="eyebrow">ИСТОЧНИК МАТЕРИАЛА</p>
-            <h2>Оригинал публикации</h2>
+            <p className="eyebrow">{t("ИСТОЧНИК МАТЕРИАЛА")}</p>
+            <h2>
+              {importedObservation
+                ? t("Материал из файла", "Файл материалы")
+                : t("Оригинал публикации")}
+            </h2>
           </div>
           <span className="advertisement-captured">
-            Зафиксировано: {date(ad.captured_at)}
+            {t("Зафиксировано: ")}
+            {date(ad.captured_at)}
           </span>
         </div>
-        {importedHtml && (
-          <p className="notice">
-            Источник: Primeminister.kz ·{" "}
-            <a
-              href="https://creativecommons.org/licenses/by/4.0/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              CC BY 4.0
-            </a>
-            . Из статьи извлечён текст, оформление удалено. Публикация не
-            означает одобрения SAQ QURYLYS издателем.
-          </p>
-        )}
+        {importedHtml &&
+          ad.source_url?.startsWith("https://primeminister.kz/") && (
+            <p className="notice">
+              {t("Источник: Primeminister.kz ·")}{" "}
+              <a
+                href="https://creativecommons.org/licenses/by/4.0/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                CC BY 4.0
+              </a>
+              {t(
+                ". Из статьи извлечён текст, оформление удалено. Публикация не означает одобрения SAQ QURYLYS издателем.",
+              )}
+            </p>
+          )}
         <p hidden={!detailed}>
           <Link href={`/monitoring?advertisement_id=${ad.id}`}>
-            Сверить объект с реестром
+            {t("Сверить объект с реестром")}
           </Link>
         </p>
+        {ad.source_url === "https://www.angroups.kz/payment" &&
+          ad.assets.some((asset) => asset.kind === "HTML") && (
+            <p className="notice">
+              {t(
+                "Текст извлечён из мобильных карточек условий оплаты. Настольная версия может отличаться — сверяйте HTML-оригинал. Дата публикации, ЖК и очередь не установлены.",
+                "Мәтін төлем шарттарының мобильді карточкаларынан алынған. Компьютер нұсқасы өзгеше болуы мүмкін — HTML түпнұсқасымен салыстырыңыз. Жарияланған күні, ТК мен кезек анықталмаған.",
+              )}
+            </p>
+          )}
         {ad.original_text ? (
           <p className="original-text">{ad.original_text}</p>
         ) : (
           <p className="muted">
-            Исходный материал — изображение. Откройте анализ, чтобы сопоставить
-            оригинал и OCR.
+            {t(
+              "Исходный материал — изображение. Откройте анализ, чтобы сопоставить оригинал и OCR.",
+            )}
           </p>
         )}
         <dl className="advertisement-metadata">
-          <dt>Дата публикации</dt>
-          <dd>{date(ad.published_at)}</dd>
-          <dt>Зафиксировано</dt>
+          <dt>{t("Дата публикации")}</dt>
+          <dd>
+            {ad.published_at
+              ? date(ad.published_at)
+              : t("Дата публикации неизвестна", "Жарияланған күні белгісіз")}
+          </dd>
+          <dt>{t("Зафиксировано")}</dt>
           <dd>{date(ad.captured_at)}</dd>
-          <dt>Источник</dt>
+          <dt>{t("Источник")}</dt>
           <dd>
             {ad.source_url ? (
               <a href={ad.source_url} target="_blank" rel="noreferrer">
@@ -2614,20 +3163,22 @@ export function AdvertisementView({ id }: { id: string }) {
         </dl>
         {ad.assets.length > 0 && (
           <div className="advertisement-assets">
-            <h3>Сохранённые материалы</h3>
+            <h3>{t("Сохранённые материалы")}</h3>
             <p className="field-help">
-              Исходный PDF скачивается без изменений. Для текста, HTML и
-              изображения формируется PDF-копия; оригинал доступен отдельно.
+              {t(
+                "Исходный PDF скачивается без изменений. Для текста, HTML и изображения формируется PDF-копия; оригинал доступен отдельно.",
+              )}
             </p>
             {ad.assets.map((asset) => (
               <div className="asset" key={asset.id}>
                 <PdfDownload
                   kind="assets"
                   id={asset.id}
-                  label={assetPdfLabel(asset)}
+                  label={t(assetPdfLabel(asset))}
                 />
                 <a className="text-link" href={`/api/v1/assets/${asset.id}`}>
-                  Скачать материал <ArrowRight size={14} />
+                  {t("Скачать материал ")}
+                  <ArrowRight size={14} />
                 </a>
                 <small>SHA-256: {asset.sha256}</small>
               </div>
@@ -2635,10 +3186,12 @@ export function AdvertisementView({ id }: { id: string }) {
           </div>
         )}
       </section>
+      {ad.status !== "NEW" && <AdvertisementAnnotation key={ad.id} ad={ad} />}
       <div className="advertisement-detail-actions">
         <p className="notice">
-          Анализ и ручная проверка доступны в рабочем месте. Гипотезы не влияют
-          на балл риска без отдельного решения аналитика.
+          {t(
+            "Анализ и ручная проверка доступны в рабочем месте. Гипотезы не влияют на балл риска без отдельного решения аналитика.",
+          )}
         </p>
       </div>
     </>
@@ -2646,6 +3199,7 @@ export function AdvertisementView({ id }: { id: string }) {
 }
 
 export function NewAdvertisementView() {
+  const { t } = useLocale();
   const { detailed } = useInterfaceMode();
   const { user } = useContext(Auth);
   const [error, setError] = useState("");
@@ -2698,34 +3252,36 @@ export function NewAdvertisementView() {
     return (
       <>
         <PageTitle
-          eyebrow="МАТЕРИАЛ СОХРАНЁН"
-          title="Публикация добавлена"
-          description="Оригинал и происхождение сохранены в базе данных."
+          eyebrow={t("МАТЕРИАЛ СОХРАНЁН")}
+          title={t("Публикация добавлена")}
+          description={t("Оригинал и происхождение сохранены в базе данных.")}
           action={false}
         />
         <section
           className="panel padded success"
-          aria-label="Результат сохранения публикации"
+          aria-label={t("Результат сохранения публикации")}
           tabIndex={-1}
           ref={savedPanel}
         >
           <Check size={32} />
-          <h2>Готово к следующему этапу</h2>
+          <h2>{t("Готово к следующему этапу")}</h2>
           <p>
-            Зафиксировано: {date(saved.captured_at)}. Правовые выводы и факторы
-            не начислялись.
+            {t("Зафиксировано: ")}
+            {date(saved.captured_at)}
+            {t(". Правовые выводы и факторы не начислялись.")}
           </p>
           <div className="success-actions">
             <Button asChild>
               <Link href={`/review?advertisement_id=${saved.id}`}>
-                Перейти к проверке <ArrowRight size={16} />
+                {t("Перейти к проверке ")}
+                <ArrowRight size={16} />
               </Link>
             </Button>
             <Button
               variant="outline"
               onClick={() => router.push(`/advertisements/${saved.id}`)}
             >
-              Открыть публикацию
+              {t("Открыть публикацию")}
             </Button>
           </div>
         </section>
@@ -2734,20 +3290,24 @@ export function NewAdvertisementView() {
   return (
     <>
       <Link href="/advertisements" className="back">
-        <ArrowLeft size={15} /> К рекламе
+        <ArrowLeft size={15} /> {t("К рекламе")}
       </Link>
       <PageTitle
-        eyebrow="СБОР МАТЕРИАЛОВ"
-        title="Добавить публикацию"
-        description="Укажите происхождение материала. Неизвестную дату публикации можно оставить пустой."
+        eyebrow={t("СБОР МАТЕРИАЛОВ")}
+        title={t("Добавить публикацию")}
+        description={t(
+          "Укажите происхождение материала. Неизвестную дату публикации можно оставить пустой.",
+        )}
         action={false}
       />
       <section className="panel form-panel intake-advertisement-panel new-advertisement-panel">
         <div className="form-tabs">
-          <strong>Текст</strong>
-          <Link href="/advertisements/upload">Файл · PNG / JPEG / TXT</Link>
+          <strong>{t("Текст")}</strong>
+          <Link href="/advertisements/upload">
+            {t("Файл · PNG / JPEG / TXT")}
+          </Link>
           <Link href="/advertisements/import-url">
-            Открытая публикация по ссылке
+            {t("Открытая публикация по ссылке")}
           </Link>
         </div>
         <form
@@ -2756,8 +3316,9 @@ export function NewAdvertisementView() {
         >
           {formDraft.restored && (
             <p className="notice" role="status">
-              Черновик публикации восстановлен для вашего пользователя.
-              Публикация ещё не сохранена.
+              {t(
+                "Черновик публикации восстановлен для вашего пользователя. Публикация ещё не сохранена.",
+              )}
             </p>
           )}
           {formDraft.storageError && (
@@ -2770,12 +3331,16 @@ export function NewAdvertisementView() {
               01
             </span>
             <div>
-              <h2>Материал и происхождение</h2>
-              <p>Два обязательных поля. Сохраните формулировки оригинала.</p>
+              <h2>{t("Материал и происхождение")}</h2>
+              <p>
+                {t("Два обязательных поля. Сохраните формулировки оригинала.")}
+              </p>
             </div>
           </div>
           <div className="form-primary-fields">
-            <label htmlFor="source">Источник / описание происхождения</label>
+            <label htmlFor="source">
+              {t("Источник / описание происхождения")}
+            </label>
             <input
               id="source"
               aria-describedby="source-help"
@@ -2783,13 +3348,14 @@ export function NewAdvertisementView() {
               maxLength={300}
               value={draft.source_label}
               onChange={(e) => update("source_label", e.target.value)}
-              placeholder="Например: собственный DEMO-баннер"
+              placeholder={t("Например: собственный DEMO-баннер")}
             />
             <p id="source-help" className="field-help">
-              Где и кем получен материал: собственный баннер, публичная страница
-              или предоставленный документ.
+              {t(
+                "Где и кем получен материал: собственный баннер, публичная страница или предоставленный документ.",
+              )}
             </p>
-            <label htmlFor="ad-text">Оригинальный текст</label>
+            <label htmlFor="ad-text">{t("Оригинальный текст")}</label>
             <textarea
               id="ad-text"
               aria-describedby="ad-text-count"
@@ -2798,32 +3364,36 @@ export function NewAdvertisementView() {
               rows={8}
               value={draft.text}
               onChange={(e) => update("text", e.target.value)}
-              placeholder="Вставьте текст публикации без изменений…"
+              placeholder={t("Вставьте текст публикации без изменений…")}
             />
             <p id="ad-text-count" className="field-help text-count">
-              {draft.text.length.toLocaleString("ru-RU")} / 100 000 символов
+              {draft.text.length.toLocaleString("ru-RU")}{" "}
+              {t("/ 100 000 символов")}
             </p>
           </div>
           <details
             className="optional-context form-context-panel"
             open={detailed || undefined}
           >
-            <summary>Ссылка и дата публикации · необязательно</summary>
+            <summary>{t("Ссылка и дата публикации · необязательно")}</summary>
             <div className="form-section-heading">
               <span className="section-index" aria-hidden="true">
                 02
               </span>
               <div>
-                <h2>Контекст публикации</h2>
+                <h2>{t("Контекст публикации")}</h2>
                 <p>
-                  Необязательные сведения. Неизвестную дату оставьте пустой.
+                  {t(
+                    "Необязательные сведения. Неизвестную дату оставьте пустой.",
+                  )}
                 </p>
               </div>
             </div>
             <div className="form-columns">
               <div>
                 <label htmlFor="url">
-                  Ссылка на источник <small>необязательно</small>
+                  {t("Ссылка на источник ")}
+                  <small>{t("необязательно")}</small>
                 </label>
                 <input
                   id="url"
@@ -2834,13 +3404,15 @@ export function NewAdvertisementView() {
                   placeholder="https://…"
                 />
                 <p className="field-help">
-                  Ссылка сохраняется; автоматическая загрузка страницы пока не
-                  выполняется.
+                  {t(
+                    "Ссылка сохраняется; автоматическая загрузка страницы пока не выполняется.",
+                  )}
                 </p>
               </div>
               <div>
                 <label htmlFor="published">
-                  Дата публикации <small>+05:00</small>
+                  {t("Дата публикации ")}
+                  <small>+05:00</small>
                 </label>
                 <input
                   id="published"
@@ -2849,7 +3421,7 @@ export function NewAdvertisementView() {
                   onChange={(e) => update("published_at", e.target.value)}
                 />
                 <p className="field-help">
-                  Время фиксации сервер запишет отдельно.
+                  {t("Время фиксации сервер запишет отдельно.")}
                 </p>
               </div>
             </div>
@@ -2860,16 +3432,16 @@ export function NewAdvertisementView() {
               checked={draft.is_demo}
               onChange={(e) => update("is_demo", e.target.checked)}
             />
-            Демонстрационный материал (DEMO)
+            {t("Демонстрационный материал (DEMO)")}
           </label>
           {error && <Notice error={error} />}
           <div className="form-actions">
             <Button disabled={busy} aria-busy={busy}>
-              {busy ? "Сохранение…" : "Сохранить публикацию"}
+              {busy ? t("Сохранение…") : t("Сохранить публикацию")}
               <ArrowRight size={16} />
             </Button>
             <span>
-              Черновик сохраняется для вас в этой вкладке до отправки.
+              {t("Черновик сохраняется для вас в этой вкладке до отправки.")}
             </span>
           </div>
         </form>
@@ -2879,6 +3451,7 @@ export function NewAdvertisementView() {
 }
 
 export function LoginView() {
+  const { t } = useLocale();
   const { user, refresh } = useContext(Auth);
   const router = useRouter();
   const [error, setError] = useState("");
@@ -2909,19 +3482,23 @@ export function LoginView() {
       <section className="login-story">
         <ShieldCheck size={40} />
         <p className="eyebrow">SAQ QURYLYS</p>
-        <h1>Проверка рекламы и документов.</h1>
+        <h1>{t("Проверка рекламы и документов.")}</h1>
         <p>
-          Реклама, объект и доказательства — в одном рабочем процессе аналитика.
+          {t(
+            "Реклама, объект и доказательства — в одном рабочем процессе аналитика.",
+          )}
         </p>
-        <span>DEMO · Усть-Каменогорск</span>
+        <span>{t("DEMO · Усть-Каменогорск")}</span>
       </section>
       <section className="login-form">
         <div>
-          <span className="demo-label">РАБОЧЕЕ МЕСТО АНАЛИТИКА</span>
-          <h2>Вход в систему</h2>
-          <p className="muted">Используйте локальную учётную запись проекта.</p>
+          <span className="demo-label">{t("РАБОЧЕЕ МЕСТО АНАЛИТИКА")}</span>
+          <h2>{t("Вход в систему")}</h2>
+          <p className="muted">
+            {t("Используйте локальную учётную запись проекта.")}
+          </p>
           <form onSubmit={submit}>
-            <label htmlFor="username">Логин</label>
+            <label htmlFor="username">{t("Логин")}</label>
             <input
               id="username"
               name="username"
@@ -2929,7 +3506,7 @@ export function LoginView() {
               required
               maxLength={300}
             />
-            <label htmlFor="password">Пароль</label>
+            <label htmlFor="password">{t("Пароль")}</label>
             <input
               id="password"
               name="password"
@@ -2940,13 +3517,14 @@ export function LoginView() {
             />
             {error && <Notice error={error} />}
             <Button disabled={busy} aria-busy={busy}>
-              {busy ? "Проверка…" : "Войти"}
+              {busy ? t("Проверка…") : t("Войти")}
               <ArrowRight size={16} />
             </Button>
           </form>
           <p className="field-help">
-            Доступ выдан локально. Система не отправляет материалы в
-            государственные органы.
+            {t(
+              "Доступ выдан локально. Система не отправляет материалы в государственные органы.",
+            )}
           </p>
         </div>
       </section>
@@ -2955,28 +3533,36 @@ export function LoginView() {
 }
 
 export function UpcomingView({ kind }: { kind: "review" | "signals" }) {
+  const { t } = useLocale();
   return (
     <>
       <PageTitle
-        eyebrow="СЛЕДУЮЩИЙ ВЕРТИКАЛЬНЫЙ СРЕЗ"
-        title={kind === "review" ? "Проверка гипотез" : "Сигнальные карточки"}
-        description="Этот модуль ещё не реализован."
+        eyebrow={t("СЛЕДУЮЩИЙ ВЕРТИКАЛЬНЫЙ СРЕЗ")}
+        title={
+          kind === "review" ? t("Проверка гипотез") : t("Сигнальные карточки")
+        }
+        description={t("Этот модуль ещё не реализован.")}
         action={false}
       />
       <section className="panel padded">
         <h2>
           {kind === "review"
-            ? "От оригинала к подтверждённому фактору"
-            : "От подтверждённых факторов к решению"}
+            ? t("От оригинала к подтверждённому фактору")
+            : t("От подтверждённых факторов к решению")}
         </h2>
         <p className="muted">
           {kind === "review"
-            ? "Здесь появятся OCR-фрагменты, кандидаты объектов и ручная проверка. Пока можно сохранить новый текст и изучить DEMO-доказательства в карточках."
-            : "Здесь появятся очередь, решения человека, версии и PDF. Действующих сигнальных карточек пока нет."}
+            ? t(
+                "Здесь появятся OCR-фрагменты, кандидаты объектов и ручная проверка. Пока можно сохранить новый текст и изучить DEMO-доказательства в карточках.",
+              )
+            : t(
+                "Здесь появятся очередь, решения человека, версии и PDF. Действующих сигнальных карточек пока нет.",
+              )}
         </p>
         <Button asChild variant="outline">
           <Link href={kind === "review" ? "/advertisements" : "/properties"}>
-            Перейти к данным <ArrowRight size={16} />
+            {t("Перейти к данным ")}
+            <ArrowRight size={16} />
           </Link>
         </Button>
       </section>

@@ -34,8 +34,14 @@ test("monitoring tabs retain candidate, source drafts and selected file without 
     "Инциденты",
     "Источники",
     "Версии реестра",
+    "Импорт CSV",
+    "Запуски",
+    "Parser V2",
   ]);
-  const reason = page.getByLabel("Основание запуска сверки", { exact: true });
+  const reason = page.getByRole("textbox", {
+    name: "Основание запуска сверки",
+    exact: true,
+  });
   await reason.fill("DEMO незавершённая сверка");
   const commands: string[] = [];
   page.on("request", (request) => {

@@ -46,6 +46,96 @@ test("registry filters and map work in the default interface with URL context", 
   ).toBeVisible();
 });
 
+test("rapid registry choices merge with text debounce and external Back/Forward state", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto("/properties?is_demo=true&page_size=5");
+  const zone = page.getByLabel("Фильтр по зоне", { exact: true });
+  const search = page.getByRole("searchbox", {
+    name: "Поиск ЖК или адреса, застройщика или БИН",
+    exact: true,
+  });
+  const city = page.getByLabel("Фильтр по городу", { exact: true });
+  await expect(zone).toBeVisible();
+  // Both user handlers run before the router can render a new query snapshot.
+  await page.evaluate(() => {
+    const select = document.querySelector<HTMLSelectElement>(
+      '[aria-label="Фильтр по зоне"]',
+    )!;
+    select.value = "RED";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    Array.from(
+      document.querySelectorAll<HTMLButtonElement>(".registry-views button"),
+    )
+      .find((button) => button.textContent === "Карта и список")!
+      .click();
+  });
+  await expect(zone).toHaveValue("RED");
+  await search.fill("DEMO");
+  await city.fill("Өскемен");
+  await expect
+    .poll(() => Object.fromEntries(new URL(page.url()).searchParams))
+    .toMatchObject({
+      zone: "RED",
+      view: "map",
+      q: "DEMO",
+      city: "Өскемен",
+      is_demo: "true",
+      page_size: "5",
+    });
+  await search.fill("Самал");
+  await zone.selectOption("GREEN");
+  await page.getByRole("button", { name: "Список", exact: true }).click();
+  await expect
+    .poll(() => Object.fromEntries(new URL(page.url()).searchParams))
+    .toMatchObject({ zone: "GREEN", q: "Самал", city: "Өскемен" });
+  expect(new URL(page.url()).searchParams.has("view")).toBe(false);
+
+  // A separate history entry represents navigation outside the filter controls.
+  await page.evaluate(() => {
+    window.history.pushState(
+      null,
+      "",
+      `/properties?${new URLSearchParams({
+        zone: "YELLOW",
+        view: "map",
+        q: "Другой",
+        city: "Астана",
+        is_demo: "true",
+        page_size: "5",
+      })}`,
+    );
+  });
+  await expect(search).toHaveValue("Другой");
+  await expect(city).toHaveValue("Астана");
+  await search.fill("Несохранённый поиск перед возвратом");
+  await page.goBack();
+  await expect(search).toHaveValue("Самал");
+  await expect(city).toHaveValue("Өскемен");
+  await expect(zone).toHaveValue("GREEN");
+  // Let the abandoned 350ms draft elapse: it must not replace restored history.
+  await page.waitForTimeout(450);
+  expect(new URL(page.url()).searchParams.get("q")).toBe("Самал");
+  await page.goForward();
+  await expect(search).toHaveValue("Другой");
+  await expect(city).toHaveValue("Астана");
+  await expect(zone).toHaveValue("YELLOW");
+  await page.reload();
+  await expect(search).toHaveValue("Другой");
+  await page
+    .getByRole("button", { name: "Сбросить фильтры", exact: true })
+    .click();
+  await expect(search).toHaveValue("");
+  await expect(city).toHaveValue("");
+  await expect(zone).toHaveValue("");
+  expect(Object.fromEntries(new URL(page.url()).searchParams)).toEqual({
+    view: "map",
+    is_demo: "true",
+    page_size: "5",
+  });
+});
+
 test("desktop workspace shows the map and selected review original before the fold", async ({
   page,
 }) => {
@@ -118,7 +208,10 @@ test("monitoring shortcuts select the actual panel without clearing the candidat
     page.getByRole("tab", { name: "Источники", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: "Кандидаты", exact: true }).click();
-  const reason = page.getByLabel("Основание запуска сверки", { exact: true });
+  const reason = page.getByRole("textbox", {
+    name: "Основание запуска сверки",
+    exact: true,
+  });
   await reason.fill("DEMO несохранённый комментарий");
   await page
     .getByRole("button", { name: "Выбрать версию реестра", exact: true })

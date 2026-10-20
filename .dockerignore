@@ -10,3 +10,11 @@ output
 tmp
 *.pdf
 *.docx
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/*.pyc
+**/*.pyo
+**/.coverage
+**/test-results
+**/playwright-report

@@ -1,0 +1,214 @@
+.detail-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(680px, 100%);
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-popover);
+}
+.detail-drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+.detail-drawer::backdrop {
+  background: rgb(20 30 35 / 35%);
+}
+.detail-drawer-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+.detail-drawer-heading h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.detail-drawer-heading p {
+  margin: 6px 0 0;
+  color: var(--color-text-muted);
+}
+.detail-drawer-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 var(--control-target-min);
+  width: var(--control-target-min);
+  height: var(--control-target-min);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+.detail-drawer-body {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  overscroll-behavior: contain;
+  scroll-padding: 16px;
+}
+.detail-drawer-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border);
+}
+.dossier-records {
+  min-width: 0;
+}
+.dossier-records-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+}
+.dossier-records-heading h3,
+.dossier-records-heading p {
+  margin: 0;
+}
+.dossier-records-heading p {
+  color: var(--color-text-muted);
+}
+.dossier-records table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dossier-records th {
+  text-align: left;
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  background: var(--color-surface-subtle);
+}
+.dossier-records :is(th, td) {
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.dossier-records td:first-child {
+  min-width: 210px;
+}
+.dossier-records td small {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-muted);
+}
+.dossier-record-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link, var(--color-info));
+  cursor: pointer;
+  text-align: left;
+  line-height: inherit;
+  font: inherit;
+  font-weight: 600;
+  min-height: var(--control-target-min);
+  min-width: var(--control-target-min);
+}
+.dossier-record-button:hover {
+  text-decoration: underline;
+}
+.dossier-record-actions {
+  white-space: nowrap;
+}
+.dossier-records-note {
+  margin: 0;
+  padding: 16px 20px;
+  color: var(--color-text-muted);
+}
+.dossier-record-facts {
+  display: grid;
+  gap: 0;
+  margin: 20px 0;
+}
+.dossier-record-facts > div {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.7fr) minmax(0, 1.3fr);
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.dossier-record-facts dt {
+  color: var(--color-text-muted);
+}
+.dossier-record-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.dossier-record-copy {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.dossier-record-files {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+  list-style: none;
+}
+.dossier-record-files > li {
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  overflow-wrap: anywhere;
+}
+.dossier-record-files p {
+  margin: 4px 0 12px;
+}
+.dossier-record-files code {
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+}
+.record-sources {
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+}
+.record-sources h3,
+.record-sources p {
+  margin: 0 0 8px;
+}
+.record-sources ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.record-sources li {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.dossier-record-panel {
+  padding-top: 16px;
+}
+.dossier-records .registry-pagination {
+  padding: 16px 20px;
+}
+@media (max-width: 600px) {
+  .detail-drawer-heading,
+  .detail-drawer-body {
+    padding: 16px;
+  }
+  .detail-drawer-footer {
+    padding: 16px;
+  }
+  .dossier-records-heading {
+    flex-wrap: wrap;
+  }
+  .dossier-records :is(th, td) {
+    padding: 12px;
+  }
+  .dossier-record-facts > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

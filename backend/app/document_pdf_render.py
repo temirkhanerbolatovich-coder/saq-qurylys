@@ -274,7 +274,8 @@ def render_document_pdf(payload, settings):
             [sys.executable, '-m', 'app.document_pdf_render'],
             input=encoded,
             capture_output=True,
-            timeout=min(settings.pdf_timeout_seconds, TIMEOUT_SECONDS),
+            # A throttled demo VM needs more wall time without a larger child CPU budget.
+            timeout=min(settings.pdf_timeout_seconds, settings.document_pdf_timeout_seconds),
             check=False,
         )
     except subprocess.TimeoutExpired:
@@ -316,6 +317,10 @@ def main():
             + text(payload['exported_at'])
             + '. Дата формирования не заменяет дату снимка.</p></body>',
         )
+    elif 'dossier_report' in payload:
+        from app.dossier_report_render import report_html
+
+        content = report_html(payload['dossier_report'])
     else:
         content = document_html(payload)
     document = HTML(string=content, url_fetcher=SavedImagesOnly()).write_pdf()

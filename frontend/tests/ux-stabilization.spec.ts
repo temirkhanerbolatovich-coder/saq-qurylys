@@ -192,7 +192,7 @@ test("picker reaches the 101st object, preserves selection through searches, err
   expect(commands).toEqual([]);
 });
 
-test("collapsed documents keep decisions mounted and visible metadata at all required widths", async ({
+test("document drawer preserves decision drafts and visible metadata at all required widths", async ({
   page,
 }) => {
   await login(page);
@@ -210,23 +210,32 @@ test("collapsed documents keep decisions mounted and visible metadata at all req
   });
   await page.goto(`/properties/${row.id}`);
   await page.getByRole("tab", { name: "Документы", exact: true }).click();
-  const card = page.locator(".dossier-document").first();
-  await expect(card).not.toHaveAttribute("open", "");
-  await expect(card.locator("summary")).toContainText("Охват:");
-  await expect(card.locator("summary")).toContainText("Период:");
-  await card.locator("summary").click();
+  const record = page
+    .locator("#dossier-bases .dossier-records tbody tr")
+    .first();
+  await expect(record).toContainText("Охват:");
+  await expect(record).toContainText("Период:");
+  await record.getByRole("button", { name: /^Открыть документ:/ }).click();
+  const card = page
+    .getByRole("dialog")
+    .filter({ has: page.locator(".document-review") });
   const reason = card.getByLabel("Обоснование проверки основания");
   await reason.fill("DEMO Әділет — черновик решения");
-  await card.locator("summary").click();
+  await card
+    .getByRole("button", { name: "Закрыть карточку записи", exact: true })
+    .click();
   await expect(reason).toBeHidden();
-  await card.locator("summary").click();
+  await record.getByRole("button", { name: /^Открыть документ:/ }).click();
   await expect(reason).toHaveValue("DEMO Әділет — черновик решения");
   await page.emulateMedia({ reducedMotion: "reduce" });
   for (const width of [360, 390, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 1000 });
-    expect(
-      await page.evaluate(() => document.documentElement.scrollWidth),
-    ).toBeLessThanOrEqual(width);
+    // Native dialog layout can settle after the viewport resize acknowledgement.
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+      .toBeLessThanOrEqual(width);
+    await expect(card).toBeVisible();
+    await expect(reason).toHaveValue("DEMO Әділет — черновик решения");
     await page.screenshot({
       path: `../output/qa/ux-stabilization-20261018/dossier-${width}.png`,
       fullPage: true,

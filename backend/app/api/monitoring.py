@@ -7,17 +7,22 @@ from sqlalchemy import func, or_, select
 from starlette.exceptions import HTTPException
 
 from app import monitoring_dto as dto
+from app.analysis_dto import AuditEventOut
 from app.api.analysis import Key, analyst, audit, revision
 from app.commands import begin_command, finish_command
 from app.dependencies import DB, Actor, check_csrf
 from app.dto import Page
 from app.models import (
     Advertisement,
+    AuditEvent,
+    Developer,
     MonitoringCandidate,
     MonitoringComparison,
     MonitoringIncident,
     MonitoringObservation,
     MonitoringRegistrySnapshot,
+    Property,
+    User,
     utcnow,
 )
 from app.monitoring import (
@@ -33,6 +38,252 @@ from app.monitoring import (
 )
 
 router = APIRouter(prefix='/api/v1/monitoring', tags=['Monitoring'])
+
+
+@router.post(
+    '/candidates/{id}/dossier',
+    response_model=dto.CandidateOut,
+    status_code=201,
+    operation_id='createCandidateDossier',
+    dependencies=[Depends(check_csrf)],
+)
+def create_candidate_dossier(
+    id: UUID, body: dto.CandidateDossierCreate, request: Request, actor: Actor, db: DB, idempotency_key: Key
+):
+    analyst(actor)
+    operation = 'createCandidateDossier'
+    previous, body_hash = begin_command(
+        db, actor.id, operation, idempotency_key, {'candidate_id': str(id), **body.model_dump(mode='json')}
+    )
+    if previous:
+        return previous
+    candidate = candidate_locked(db, id)
+    revision(candidate.revision, body.expected_revision)
+    if candidate.property_id:
+        raise HTTPException(409, 'Кандидат уже связан с досье. Обновите карточку.')
+    # Serialize all creations in one data mode: same identity cannot race through the duplicate check.
+    advisory_lock(db, f'candidate-dossier:{candidate.is_demo}')
+    identity = tuple(dto.normalized(value) for value in (body.name, candidate.city, body.address))
+    existing = db.scalars(select(Property).where(Property.is_demo == candidate.is_demo))
+    if any(tuple(dto.normalized(value) for value in (row.name, row.city, row.address)) == identity for row in existing):
+        raise HTTPException(409, 'Объект с таким названием, городом и адресом уже существует. Найдите его в реестре.')
+    developers = list(db.scalars(select(Developer).where(Developer.is_demo == candidate.is_demo)))
+    by_bin = [row for row in developers if body.developer_bin and row.bin == body.developer_bin]
+    if by_bin and any(dto.normalized(row.name) != dto.normalized(body.developer_name) for row in by_bin):
+        raise HTTPException(409, 'БИН уже указан у другого названия застройщика. Проверьте реквизиты.')
+    matches = by_bin or [
+        row
+        for row in developers
+        if row.bin == body.developer_bin and dto.normalized(row.name) == dto.normalized(body.developer_name)
+    ]
+    if len(matches) > 1:
+        raise HTTPException(409, 'Несколько застройщиков с этими реквизитами. Требуется устранить неоднозначность.')
+    developer = (
+        matches[0]
+        if matches
+        else Developer(name=body.developer_name, bin=body.developer_bin, is_demo=candidate.is_demo)
+    )
+    db.add(developer)
+    db.flush()
+    prop = Property(
+        name=body.name,
+        city=candidate.city,
+        address=body.address,
+        developer_id=developer.id,
+        is_demo=candidate.is_demo,
+        level='PHASE',
+        stage='UNKNOWN',
+        legal_verification_status='UNKNOWN',
+    )
+    db.add(prop)
+    db.flush()
+    old_revision = candidate.revision
+    candidate.property_id = prop.id
+    candidate.property_link_kind = 'CREATED'
+    candidate.revision += 1
+    observations = db.scalars(select(MonitoringObservation).where(MonitoringObservation.candidate_id == id))
+    provenance = {
+        'candidate_id': str(id),
+        'candidate_revision': old_revision,
+        'candidate_identity': {key: getattr(candidate, key) for key in ('name', 'city', 'address', 'phase', 'is_demo')},
+        'property_id': str(prop.id),
+        'name': prop.name,
+        'address': prop.address,
+        'developer_id': str(developer.id),
+        'developer_name': developer.name,
+        'developer_bin': developer.bin,
+        'observations': [
+            {
+                'id': str(row.id),
+                'advertisement_id': str(row.advertisement_id),
+                'advertisement_revision': row.advertisement_revision,
+            }
+            for row in observations
+        ],
+    }
+    audit(db, request, actor, prop, 'PROPERTY_CREATED_FROM_CANDIDATE', None, body.reason, provenance)
+    audit(
+        db,
+        request,
+        actor,
+        candidate,
+        'MONITORING_DOSSIER_CREATED',
+        old_revision,
+        body.reason,
+        provenance,
+    )
+    db.flush()
+    result = candidate_view(db, candidate).model_dump(mode='json')
+    finish_command(db, actor.id, operation, idempotency_key, body_hash, result)
+    return result
+
+
+@router.post(
+    '/candidates/{id}/link-dossier',
+    response_model=dto.CandidateOut,
+    status_code=200,
+    operation_id='linkCandidateDossier',
+    dependencies=[Depends(check_csrf)],
+)
+def link_candidate_dossier(
+    id: UUID, body: dto.CandidateDossierLink, request: Request, actor: Actor, db: DB, idempotency_key: Key
+):
+    analyst(actor)
+    operation = 'linkCandidateDossier'
+    previous, body_hash = begin_command(
+        db, actor.id, operation, idempotency_key, {'candidate_id': str(id), **body.model_dump(mode='json')}
+    )
+    if previous:
+        return previous
+    candidate = candidate_locked(db, id)
+    revision(candidate.revision, body.expected_revision)
+    if candidate.property_id:
+        raise HTTPException(409, 'Кандидат уже связан с досье. Обновите карточку.')
+    prop = db.scalar(select(Property).where(Property.id == body.property_id).with_for_update())
+    if not prop:
+        raise HTTPException(404, 'Досье объекта не найдено')
+    revision(prop.revision, body.expected_property_revision)
+    if candidate.is_demo != prop.is_demo or dto.normalized(candidate.city) != dto.normalized(prop.city):
+        raise HTTPException(422, 'Досье должно относиться к тому же городу и режиму DEMO/реальных данных')
+    old_revision = candidate.revision
+    candidate.property_id = prop.id
+    candidate.property_link_kind = 'LINKED'
+    candidate.revision += 1
+    provenance = dossier_provenance(db, candidate, prop, old_revision)
+    audit(db, request, actor, candidate, 'MONITORING_DOSSIER_LINKED', old_revision, body.reason, provenance)
+    # Relation metadata does not revise the dossier's facts or historical risk snapshots.
+    audit(db, request, actor, prop, 'PROPERTY_CANDIDATE_LINKED', prop.revision, body.reason, provenance)
+    db.flush()
+    result = candidate_view(db, candidate).model_dump(mode='json')
+    finish_command(db, actor.id, operation, idempotency_key, body_hash, result)
+    return result
+
+
+def dossier_provenance(db, candidate, prop, old_revision):
+    observations = db.scalars(select(MonitoringObservation).where(MonitoringObservation.candidate_id == candidate.id))
+    return {
+        'candidate_id': str(candidate.id),
+        'candidate_revision': old_revision,
+        'candidate_identity': {key: getattr(candidate, key) for key in ('name', 'city', 'address', 'phase', 'is_demo')},
+        'property_id': str(prop.id),
+        'property_revision': prop.revision,
+        'developer_id': str(prop.developer_id),
+        'developer_name': prop.developer.name,
+        'developer_bin': prop.developer.bin,
+        'property_identity': {key: getattr(prop, key) for key in ('name', 'city', 'address', 'level', 'is_demo')},
+        'observations': [
+            {
+                'id': str(row.id),
+                'advertisement_id': str(row.advertisement_id),
+                'advertisement_revision': row.advertisement_revision,
+            }
+            for row in observations
+        ],
+    }
+
+
+@router.post(
+    '/candidates/{id}/unlink-dossier',
+    response_model=dto.CandidateOut,
+    operation_id='unlinkCandidateDossier',
+    dependencies=[Depends(check_csrf)],
+)
+def unlink_candidate_dossier(
+    id: UUID, body: dto.CandidateDossierUnlink, request: Request, actor: Actor, db: DB, idempotency_key: Key
+):
+    analyst(actor)
+    operation = 'unlinkCandidateDossier'
+    previous, body_hash = begin_command(
+        db, actor.id, operation, idempotency_key, {'candidate_id': str(id), **body.model_dump(mode='json')}
+    )
+    if previous:
+        return previous
+    candidate = candidate_locked(db, id)
+    revision(candidate.revision, body.expected_revision)
+    if candidate.property_link_kind != 'LINKED' or candidate.property_id != body.property_id:
+        raise HTTPException(
+            409, 'Отменить можно только текущую связь с существующим досье. Происхождение создания сохраняется.'
+        )
+    prop = db.scalar(select(Property).where(Property.id == body.property_id).with_for_update())
+    if not prop:
+        raise HTTPException(404, 'Досье объекта не найдено')
+    revision(prop.revision, body.expected_property_revision)
+    old_revision = candidate.revision
+    provenance = dossier_provenance(db, candidate, prop, old_revision)
+    provenance['before_property_id'] = str(prop.id)
+    previous_link = db.scalar(
+        select(AuditEvent)
+        .where(
+            AuditEvent.entity_type == 'monitoring_candidates',
+            AuditEvent.entity_id == id,
+            AuditEvent.action == 'MONITORING_DOSSIER_LINKED',
+        )
+        .order_by(AuditEvent.occurred_at.desc(), AuditEvent.id.desc())
+        .limit(1)
+    )
+    provenance['previous_link_event_id'] = str(previous_link.id) if previous_link else None
+    candidate.property_id = None
+    candidate.property_link_kind = None
+    candidate.revision += 1
+    audit(db, request, actor, candidate, 'MONITORING_DOSSIER_UNLINKED', old_revision, body.reason, provenance)
+    audit(db, request, actor, prop, 'PROPERTY_CANDIDATE_UNLINKED', prop.revision, body.reason, provenance)
+    db.flush()
+    result = candidate_view(db, candidate).model_dump(mode='json')
+    finish_command(db, actor.id, operation, idempotency_key, body_hash, result)
+    return result
+
+
+@router.get(
+    '/candidates/{id}/dossier-history', response_model=Page[AuditEventOut], operation_id='listCandidateDossierHistory'
+)
+def candidate_dossier_history(
+    id: UUID, actor: Actor, db: DB, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100)
+):
+    if not db.get(MonitoringCandidate, id):
+        raise HTTPException(404, 'Кандидат объекта не найден')
+    query = (
+        select(AuditEvent)
+        .where(
+            AuditEvent.entity_type == 'monitoring_candidates',
+            AuditEvent.entity_id == id,
+            AuditEvent.action.in_(
+                ['MONITORING_DOSSIER_CREATED', 'MONITORING_DOSSIER_LINKED', 'MONITORING_DOSSIER_UNLINKED']
+            ),
+        )
+        .order_by(AuditEvent.occurred_at.desc(), AuditEvent.id.desc())
+    )
+
+    def views(rows):
+        rows = list(rows)
+        names = dict(
+            db.execute(select(User.id, User.display_name).where(User.id.in_({row.actor_id for row in rows}))).all()
+        )
+        return [
+            AuditEventOut.model_validate(row).model_copy(update={'actor_display_name': names.get(row.actor_id)})
+            for row in rows
+        ]
+
+    return page_result(db, query, page, page_size, views)
 
 
 def candidate_locked(db, candidate_id):
@@ -72,8 +323,11 @@ def candidates(
     page_size: int = Query(25, ge=1, le=100),
     is_demo: bool | None = None,
     q: str | None = Query(None, max_length=300),
+    property_id: UUID | None = None,
 ):
     query = filtered(select(MonitoringCandidate), MonitoringCandidate, is_demo, q)
+    if property_id is not None:
+        query = query.where(MonitoringCandidate.property_id == property_id)
     query = query.order_by(MonitoringCandidate.created_at.desc(), MonitoringCandidate.id)
     return page_result(db, query, page, page_size, lambda rows: candidate_views(db, rows))
 

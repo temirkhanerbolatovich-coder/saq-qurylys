@@ -339,7 +339,7 @@ test("registry pagination preserves its map mode and viewer remains read-only", 
   expect(state.fixture.writes).toEqual([]);
 });
 
-test("dark navigation has readable text and visible keyboard focus", async ({
+test("light navigation has readable text and visible keyboard focus", async ({
   page,
 }) => {
   await mount(page);
@@ -356,7 +356,7 @@ test("dark navigation has readable text and visible keyboard focus", async ({
     }
     const foreground = luminance(getComputedStyle(element).color);
     const background = luminance(
-      getComputedStyle(element.closest(".sidebar")!).backgroundColor,
+      getComputedStyle(element.closest(".topbar")!).backgroundColor,
     );
     return (
       (Math.max(foreground, background) + 0.05) /

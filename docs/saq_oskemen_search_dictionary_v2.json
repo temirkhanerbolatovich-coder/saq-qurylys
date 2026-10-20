@@ -1,0 +1,723 @@
+{
+  "project": "SAQ QURYLYS / SAQ Social Monitor",
+  "geography": "Усть-Каменогорск (Өскемен), Восточно-Казахстанская область",
+  "created_at": "2026-10-19",
+  "notes": [
+    "Поисковая конфигурация, не реестр нарушений.",
+    "Теги и запросы — поисковые гипотезы; наличие фразы не устанавливает нарушение.",
+    "Для коммерческих платформ использовать только разрешённые способы получения данных.",
+    "Перед скорингом требуется подтверждение источника, статуса конкретного корпуса и применимого документа."
+  ],
+  "city_aliases": [
+    "Усть-Каменогорск",
+    "Усть Каменогорск",
+    "У-Ка",
+    "Ука",
+    "Өскемен",
+    "Оскемен",
+    "Oskemen",
+    "Ust-Kamenogorsk",
+    "Ust Kamenogorsk",
+    "Ust-Kamenogorsk",
+    "УК",
+    "ВКО",
+    "ШҚО",
+    "Шығыс Қазақстан"
+  ],
+  "real_estate_ru": [
+    "ЖК",
+    "жилой комплекс",
+    "новостройка",
+    "квартира от застройщика",
+    "строящийся дом",
+    "долевое строительство",
+    "квартиры на этапе строительства",
+    "новая очередь",
+    "продажа квартир"
+  ],
+  "real_estate_kk": [
+    "ТҮК",
+    "тұрғын үй кешені",
+    "жаңа құрылыс",
+    "жаңа пәтер",
+    "пәтер сату",
+    "пәтерлер сатылымда",
+    "құрылыс салушы",
+    "үлестік құрылыс",
+    "үлестік қатысу",
+    "жаңа кезек"
+  ],
+  "payment_strong_ru": [
+    "платная бронь",
+    "бронирование за деньги",
+    "внести депозит",
+    "депозит за квартиру",
+    "предоплата",
+    "50% предоплата",
+    "первоначальный взнос",
+    "первый взнос",
+    "платёж по этапам",
+    "рассрочка от застройщика",
+    "рассрочка до сдачи",
+    "забронировать квартиру за",
+    "оплатите бронь",
+    "договор бронирования",
+    "обеспечительный платёж",
+    "инвестиционный договор",
+    "платный резерв",
+    "внести аванс",
+    "внести задаток",
+    "50% после сдачи"
+  ],
+  "payment_strong_kk": [
+    "алдын ала төлем",
+    "алғашқы жарна",
+    "бастапқы жарна",
+    "кепілақы",
+    "ақылы брондау",
+    "пәтерді брондау",
+    "пәтерге бронь",
+    "бөліп төлеу",
+    "пайызсыз бөліп төлеу",
+    "құрылыс салушыдан бөліп төлеу",
+    "төлем кестесі",
+    "алдын ала жарна",
+    "ақша салу",
+    "үй тапсырылғаннан кейін төлеу",
+    "үй тапсырылғанға дейін төлеу"
+  ],
+  "marketing_ru": [
+    "старт продаж",
+    "открыта продажа",
+    "продажи открыты",
+    "успей купить",
+    "успей забронировать",
+    "закрытые продажи",
+    "раннее бронирование",
+    "скидка при бронировании",
+    "новая очередь",
+    "старт продаж 2 очереди",
+    "спецусловия",
+    "выгодная рассрочка",
+    "0% рассрочка",
+    "без переплаты",
+    "поквартальная рассрочка"
+  ],
+  "marketing_kk": [
+    "сатылым басталды",
+    "сатылымда",
+    "пәтерлер сатылымда",
+    "брондап үлгер",
+    "ерте брондау",
+    "жаңа кезек",
+    "арнайы шарттар",
+    "жеңілдік",
+    "науқан",
+    "пайызсыз бөліп төлеу",
+    "үй салынып жатыр"
+  ],
+  "under_construction_ru": [
+    "строится",
+    "в процессе строительства",
+    "до ввода в эксплуатацию",
+    "сдача в 2027",
+    "сдача в 2028",
+    "котлован",
+    "возведение каркаса",
+    "черновая отделка",
+    "стройка идёт",
+    "завершение строительства",
+    "очередь строительства",
+    "до сдачи дома"
+  ],
+  "under_construction_kk": [
+    "құрылысы салынуда",
+    "үй салынып жатыр",
+    "құрылыс кезеңінде",
+    "пайдалануға беру",
+    "2027 жылы тапсырылады",
+    "үй тапсырылғанға дейін",
+    "құрылыс жүріп жатыр",
+    "кезеңі",
+    "кезек"
+  ],
+  "legal_terms_ru": [
+    "гарантия КЖК",
+    "номер разрешения МИО",
+    "разрешение на привлечение денег дольщиков",
+    "ДДУ",
+    "сдать в эксплуатацию",
+    "после получения разрешения",
+    "после выдачи гарантии",
+    "изучение спроса"
+  ],
+  "legal_terms_kk": [
+    "кепілдік",
+    "рұқсат",
+    "үлестік қатысу шарты",
+    "пайдалануға беру",
+    "құрылысқа рұқсат"
+  ],
+  "project_aliases": {
+    "Muztau": [
+      "Muztau",
+      "Музтау",
+      "Мұзтау",
+      "ЖК Muztau"
+    ],
+    "Ray Residence": [
+      "Ray Residence",
+      "RayResidence",
+      "Рей Резиденс"
+    ],
+    "Riverside": [
+      "Riverside",
+      "Риверсайд"
+    ],
+    "Viva Park": [
+      "Viva Park",
+      "VIVAPARK",
+      "Вива Парк"
+    ],
+    "Altyn Uia": [
+      "Altyn Uia",
+      "Altyn Uia 2",
+      "Altyn Uia III",
+      "Алтын Уя",
+      "AltynUia"
+    ],
+    "VIVA LIFE": [
+      "VIVA LIFE",
+      "Viva Life"
+    ],
+    "ASYL TAU": [
+      "ASYL TAU",
+      "Asyl Tau",
+      "Асыл Тау"
+    ],
+    "ASYLTAS": [
+      "ASYLTAS",
+      "Asyltas"
+    ],
+    "ASYLYM": [
+      "ASYLYM",
+      "Асылым"
+    ],
+    "Золотой квадрат": [
+      "Золотой квадрат",
+      "Zolotoy Kvadrat"
+    ],
+    "Престиж": [
+      "Престиж",
+      "Sparkle Diamond",
+      "Diamond"
+    ],
+    "ORDA": [
+      "ORDA",
+      "ЖК Орда"
+    ],
+    "TUMAR TOWERS OSKEMEN": [
+      "TUMAR TOWERS OSKEMEN",
+      "Tumar Towers"
+    ],
+    "Айналайын": [
+      "Айналайын",
+      "Ainalaiyn",
+      "AINALAIYN"
+    ],
+    "BELGRAVIA": [
+      "BELGRAVIA",
+      "Belgravia"
+    ],
+    "BS HOLDING EASTON": [
+      "BS HOLDING EASTON",
+      "EASTON",
+      "Easton"
+    ],
+    "ECO POLIS": [
+      "ECO POLIS",
+      "Eco Polis",
+      "Ecopolis"
+    ],
+    "PARK LINE": [
+      "PARK LINE",
+      "Park Line",
+      "Parkline"
+    ],
+    "RENESANS": [
+      "RENESANS",
+      "Renesans",
+      "Ренесанс"
+    ],
+    "SATTI CITY": [
+      "SATTI CITY",
+      "Satti City",
+      "Sátti City"
+    ]
+  },
+  "hashtags": {
+    "geography": [
+      "#устькаменогорск",
+      "#УстьКаменогорск",
+      "#өскемен",
+      "#Өскемен",
+      "#оскемен",
+      "#oskemen",
+      "#ustkamenogorsk",
+      "#uka",
+      "#вко",
+      "#шқо"
+    ],
+    "real_estate": [
+      "#новостройки",
+      "#новостройка",
+      "#жкустькаменогорск",
+      "#новостройкиустькаменогорск",
+      "#новостройкиоскемен",
+      "#жкоскемен",
+      "#тұрғынүйкешені",
+      "#жаңақұрылыс",
+      "#пәтерсату",
+      "#баспана"
+    ],
+    "payment": [
+      "#рассрочка",
+      "#рассрочкаотзастройщика",
+      "#броньквартиры",
+      "#первоначальныйвзнос",
+      "#стартпродаж",
+      "#бөліптөлеу",
+      "#алғашқыжарна",
+      "#пәтерброндау"
+    ],
+    "official": [
+      "#УГАСКВКО",
+      "#долевоестроительство",
+      "#Homeportal",
+      "#законноестроительство"
+    ]
+  },
+  "query_templates": [
+    "{city} {estate} {payment}",
+    "{city} {marketing}",
+    "{project} {payment}",
+    "{project} {under_construction}",
+    "{project} {legal_terms}",
+    "{hashtag}"
+  ],
+  "starter_queries_ru": [
+    "Усть-Каменогорск ЖК бронь квартиры",
+    "Усть-Каменогорск новостройка первоначальный взнос",
+    "Усть-Каменогорск рассрочка от застройщика",
+    "Усть-Каменогорск старт продаж 2026",
+    "Усть-Каменогорск старт продаж 2 очередь",
+    "Усть-Каменогорск стройка квартиры предоплата",
+    "Оскемен новостройка депозит",
+    "ЖК Muztau рассрочка бронь",
+    "Ray Residence график платежей",
+    "Riverside Усть-Каменогорск бронирование",
+    "Altyn Uia III старт продаж",
+    "Viva Park Усть-Каменогорск предоплата"
+  ],
+  "starter_queries_kk": [
+    "Өскемен пәтер сату бөліп төлеу",
+    "Өскемен тұрғын үй кешені алғашқы жарна",
+    "Өскемен пәтерді брондау",
+    "Өскемен жаңа құрылыс сатылым басталды",
+    "Өскемен пәтерге алдын ала төлем",
+    "Өскемен құрылыс салушы пайызсыз бөліп төлеу",
+    "Өскемен салынып жатқан пәтер сату",
+    "ШҚО жаңа тұрғын үй кешені бөліп төлеу"
+  ],
+  "review_rules": {
+    "priority_p1": "Есть география/проект и предложение внести деньги, объект возможно строится. Отправить на срочный просмотр, не считать автоматически нарушением.",
+    "priority_p2": "Есть география/проект и реклама ранних продаж или стадии строительства, но нет точного фрагмента об оплате.",
+    "priority_p3": "Есть география/проект и общая реклама без доказательств платежей.",
+    "do_not_assume": [
+      "Отсутствие ЖК в перечне != подтверждённое отсутствие правового основания.",
+      "Наличие слов «бронь», «ипотека», «рассрочка» само по себе не равно нарушению.",
+      "Проверять официальный документ, очередь и дату.",
+      "Реальные и демонстрационные материалы раздельно."
+    ]
+  },
+  "sources_used": [
+    "https://altynuia.kz/",
+    "https://krisha.kz/complex/search/ust-kamenogorsk/?rassrochka=1",
+    "https://krisha.kz/kz/complex/search/ust-kamenogorsk/",
+    "https://www.gov.kz/memleket/entities/akimvko/press/news/details/1287143?lang=ru",
+    "https://hcsbk.kz/ru/news/bank_news/obyavlenie-o-pryamom-bronirovanii-zhilya-po-programme-svoy-domx8570/"
+  ],
+  "v2_additions": {
+    "schema_version": "2.0",
+    "based_on_original_sha256": "4eaaca44b6cc549c396fafc2736e88646371c12cd6e5cd400a95bca4e1f9fac5",
+    "based_on_original_file": "saq_oskemen_search_dictionary_2026-10-19.json",
+    "created_at": "2026-10-19",
+    "origin_note": "Every original top-level field is preserved verbatim. Only v2_additions is new; all new strings are research hypotheses, not verified claims about active developments or law.",
+    "geo_alias_policy": {
+      "strong_city_aliases": [
+        "Усть-Каменогорск",
+        "Усть Каменогорск",
+        "Өскемен",
+        "Оскемен",
+        "Oskemen",
+        "Ust-Kamenogorsk",
+        "Ust Kamenogorsk"
+      ],
+      "weak_or_broad_aliases": [
+        "У-Ка",
+        "Ука",
+        "УК",
+        "ВКО",
+        "ШҚО",
+        "Шығыс Қазақстан"
+      ],
+      "casefold_deduplicate_queries": true,
+      "weak_alias_alone_not_sufficient_to_confirm_city": true,
+      "hashtag_context_required": [
+        "#uka",
+        "#вко",
+        "#шқо"
+      ],
+      "regional_scope": "Усть-Каменогорск (Өскемен), Восточно-Казахстанская область",
+      "regional_scope_is_search_constraint_not_claim_of_geolocation": true
+    },
+    "phase_and_alias_policy": {
+      "keep_project_family_separate_from_phase": true,
+      "must_resolve_phase_individually": [
+        "Altyn Uia 2",
+        "Altyn Uia III"
+      ],
+      "weak_project_names_require_extra_context": [
+        "Престиж",
+        "Diamond",
+        "ORDA",
+        "Riverside",
+        "EASTON"
+      ],
+      "no_auto_property_creation_from_alias": true,
+      "no_automatic_legal_document_inheritance_between_phases": true
+    },
+    "extended_terms": {
+      "payment_ru": [
+        "открыто бронирование",
+        "бронь за",
+        "сумма бронирования",
+        "внесите задаток",
+        "аванс до сдачи",
+        "оплата до ввода",
+        "платёж до ввода в эксплуатацию",
+        "рассрочка на период строительства",
+        "оплата по договору бронирования"
+      ],
+      "payment_kk": [
+        "брондау басталды",
+        "брондау үшін төлем",
+        "алдын ала ақы төлеу",
+        "үй пайдалануға берілгенге дейін",
+        "құрылыс кезеңіндегі төлем"
+      ],
+      "marketing_ru": [
+        "отдел продаж",
+        "старт бронирования",
+        "продажи в новой очереди",
+        "продажа на этапе котлована"
+      ],
+      "marketing_kk": [
+        "сату бөлімі",
+        "сатылым ашылды",
+        "тұрғын үй кешеніндегі пәтер",
+        "жаңа үйлер сатылымда"
+      ],
+      "construction_ru": [
+        "на этапе котлована",
+        "строительный этап",
+        "ввод в эксплуатацию",
+        "передача ключей"
+      ],
+      "construction_kk": [
+        "құрылыс аяқталғанға дейін",
+        "пайдалануға берілгенге дейін",
+        "құрылыс барысы"
+      ],
+      "legal_ru": [
+        "номер гарантии КЖК",
+        "договор долевого участия",
+        "разрешение местного исполнительного органа"
+      ],
+      "legal_kk": [
+        "үлестік қатысу туралы шарт",
+        "жергілікті атқарушы органның рұқсаты"
+      ]
+    },
+    "negative_context_ru": [
+      "сдам квартиру",
+      "аренда",
+      "вторичный рынок",
+      "вторичка",
+      "перепродажа",
+      "ремонт квартир",
+      "вакансия",
+      "требуется менеджер",
+      "новости",
+      "предупреждение",
+      "мошенничество",
+      "оформление ипотеки",
+      "ипотека банка",
+      "программа ипотечного кредитования"
+    ],
+    "negative_context_kk": [
+      "пәтер жалға беріледі",
+      "жалға алу",
+      "қайталама нарық",
+      "жөндеу",
+      "жұмысқа қабылдаймыз",
+      "жаңалық",
+      "ескерту",
+      "алаяқтық",
+      "ипотекалық несие"
+    ],
+    "negation_and_timing": {
+      "negated_payment_ru": [
+        "бронь бесплатная",
+        "без предоплаты",
+        "предоплата не требуется",
+        "без первоначального взноса"
+      ],
+      "negated_payment_kk": [
+        "брондау тегін",
+        "алдын ала төлемсіз",
+        "алғашқы жарнасыз"
+      ],
+      "before_commissioning_ru": [
+        "до сдачи дома",
+        "до ввода в эксплуатацию",
+        "до завершения строительства"
+      ],
+      "after_commissioning_ru": [
+        "после сдачи",
+        "после ввода в эксплуатацию",
+        "после передачи ключей"
+      ],
+      "before_commissioning_kk": [
+        "үй тапсырылғанға дейін",
+        "пайдалануға берілгенге дейін"
+      ],
+      "after_commissioning_kk": [
+        "үй тапсырылғаннан кейін",
+        "пайдалануға берілгеннен кейін"
+      ],
+      "conditional_ru": [
+        "после получения разрешения",
+        "если получим разрешение"
+      ],
+      "conditional_kk": [
+        "рұқсат алғаннан кейін"
+      ],
+      "payment_timing_enum": [
+        "BEFORE_COMMISSIONING",
+        "AFTER_COMMISSIONING",
+        "UNKNOWN",
+        "NEGATED"
+      ],
+      "rules": [
+        "A negated mention is not evidence of an affirmative payment requirement.",
+        "Payment to a bank must not automatically become payment to a developer.",
+        "Term match alone never proves a legal violation or document existence."
+      ]
+    },
+    "new_query_templates": [
+      "{city} {estate} {marketing}",
+      "{city} {estate} {under_construction}",
+      "{project} {marketing}",
+      "{project} {city}",
+      "{project} {phase} {payment}",
+      "{city} {estate} {legal_terms}"
+    ],
+    "query_groups": [
+      {
+        "id": "regional_new_build",
+        "rank": 1,
+        "discovery": "keyword",
+        "template_ids": [
+          "{city} {estate} {marketing}",
+          "{city} {estate} {under_construction}"
+        ],
+        "local_filters": [
+          "regional_scope",
+          "new_build_context"
+        ]
+      },
+      {
+        "id": "project_exact",
+        "rank": 1,
+        "discovery": "keyword",
+        "template_ids": [
+          "{project} {marketing}",
+          "{project} {payment}",
+          "{project} {under_construction}"
+        ],
+        "local_filters": [
+          "project_alias",
+          "phase"
+        ]
+      },
+      {
+        "id": "hashtag_discovery",
+        "rank": 2,
+        "discovery": "hashtag",
+        "template_ids": [
+          "{hashtag}"
+        ],
+        "local_filters": [
+          "regional_scope",
+          "property_context"
+        ]
+      },
+      {
+        "id": "payments_targeted",
+        "rank": 2,
+        "discovery": "keyword",
+        "template_ids": [
+          "{city} {estate} {payment}",
+          "{project} {payment}"
+        ],
+        "local_filters": [
+          "negation",
+          "timing",
+          "relevance"
+        ]
+      },
+      {
+        "id": "legal_claims",
+        "rank": 3,
+        "discovery": "keyword",
+        "template_ids": [
+          "{city} {estate} {legal_terms}",
+          "{project} {legal_terms}"
+        ],
+        "local_filters": [
+          "legal_claim_only"
+        ]
+      }
+    ],
+    "extended_queries_ru": [
+      "Усть-Каменогорск ЖК открыто бронирование",
+      "Усть-Каменогорск новостройка оплата до сдачи",
+      "Усть-Каменогорск рассрочка на период строительства",
+      "Усть-Каменогорск ЖК платная бронь",
+      "Өскемен ЖК старт продаж новой очереди",
+      "Оскемен отдел продаж ЖК рассрочка",
+      "Усть-Каменогорск новостройки на этапе котлована",
+      "ВКО строительство ЖК продажа квартир",
+      "Усть-Каменогорск ЖК договор бронирования",
+      "Усть-Каменогорск ЖК после получения разрешения",
+      "Усть-Каменогорск ЖК гарантия КЖК",
+      "Altyn Uia III бронь квартиры"
+    ],
+    "extended_queries_kk": [
+      "Өскемен тұрғын үй кешені брондау басталды",
+      "Өскемен пәтер брондау үшін төлем",
+      "Өскемен жаңа пәтер алдын ала ақы төлеу",
+      "Өскемен салынып жатқан үй сатылымда",
+      "Өскемен құрылыс кезеңіндегі төлем",
+      "Өскемен жаңа кезектегі пәтерлер сатылымға шықты",
+      "Өскемен тұрғын үй кешені сату бөлімі",
+      "ШҚО пәтерге кепілақы төлеу",
+      "Өскемен үй пайдалануға берілгенге дейін төлем",
+      "Өскемен үлестік құрылысқа рұқсат"
+    ],
+    "query_execution_policy": {
+      "no_unbounded_cartesian_product": true,
+      "max_compiled_queries_default": 25,
+      "respect_platform_limits_and_rights": true,
+      "preserve_query_ids_per_finding": true,
+      "statuses": [
+        "SUPPORTED",
+        "LOCAL_FILTER_ONLY",
+        "UNSUPPORTED"
+      ],
+      "run_statuses": [
+        "SUCCESS",
+        "PARTIAL",
+        "FAILED",
+        "BLOCKED"
+      ],
+      "keyword_and_hashtag_are_distinct_capabilities": true,
+      "checkpoint_after_persisted_page_only": true,
+      "never_assert_full_platform_coverage": true
+    },
+    "extraction_patterns": {
+      "year_regex": "\\b20\\d{2}\\b",
+      "currency_tokens": [
+        "₸",
+        "тг",
+        "тенге",
+        "теңге",
+        "KZT"
+      ],
+      "keep_amount_span_and_timing_context": true,
+      "price_alone_not_payment_evidence": true
+    },
+    "review_priority_policy": {
+      "P1": "Regional/project candidate plus affirmative payment offer and construction/unknown phase: urgent human review, no violation claim.",
+      "P2": "Regional/project candidate plus new-build marketing or construction-stage claim, but no proven upfront payment.",
+      "P3": "Regional/project candidate plus generic real-estate advertisement.",
+      "NOT_RELEVANT": "Unrelated after contextual verification.",
+      "NEEDS_CONTEXT": "Ambiguous or incomplete source content.",
+      "never_apply_R1_R6_automatically": true
+    },
+    "review_examples": [
+      {
+        "text": "Усть-Каменогорск, строящийся ЖК. Оплатите бронь 100 000 ₸ до сдачи дома.",
+        "expected": "P1",
+        "reason": "city + construction + affirmative pre-commissioning payment"
+      },
+      {
+        "text": "Өскемен тұрғын үй кешені сатылым басталды, үй салынып жатыр.",
+        "expected": "P2",
+        "reason": "city + sale + under construction; payment unknown"
+      },
+      {
+        "text": "Усть-Каменогорск: квартиры от застройщика.",
+        "expected": "P3",
+        "reason": "city + generic real estate offer"
+      },
+      {
+        "text": "Усть-Каменогорск: ЖК строится, бронь бесплатная.",
+        "expected": "P2",
+        "reason": "negation cancels payment signal; construction remains"
+      },
+      {
+        "text": "Усть-Каменогорск: ЖК строится, 50% после сдачи.",
+        "expected": "P2",
+        "reason": "post-commissioning payment, not upfront"
+      },
+      {
+        "text": "Ремонт квартир и вакансии в Ука",
+        "expected": "NOT_RELEVANT",
+        "reason": "weak geo alias, unrelated topic"
+      },
+      {
+        "text": "Riverside в Москве: платная бронь",
+        "expected": "NOT_RELEVANT",
+        "reason": "outside configured region"
+      },
+      {
+        "text": "Продажа вторичной квартиры в новостройке Өскемен",
+        "expected": "NEEDS_CONTEXT",
+        "reason": "resale must not be equated with developer pre-commissioning sales"
+      },
+      {
+        "text": "Алтын Уя III: мы получили разрешение",
+        "expected": "NEEDS_CONTEXT",
+        "reason": "text claim not legal-document verification; phase-specific resolution required"
+      },
+      {
+        "text": "Отбасы банк предлагает ипотеку на новостройки",
+        "expected": "NEEDS_CONTEXT",
+        "reason": "bank product is not proof of developer taking deposits"
+      }
+    ],
+    "sources_status": "Source URLs in the user-supplied dictionary have NOT been independently verified by this JSON transformation."
+  }
+}

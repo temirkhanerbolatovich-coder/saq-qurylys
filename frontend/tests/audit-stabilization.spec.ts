@@ -17,16 +17,23 @@ test("registry coalesces text filters without losing either field or Enter/reset
   });
   const input = page.getByLabel("Поиск ЖК или адреса");
   const city = page.getByLabel("Фильтр по городу");
+  // Keep the debounce interval deterministic even on a busy native-PDF runner.
+  await page.clock.install({ time: new Date("2026-10-20T00:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-10-20T00:00:01Z"));
   await input.pressSequentially("DEMO", { delay: 15 });
   await city.fill("Усть-Каменогорск");
   expect(requests).toHaveLength(0);
+  await page.clock.fastForward(351);
+  await page.clock.resume();
   await expect
     .poll(() => new URL(page.url()).searchParams.get("city"))
     .toBe("Усть-Каменогорск");
   expect(new URL(page.url()).searchParams.get("q")).toBe("DEMO");
   expect(new URL(page.url()).searchParams.get("page")).toBeNull();
   expect(new URL(page.url()).searchParams.get("view")).toBe("map");
-  await expect.poll(() => requests.length).toBe(1);
+  await expect.poll(() => requests.length).toBeGreaterThan(0);
+  // StrictMode can repeat reads; every read must use the complete merged filter.
+  expect(new Set(requests.map((url) => url.search)).size).toBe(1);
   expect(requests[0].searchParams.get("city")).toBe("Усть-Каменогорск");
   await input.fill("Самал");
   await input.press("Enter");
@@ -177,7 +184,10 @@ test("version chooser pages complete registry and retains readable selection, re
     name: "Выбор версии реестра",
     exact: true,
   });
-  const reason = page.getByLabel("Основание запуска сверки", { exact: true });
+  const reason = page.getByRole("textbox", {
+    name: "Основание запуска сверки",
+    exact: true,
+  });
   await reason.fill("DEMO неотправленный комментарий");
   await chooser
     .getByRole("combobox", { name: "DEMO-версия реестра", exact: true })

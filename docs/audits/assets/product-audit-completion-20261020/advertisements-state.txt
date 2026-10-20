@@ -1,0 +1,76 @@
+- alert
+- link "Перейти к содержимому":
+  - /url: "#main-content"
+- banner:
+  - link "SAQ QURYLYS":
+    - /url: /dashboard
+    - text: SAQ QURYLYS
+    - generic: Аналитика строительства
+  - search "Поиск объекта":
+    - generic: Найти объект или адрес
+    - searchbox "Найти объект или адрес"
+    - button "Найти объект":
+  - generic: Язык интерфейса
+  - combobox "Язык интерфейса":
+    - option "RU" [selected]
+    - option "KZ"
+  - generic: А
+  - strong: Аналитик
+  - generic: Аналитик
+  - button "Выйти":
+- complementary:
+  - navigation "Основная навигация":
+    - link "Обзор":
+      - /url: /dashboard
+      - generic: Обзор
+    - link "Объекты":
+      - /url: /properties
+      - generic: Объекты
+    - link "Реклама":
+      - /url: /advertisements
+      - generic: Реклама
+    - link "Проверка":
+      - /url: /review?queue=actions
+      - generic: Проверка
+    - link "Сигналы":
+      - /url: /signals
+      - generic: Сигналы
+  - link "Источники":
+    - /url: /sources
+    - generic: Источники
+  - button "Подробный вид":
+    - generic: Подробный вид
+- generic: Рабочее место аналитика
+- main:
+  - paragraph: РЕКЛАМНЫЕ МАТЕРИАЛЫ
+  - heading "Реклама" [level=1]
+  - paragraph: Сохранённый оригинал, происхождение и время фиксации каждой публикации.
+  - link "Добавить публикацию":
+    - /url: /advertisements/new
+    - text: Добавить публикацию
+  - region "Добавьте материал для проверки":
+    - paragraph: С ЧЕГО НАЧАТЬ
+    - heading "Добавьте материал для проверки" [level=2]
+    - paragraph: Добавьте текст или загрузите PNG, JPEG либо TXT. Сохраните оригинал, затем перейдите к анализу и отдельной ручной проверке.
+  - search "Поиск материалов":
+    - generic: Текст публикации или название источника
+    - searchbox "Текст публикации или название источника"
+    - button "Найти материалы"
+    - paragraph: По всему списку с учётом фильтров. OCR и гипотезы не входят в поиск.
+  - heading "Публикации" [level=2]
+  - paragraph: Загрузка… · Оригиналы, состояние обработки и ручная проверка
+  - generic: Режим материалов
+  - combobox "Режим материалов":
+    - option "DEMO и реальные" [selected]
+    - option "Только DEMO"
+    - option "Только реальные"
+  - generic: Состояние обработки
+  - combobox "Состояние обработки":
+    - option "Все состояния" [selected]
+    - option "Новый материал"
+    - option "Анализируется"
+    - option "Готово к проверке"
+    - option "Проверено"
+    - option "Ошибка обработки"
+  - status: Загрузка данных…
+- contentinfo: SAQ QURYLYS · Прототип · Сигнал не устанавливает факт правонарушенияDEMO отмечено отдельно

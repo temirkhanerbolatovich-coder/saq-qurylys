@@ -238,7 +238,7 @@ test("a pending signal filter never presents the previous queue as its own resul
   page,
 }) => {
   await login(page);
-  await page.goto("/signals");
+  await page.goto("/signals?state=&is_stale=");
   await expect(page.locator(".signal-queue-item").first()).toBeVisible();
   let release: () => void = () => {};
   const gate = new Promise<void>((resolve) => {

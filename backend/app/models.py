@@ -5,11 +5,13 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -24,6 +26,55 @@ def utcnow() -> datetime:
 
 class Base(DeclarativeBase):
     pass
+
+
+class MonitoringDictionaryVersion(Base):
+    __tablename__ = 'monitoring_dictionary_versions'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    dictionary_version: Mapped[str] = mapped_column(String(30))
+    content_sha256: Mapped[str] = mapped_column(String(64), unique=True)
+    source: Mapped[str] = mapped_column(String(200))
+    raw: Mapped[bytes] = mapped_column(LargeBinary)
+    original_raw: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+
+
+class MonitoringDictionaryActivation(Base):
+    __tablename__ = 'monitoring_dictionary_activations'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    revision: Mapped[int] = mapped_column(Integer, unique=True)
+    dictionary_id: Mapped[UUID | None] = mapped_column(ForeignKey('monitoring_dictionary_versions.id'))
+    reason: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+
+
+class MonitoringQueryProfile(Base):
+    __tablename__ = 'monitoring_query_profiles'
+    dictionary_version: Mapped[str] = mapped_column(String(10), default='1.0', server_default='1.0')
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    name: Mapped[str] = mapped_column(String(100))
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+
+
+class MonitoringQueryProfileVersion(Base):
+    __tablename__ = 'monitoring_query_profile_versions'
+    dictionary_id: Mapped[UUID | None] = mapped_column(ForeignKey('monitoring_dictionary_versions.id'))
+    compiled_preview: Mapped[dict | None] = mapped_column(JSON(none_as_null=True))
+    __table_args__ = (UniqueConstraint('profile_id', 'revision', name='uq_query_profile_revision'),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    profile_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_query_profiles.id'), index=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(100))
+    parameters: Mapped[dict] = mapped_column(JSON)
+    compiled_queries: Mapped[list] = mapped_column(JSON)
+    dictionary_sha256: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
 
 
 class User(Base):
@@ -102,6 +153,106 @@ class Asset(Base):
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     is_demo: Mapped[bool] = mapped_column(Boolean)
     source_details: Mapped[dict | None] = mapped_column(JSON)
+
+
+class MonitoringRun(Base):
+    __tablename__ = 'monitoring_runs'
+    __table_args__ = (UniqueConstraint('created_by', 'command_key', name='uq_monitoring_run_command'),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    source_code: Mapped[str] = mapped_column(String(40), index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    command_key: Mapped[UUID] = mapped_column()
+    body_hash: Mapped[str] = mapped_column(String(64))
+    query: Mapped[dict] = mapped_column(JSON)
+    state: Mapped[str] = mapped_column(String(25), default='RUNNING')
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    deadline_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_code: Mapped[str | None] = mapped_column(String(60))
+    http_status: Mapped[int | None] = mapped_column(Integer)
+    result: Mapped[dict | None] = mapped_column(JSON)
+
+
+class MonitoringFinding(Base):
+    __tablename__ = 'monitoring_findings'
+    __table_args__ = (UniqueConstraint('platform', 'external_id', 'is_demo', name='uq_monitoring_finding_identity'),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    platform: Mapped[str] = mapped_column(String(30))
+    external_id: Mapped[str] = mapped_column(String(100))
+    is_demo: Mapped[bool] = mapped_column(Boolean)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MonitoringFindingVersion(Base):
+    __tablename__ = 'monitoring_finding_versions'
+    __table_args__ = (UniqueConstraint('finding_id', 'version', name='uq_monitoring_finding_version'),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    finding_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_findings.id'), index=True)
+    version: Mapped[int] = mapped_column(Integer)
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    dictionary_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_dictionary_versions.id'))
+    dictionary_sha256: Mapped[str] = mapped_column(String(64))
+    rules_version: Mapped[str] = mapped_column(String(50))
+    source_url: Mapped[str] = mapped_column(String(2048))
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    text: Mapped[str | None] = mapped_column(Text)
+    media_type: Mapped[str] = mapped_column(String(40))
+    priority: Mapped[str] = mapped_column(String(30), index=True)
+    context: Mapped[dict] = mapped_column(JSON)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+
+
+class MonitoringFindingObservation(Base):
+    __tablename__ = 'monitoring_finding_observations'
+    __table_args__ = (UniqueConstraint('run_id', 'finding_id', name='uq_monitoring_finding_run'),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    finding_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_findings.id'), index=True)
+    version_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_finding_versions.id'), index=True)
+    run_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_runs.id'), index=True)
+    profile_version_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_query_profile_versions.id'))
+    query_id: Mapped[str] = mapped_column(String(64))
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    raw_response_sha256: Mapped[str] = mapped_column(String(64))
+    has_more: Mapped[bool] = mapped_column(Boolean)
+
+
+class MonitoringFindingImport(Base):
+    __tablename__ = 'monitoring_finding_imports'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    version_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_finding_versions.id'), unique=True)
+    observation_id: Mapped[UUID] = mapped_column(ForeignKey('monitoring_finding_observations.id'))
+    advertisement_id: Mapped[UUID] = mapped_column(ForeignKey('advertisements.id'), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    reason: Mapped[str] = mapped_column(Text)
+
+
+class CsvImportBatch(Base):
+    __tablename__ = 'csv_import_batches'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    batch_key: Mapped[str] = mapped_column(String(64), unique=True)
+    filename: Mapped[str] = mapped_column(String(200))
+    file_sha256: Mapped[str] = mapped_column(String(64))
+    format: Mapped[str] = mapped_column(String(30))
+    is_demo: Mapped[bool] = mapped_column(Boolean)
+    original_asset_id: Mapped[UUID] = mapped_column(ForeignKey('assets.id'))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    row_count: Mapped[int] = mapped_column(Integer)
+    created_count: Mapped[int] = mapped_column(Integer)
+    duplicate_count: Mapped[int] = mapped_column(Integer)
+    entries: Mapped[list] = mapped_column(JSON)
+
+
+class CsvImportedMaterial(Base):
+    __tablename__ = 'csv_imported_materials'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    fingerprint: Mapped[str] = mapped_column(String(64), unique=True)
+    identity_key: Mapped[str] = mapped_column(String(64), index=True)
+    advertisement_id: Mapped[UUID] = mapped_column(ForeignKey('advertisements.id'))
+    batch_id: Mapped[UUID] = mapped_column(ForeignKey('csv_import_batches.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class Evidence(Base):
@@ -208,6 +359,38 @@ class AnalysisJob(Base):
     input_payload: Mapped[dict | None] = mapped_column(JSON)
 
 
+class UrlSchedule(Base):
+    __tablename__ = 'url_schedules'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    url: Mapped[str] = mapped_column(String(2048), unique=True)
+    source_id: Mapped[str] = mapped_column(String(100))
+    name: Mapped[str] = mapped_column(String(100))
+    interval_minutes: Mapped[int] = mapped_column(Integer)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    next_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    failure_count: Mapped[int] = mapped_column(Integer, default=0)
+    pause_reason: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    updated_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+
+
+class UrlScheduleRun(Base):
+    __tablename__ = 'url_schedule_runs'
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    schedule_id: Mapped[UUID] = mapped_column(ForeignKey('url_schedules.id'), index=True)
+    configuration: Mapped[dict] = mapped_column(JSON)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    state: Mapped[str] = mapped_column(String(20), index=True)
+    reason: Mapped[str | None] = mapped_column(String(100))
+    job_id: Mapped[UUID | None] = mapped_column(ForeignKey('analysis_jobs.id'))
+    reused_job: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class ExtractionResult(Base):
     __tablename__ = 'extraction_results'
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -262,8 +445,23 @@ class Signal(Base):
 
 class MonitoringCandidate(Base):
     __tablename__ = 'monitoring_candidates'
+    __table_args__ = (
+        CheckConstraint(
+            '(property_id IS NULL AND property_link_kind IS NULL) OR '
+            "(property_id IS NOT NULL AND property_link_kind IS NOT NULL AND property_link_kind IN ('CREATED', 'LINKED'))",
+            name='ck_candidate_property_link',
+        ),
+        Index(
+            'uq_candidate_property_created',
+            'property_id',
+            unique=True,
+            postgresql_where=text("property_link_kind = 'CREATED'"),
+        ),
+    )
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     identity_key: Mapped[str] = mapped_column(String(64), unique=True)
+    property_id: Mapped[UUID | None] = mapped_column(ForeignKey('properties.id'), index=True)
+    property_link_kind: Mapped[str | None] = mapped_column(String(20))
     name: Mapped[str] = mapped_column(String(300))
     city: Mapped[str] = mapped_column(String(100))
     address: Mapped[str | None] = mapped_column(String(300))

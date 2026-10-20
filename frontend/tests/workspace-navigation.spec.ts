@@ -13,10 +13,13 @@ test("five work zones stay accessible in both views and monitoring belongs to ch
   for (const width of [360, 375, 390, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 1000 });
     await expect(mainNav.getByRole("link")).toHaveCount(5);
-    for (const name of zones)
-      await expect(
-        mainNav.getByRole("link", { name, exact: true }),
-      ).toBeVisible();
+    for (const name of zones) {
+      const link = mainNav.getByRole("link", { name, exact: true });
+      await expect(link).toBeVisible();
+      await expect(link.locator("svg")).toBeVisible();
+      const target = await link.boundingBox();
+      expect(target!.height).toBeGreaterThanOrEqual(44);
+    }
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -82,7 +85,11 @@ test("work queues use server totals and processing failure keeps the other actio
       "/review?queue=actions",
     ],
     ["Ошибки обработки", failed.total, "/review?status=FAILED"],
-    ["Сигналы без решения", summary.pending_signals, "/signals?state=DRAFT"],
+    [
+      "Сигналы без решения",
+      summary.pending_signals,
+      "/signals?state=DRAFT&is_stale=false",
+    ],
   ] as const;
   for (const [title, total, href] of cases) {
     const queue = page
