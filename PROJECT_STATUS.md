@@ -1,23 +1,31 @@
 # SAQ QURYLYS — текущий статус
 
-## Repository cleanup ·21.10.2026 ·локальная приёмка завершена
+## GitHub и структура · 21.10.2026
 
-Исполнитель:Codex, независимый read-only review deployment/security. Ветка codex/repository-cleanup, [PR5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5). База b156086 плюс620файлов сохранённого рабочего снимка; первоначальный checkout/.env/DB/storage не изменены.
+Исполнитель: Codex; структура и навигация дополнительно проверены независимым read-only reviewer. Пользователь разрешил проверку GitHub и доработку структуры. Исходная ревизия блока — main 24811c2228b66d3e3e863430a98e349b7ceeaee4; документационные исправления — в codex/repository-structure-followup.
 
-Полный source0.34 опубликован в ветке; текущий main исторический до отдельного merge. Подготовлены краткий README, тематические guides, index/archive/reference с SHA, scripts-wide CI/hygiene, recording E2E/OCR guards, Docker context exclusions и review templates. Код бизнеса/API/миграций/UI относительно исходного рабочего снимка cleanup не меняет.
+Полный исходный срез с контрактом 0.34 опубликован в main: [PR №5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5) слит. GitHub API подтвердил default branch main, 644 опубликованных файла и отсутствие открытых PR/issues на начало этого блока. Все четыре jobs main успешны: [CI 39488225449](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39488225449).
 
-## Проверки
+Исправлены инструкции README/DEPLOYMENT/CONTRIBUTING/CLEAN_INSTALL, оставшиеся от состояния до merge. Каталоги docs и ADR дополнены прямыми ссылками, PROJECT_STATUS_TEMPLATE заменён общим шаблоном checkpoint, заголовок CHANGELOG перенесён в начало. REFACTOR_REPORT дополнен датированным результатом проверки GitHub с сохранением прежних evidence. Архитектурных решений или runtime изменений этот блок не вводит.
 
-Linux backend1252PASS/0SKIP; tools103(1SKIP); Node20PASS; Ruff/lint/type/format/build/hygiene/Compose PASS. Fresh GitHub clone → новые DB/storage → actual RU/KZ OCR → единый browser311PASS/6SKIP/0FAIL. CSV→отдельные решения→R2/25→архивныйPDF проверен;3страницы просмотрены; snapshot/decisions/PDF SHA сохранены после restart. QA backup/restore37tables/60assets и authenticated historical downloads PASS.
+## Проверки текущего блока
 
-Точные команды, промежуточные failures, пропуски и environmental QA subnet override — [REFACTOR_REPORT](docs/REFACTOR_REPORT.md). GitHubCI точного опубликованного SHA — [Checks PR5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5/checks); локальный PASS не заменяет его.
+GitHub main/PR/CI/дерево сверены через API. git diff --check, git diff --cached --check и python scripts/check_repository_hygiene.py --staged — PASS для 644 source paths. Дополнительно подтверждены ссылки на все 29 FEATURE и 29 ADR, один основной заголовок каждого изменённого документа и состав diff: только 10 Markdown-файлов. Независимый review не обнаружил actionable дефектов.
+
+Backend/frontend/build/E2E локально заново не запускались: меняется только документация. Состояние CI опубликованной документационной ветки — [GitHub Actions](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions?query=branch%3Acodex%2Frepository-structure-followup).
+
+## Сохранённая приёмка полного среза
+
+Repository cleanup: база b156086 плюс 620 файлов сохранённого рабочего снимка. Первоначальный checkout, .env, DB и storage сохранены. Linux backend: 1252 PASS / 0 SKIP; tools: 102 PASS / 1 SKIP; Node: 20 PASS. Ruff/lint/type/format/build/hygiene/Compose прошли. Fresh GitHub clone с новыми DB/storage: настоящий RU/KZ OCR, полный browser 311 PASS / 6 SKIP / 0 FAIL.
+
+CSV → отдельные решения → R2/25 → архивный PDF проверен; все три страницы просмотрены. Snapshot, решения и PDF SHA сохранились после restart. QA backup/restore: 37 таблиц / 60 assets; authenticated historical downloads прошли. Это результаты предыдущего блока, а не новый runtime прогон. Точные команды, промежуточные отказы, пропуски и QA subnet override — [REFACTOR_REPORT](docs/REFACTOR_REPORT.md).
 
 ## Границы и следующий шаг
 
-Контракт0.34,16миграций/head ef90fc78b461; Social Monitor V2 и SQ-01—SQ-15 включены как ранее реализованный продуктовый срез. Cleanup не обновлял production, не менял repository settings и не переписывал историю.
+Контракт 0.34, 16 миграций / head ef90fc78b461; Social Monitor V2 и SQ-01—SQ-15 входят в опубликованный продуктовый срез. Рабочие deployment/DB/storage, настройки GitHub, история и старые ветки этим блоком не менялись. Оснований для массовых переносов или удаления исходников/evidence не найдено.
 
-Следующее действие: review и согласованное merge PR5. Deployment — отдельное разрешённое действие с backup/проверкой схемы. Остаются live social access, REAL-реестр, независимая RU/KZ/OCR/UX/предметная приёмка, второйПК, off-host backup/monitoring и историческая credential rotation.
+Следующее действие: review документационного PR codex/repository-structure-followup после CI; merge согласуется отдельно. Deployment требует отдельного разрешения с backup/проверкой схемы. Открыты live social access, принятый REAL-реестр, независимая RU/KZ/OCR/UX/предметная приёмка, второй физический ПК, off-host backup/monitoring и историческая credential rotation.
 
 ## История и документы
 
-[Полная прежняя история](docs/archive/PROJECT_STATUS_2026-10-20.md), [SQ fixes](docs/implementation/SQ_FIX_PROGRESS.md), [чеклист](docs/REMAINING_CHECKLIST.md), [пофайловый аудит](docs/REPOSITORY_AUDIT.md), [документация](docs/README.md). Завершённые длинные журналы сохраняются в archive; текущий checkpoint не дублирует хронологию.
+[Полная прежняя история](docs/archive/PROJECT_STATUS_2026-10-20.md), [отчёт cleanup и post-merge проверки](docs/REFACTOR_REPORT.md), [SQ fixes](docs/implementation/SQ_FIX_PROGRESS.md), [чеклист](docs/REMAINING_CHECKLIST.md), [пофайловый аудит](docs/REPOSITORY_AUDIT.md), [документация](docs/README.md). Завершённые длинные журналы сохраняются в archive; текущий checkpoint не дублирует хронологию.

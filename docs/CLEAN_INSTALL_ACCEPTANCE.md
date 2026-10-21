@@ -13,9 +13,10 @@ storage, затем получить новый DEMO материал, прин�
 `backend/requirements-dev.txt`; для просмотра PDF — Poppler. Требования и права
 storage на Linux/WSL описаны в [README](../README.md#первый-запуск-на-linuxwsl).
 
-Используйте **отдельный Git clone** проверенного SHA ветки codex/repository-cleanup
-(после согласованного merge — соответствующего main). Эта ветка содержит полный
-исходный срез; старые SHA не эквивалентны ему. Зафиксируйте git rev-parse HEAD. Не переносите
+Используйте **отдельный Git clone** проверенного SHA ветки main. Полный исходный
+срез интегрирован через [PR №5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5)
+в merge-коммит 24811c2; старые SHA не эквивалентны ему. Выберите ревизию с успешным
+CI и зафиксируйте git rev-parse HEAD. Не переносите
 `.env`, `.local`, storage, output, node_modules, .next, .venv или чужие credentials.
 Повторно использовать существующую рабочую папку или PostgreSQL volume нельзя.
 

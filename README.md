@@ -1,5 +1,7 @@
 # SAQ QURYLYS
 
+[![CI main](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/workflows/ci.yml?query=branch%3Amain)
+
 Рабочее место аналитика для проверки признаков риска в рекламе долевого жилищного строительства Казахстана. Система сохраняет источники, помогает проверять гипотезы и готовить сигналы; она не устанавливает факт правонарушения.
 
 ## Возможности и статус
@@ -15,7 +17,7 @@ Live-доступ к социальным платформам, принятый
 ```sh
 git clone https://github.com/temirkhanerbolatovich-coder/saq-qurylys.git
 cd saq-qurylys
-git switch codex/repository-cleanup
+git switch main
 python scripts/configure_local.py
 ```
 

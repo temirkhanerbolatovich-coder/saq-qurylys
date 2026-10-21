@@ -4,6 +4,16 @@
 Ветка [codex/repository-cleanup](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/tree/codex/repository-cleanup), [PR5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5).
 Рабочий deployment/БД/storage не изменялись; merge/settings/history rewrite не выполнялись.
 
+## Проверка GitHub после слияния · 21.10.2026
+
+Этот раздел дополняет исходный отчёт выше: на момент первоначального cleanup слияние ещё не выполнялось. Сейчас [PR №5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5) уже слит в main коммитом 24811c2228b66d3e3e863430a98e349b7ceeaee4. Через GitHub API подтверждены main как default branch, 644 файла в опубликованном дереве и отсутствие открытых PR/issues на момент проверки. Все четыре CI jobs этого main прошли: [run 39488225449](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/actions/runs/39488225449).
+
+Последующая ветка codex/repository-structure-followup исправляет оставшиеся инструкции до merge: README/DEPLOYMENT теперь используют main, CONTRIBUTING/CLEAN_INSTALL и PROJECT_STATUS отражают опубликованный срез. Каталоги сценариев и ADR содержат прямые ссылки; PROJECT_STATUS_TEMPLATE описывает текущий checkpoint без устаревшего списка NOT STARTED. Заголовок CHANGELOG перенесён в начало.
+
+Проверки этого документационного блока: Git diff и staged hygiene по исходникам/файловым ссылкам/JSON/ограниченным сигнатурам секретов; точный результат и следующий шаг — [PROJECT_STATUS](../PROJECT_STATUS.md). Backend/frontend/build/E2E локально заново не запускались: исполняемые файлы, зависимости и CI workflow не менялись. Прежние runtime результаты ниже сохранены как исторические evidence.
+
+Дальнейшие удаления или массовые переносы не обоснованы: исходники, миграции, fixtures, audit evidence, первичные документы и закреплённые сторонние лицензии имеют назначение. Repository settings, старые ветки, история, рабочие deployment/DB/storage не изменялись.
+
 ## Исходное состояние
 
 GitHub main aefb72f (контракт0.13), feature f5c6387 (0.18), локальный HEAD b156086 (0.19) плюс полный рабочий source0.34. Сохранены620файлов:401tracked/219новых и101изменённый tracked. Snapshot/manifest остались приватно; после работ SHA всех620файлов первоначального checkout совпали.
@@ -80,4 +90,4 @@ Off-host encrypted backup/retention/monitoring и полная pilot-hardening �
 
 Helper backup_local требует Git metadata и своего Compose identity/working_dir; пустая БД без оригинала/аудита не покрывается его HTTP verify. Linux VPS/manual backup shell recipe здесь не исполнялся на реальном сервере.
 
-[Quick Start](../README.md), [deployment](DEPLOYMENT.md), [backup/restore](operations/BACKUP_RESTORE.md), [troubleshooting](TROUBLESHOOTING.md). Тестовые volumes/storage/приватные receipts сохраняются; собственные QA services останавливаются после приёмки. Следующее действие — review/согласованное слияние PR5; production deployment отдельно.
+[Quick Start](../README.md), [deployment](DEPLOYMENT.md), [backup/restore](operations/BACKUP_RESTORE.md), [troubleshooting](TROUBLESHOOTING.md). Тестовые volumes/storage/приватные receipts сохраняются; собственные QA services остановлены после приёмки. Слияние PR №5 завершено; актуальный следующий шаг — в [PROJECT_STATUS](../PROJECT_STATUS.md). Production deployment согласуется отдельно.
