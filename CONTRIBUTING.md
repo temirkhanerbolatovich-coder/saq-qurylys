@@ -12,7 +12,7 @@ git pull --ff-only origin main
 git switch -c codex/short-feature-name
 ```
 
-До отдельного merge полный подготовленный срез находится в codex/repository-cleanup. Старый main не эквивалентен этой ветке. PR не разрешает merge/deploy.
+Основная ветка — main; полный исходный срез интегрирован через [PR №5](https://github.com/temirkhanerbolatovich-coder/saq-qurylys/pull/5). Новую работу начинайте от актуального main. Для воспроизводимой проверки сохраняйте точный SHA. Создание PR не разрешает merge/deploy.
 
 Scope минимальный и связный. При параллельной работе заранее разделить пути; не перезаписывать общий статус/tokens/lockfiles. API/роли/DEMO/REAL/риск/история сохраняются.
 

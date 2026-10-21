@@ -28,7 +28,7 @@ Public overlay не является reverse proxy сам по себе. Dev ove
 ```sh
 git clone https://github.com/temirkhanerbolatovich-coder/saq-qurylys.git /opt/saq-qurylys
 cd /opt/saq-qurylys
-git switch codex/repository-cleanup
+git switch main
 git rev-parse HEAD
 python3 scripts/configure_server.py --public-host saq.example.org
 chmod 600 .env .local/server-credentials.txt

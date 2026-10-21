@@ -1,11 +1,12 @@
+# Changelog
+
 ## 21.10.2026 — организация репозитория и воспроизводимость
 
 - Краткий README, тематические developer/API/deployment/backup/troubleshooting guides; история сохранена в docs/archive, первичные источники в docs/reference с SHA.
 - Общие guards записывающих E2E/OCR, scripts-wide Ruff и repository/Compose/docs/secret checks в существующем CI.
 - Кэши исключены из Docker context, добавлены шаблоны PR/issue, EditorConfig и SECURITY без назначения проекту новой лицензии.
 - Полные результаты/ограничения текущей ревизии — docs/REFACTOR_REPORT.md. API/риск/исторические snapshots и рабочие deployment/data не изменены cleanup.
-
-# Changelog
+- После merge PR №5 команды установки и текущий статус приведены к main; каталог сценариев и ADR дополнен ссылками, шаблон статуса отделён от устаревшего стартового MVP checklist.
 
 ## 2026-10-20 — SQ fixes, этапы3–6 (source/test runtime)
 
